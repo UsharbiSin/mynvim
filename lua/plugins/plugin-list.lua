@@ -141,9 +141,9 @@ return {
   -- ==========================================
   -- Git 与协同
   -- ==========================================
-  { "tpope/vim-fugitive" },                     -- Git 深度集成工具
-  { "mhinz/vim-signify" },                      -- 侧边栏版本差异可视化
-  { "rhysd/conflict-marker.vim" },              -- 辅助解决 Git 合并冲突
+  { "tpope/vim-fugitive" },                         -- Git 深度集成工具
+  { "mhinz/vim-signify" },                          -- 侧边栏版本差异可视化
+  { "rhysd/conflict-marker.vim" },                  -- 辅助解决 Git 合并冲突
   { "gisphm/vim-gitignore",     ft = "gitignore" }, -- 快速生成 .gitignore
 
   -- ==========================================
@@ -177,6 +177,7 @@ return {
       require('config.tools')
     end
   },
+  { "h-hg/fcitx.nvim" }, -- normal模式自动切换为英文
 
   -- ==========================================
   -- 语言特定优化 (杂项)
