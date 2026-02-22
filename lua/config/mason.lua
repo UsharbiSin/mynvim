@@ -29,5 +29,5 @@ require("mason-lspconfig").setup({
   automatic_installation = true,
 })
 
-require("lazydev").setup({})
+require("lazydev")
 require("config.lsp")
