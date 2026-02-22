@@ -1,9 +1,30 @@
 -- ==========================================
--- 主题与色彩 (vim-snazzy)
+-- 主题与色彩 (tokyonight.nvim)
 -- ==========================================
--- 开启透明背景并应用主题
-vim.g.SnazzyTransparent = 1
-vim.cmd("colorscheme snazzy")
+require("tokyonight").setup({
+  style = "night",     -- 还有 'storm', 'moon', 'day' 可选，night 最纯粹
+  transparent = false, -- 如果你想要磨砂透明终端效果，可以设为 true
+  terminal_colors = true,
+  styles = {
+    -- 修改一些细节，让代码看起来更舒服
+    comments = { italic = true }, -- 注释斜体
+    keywords = { italic = true }, -- 关键字斜体
+    functions = {},
+    variables = {},
+    -- 重点：让背景稍微暗一点，衬托出 Treesitter 的鲜艳颜色
+    sidebars = "dark",
+    floats = "dark",
+  },
+  -- 强制修正一些高亮组
+  on_highlights = function(hl, c)
+    -- 修正之前提到的断点颜色，确保它们在 Tokyonight 下依然醒目
+    hl.DapBreakpoint = { fg = c.red, bold = true }
+    hl.DapStoppedLine = { bg = c.green9, bold = true } -- 那个淡绿色的背景
+  end,
+})
+
+-- 载入主题
+vim.cmd [[colorscheme tokyonight-night]]
 
 
 -- ==========================================
@@ -55,43 +76,3 @@ end
 -- 设置 Airline 的 X 区 (通常显示文件类型和编码)
 -- 使用 %{v:lua.show_my_env()} 来调用上面的 Lua 函数
 vim.g.airline_section_x = "%{v:lua.show_my_env()} %y"
-
-
--- ==========================================
--- 提取并格式化当前函数名 (配合 coc.nvim)
--- ==========================================
-_G.coc_current_function = function()
-  -- 获取 b:coc_symbol_line 变量
-  local status, symbol = pcall(function() return vim.b.coc_symbol_line end)
-
-  if status and symbol and symbol ~= "" then
-    -- 使用 Lua 的 gsub 替代 Vimscript 的 substitute
-    -- 剔除颜色控制、鼠标点击代码、点击结束符和颜色重置符
-    symbol = symbol:gsub("%%#.-#", "")
-    symbol = symbol:gsub("%%%d+@.-@", "")
-    symbol = symbol:gsub("%%X", "")
-    symbol = symbol:gsub("%%[*]", "")
-  else
-    -- 如果没获取到，降级回退到原生单函数名 [cite: 34]
-    status, symbol = pcall(function() return vim.b.coc_current_function end)
-  end
-
-  -- 拼接并返回显示字符串
-  if status and symbol and symbol ~= "" then
-    return '  ' .. symbol
-  else
-    return ''
-  end
-end
-
--- 使用 airline#section#create 构建 C 区 (通常显示文件名)
-vim.g.airline_section_c = vim.fn['airline#section#create']({
-  '%<',
-  'file',
-  ' ',
-  'readonly',
-  '%{v:lua.coc_current_function()}'
-})
-
--- 确保开启 coc.nvim 支持
--- vim.g['airline#extensions#coc#enabled'] = 1

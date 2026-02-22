@@ -188,7 +188,7 @@ end
 -- ==========================================
 -- DAP UI 界面自动响应与布局配置
 -- ==========================================
-local custom_utils = require 'config.utils'
+local custom_utils = require('config.utils')
 local dapui = require('dapui')
 
 -- UI 响应事件：在调试开始/结束时自动打开/关闭 UI 面板

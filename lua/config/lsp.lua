@@ -42,6 +42,11 @@ vim.api.nvim_create_autocmd("LspAttach", {
   callback = function(event)
     local client = assert(vim.lsp.get_client_by_id(event.data.client_id))
 
+    -- 开启 LSP 语义高亮 (Semantic Tokens)
+    if client.server_capabilities.semanticTokensProvider then
+      vim.lsp.semantic_tokens.start(event.buf, client.id)
+    end
+
     local function map(mode, keys, func, desc)
       vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = "LSP: " .. desc })
     end
@@ -114,9 +119,10 @@ vim.api.nvim_create_autocmd("LspAttach", {
       end, "Toggle Inlay Hints")
     end
 
-    -- 折叠表达式
+    -- 代码折叠
     if client and client:supports_method("textDocument/foldingRange") then
       local win = vim.api.nvim_get_current_win()
+      vim.wo[win][0].foldmethod = "expr"
       vim.wo[win][0].foldexpr = "v:lua.vim.lsp.foldexpr()"
     end
 
@@ -160,12 +166,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
         vim.diagnostic.open_float(nil, { focusable = false })
       end
     })
-
-    -- 代码折叠
-    if client and client:supports_method "textDocument/foldingRange" then
-      local win = vim.api.nvim_get_current_win()
-      vim.wo[win][0].foldexpr = "v:lua.vim.lsp.foldexpr()"
-    end
   end,
 })
 

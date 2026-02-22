@@ -4,6 +4,9 @@ vim.g.mapleader = " "
 vim.g.loaded_perl_provider = 0
 vim.g.loaded_ruby_provider = 0
 
+-- nvim-treesitter 语言包
+vim.g.treesitter_ensure_installed = { "python", "lua", "c", "cpp", "vim", "vimdoc", "query" }
+
 
 -- ==========================================
 -- 加载核心配置 (Core)
@@ -18,8 +21,9 @@ require('core.keymaps')
 local Plug = vim.fn['plug#']
 
 vim.call('plug#begin', '~/.local/share/nvim/plugged')
-Plug('vim-airline/vim-airline')  -- 美化底部状态栏
-Plug('connorholyday/vim-snazzy') -- 色彩主题
+Plug('vim-airline/vim-airline') -- 美化底部状态栏
+-- Plug('connorholyday/vim-snazzy') -- 色彩主题
+Plug('folke/tokyonight.nvim')   -- 色彩主题
 -- Plug('preservim/nerdtree', { on = 'NERDTreeToggle' })                -- 文件树，仅按需加载
 -- Plug('Xuyuanp/nerdtree-git-plugin')                                     -- 文件树 Git 状态显示
 -- Plug('neoclide/coc.nvim', { branch = 'release' })                       -- 强大的智能代码补全引擎
