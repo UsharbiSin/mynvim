@@ -4,105 +4,33 @@ vim.g.mapleader = " "
 vim.g.loaded_perl_provider = 0
 vim.g.loaded_ruby_provider = 0
 
--- nvim-treesitter 语言包
-vim.g.treesitter_ensure_installed = { "python", "lua", "c", "cpp", "vim", "vimdoc", "query" }
-
-
 -- ==========================================
--- 加载核心配置 (Core)
+-- 1. 加载核心配置 (Core)
 -- ==========================================
 require('core.options')
 require('core.keymaps')
 
+-- ==========================================
+-- 2. Bootstrap 自动安装 lazy.nvim
+-- ==========================================
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+if not vim.uv.fs_stat(lazypath) then
+  vim.fn.system({
+    "git",
+    "clone",
+    "--filter=blob:none",
+    "https://github.com/folke/lazy.nvim.git",
+    "--branch=stable", -- 最新稳定版
+    lazypath,
+  })
+end
+vim.opt.rtp:prepend(lazypath)
 
 -- ==========================================
--- 插件管理 (vim-plug)
+-- 3. 启动 lazy.nvim，并告诉它去读取分离的声明列表
 -- ==========================================
-local Plug = vim.fn['plug#']
-
-vim.call('plug#begin', '~/.local/share/nvim/plugged')
-Plug('vim-airline/vim-airline') -- 美化底部状态栏
--- Plug('connorholyday/vim-snazzy') -- 色彩主题
-Plug('folke/tokyonight.nvim')   -- 色彩主题
--- Plug('preservim/nerdtree', { on = 'NERDTreeToggle' })                -- 文件树，仅按需加载
--- Plug('Xuyuanp/nerdtree-git-plugin')                                     -- 文件树 Git 状态显示
--- Plug('neoclide/coc.nvim', { branch = 'release' })                       -- 强大的智能代码补全引擎
--- Plug('dense-analysis/ale')                                              -- 异步代码纠错与格式化
-Plug('preservim/tagbar', { on = 'TagbarOpenAutoClose' })                                             -- 侧边栏函数大纲
-Plug('mbbill/undotree')                                                                              -- 可视化撤销历史树
-Plug('preservim/vim-indent-guides')                                                                  -- 可视化显示缩进级别
-Plug('itchyny/vim-cursorword')                                                                       -- 自动高亮当前光标下的单词
-Plug('rhysd/conflict-marker.vim')                                                                    -- 辅助解决 Git 合并冲突
-Plug('tpope/vim-fugitive')                                                                           -- Git 深度集成工具
-Plug('mhinz/vim-signify')                                                                            -- 侧边栏版本差异可视化
-Plug('gisphm/vim-gitignore', { ['for'] = { 'gitignore', 'vim-plug' } })                              -- 快速生成 .gitignore
-Plug('elzr/vim-json')                                                                                -- JSON 文件解析与优化
-Plug('hail2u/vim-css3-syntax')                                                                       -- CSS3 语法高亮优化
-Plug('spf13/PIV', { ['for'] = { 'php', 'vim-plug' } })                                               -- PHP 优化
-Plug('gko/vim-coloresque', { ['for'] = { 'vim-plug', 'php', 'html', 'javascript', 'css', 'less' } }) -- 颜色代码实时预览
-Plug('pangloss/vim-javascript', { ['for'] = { 'javascript', 'vim-plug' } })                          -- JS 优化
-Plug('mattn/emmet-vim')                                                                              -- HTML/CSS 代码快速生成
-Plug('vim-scripts/indentpython.vim')                                                                 -- Python 自动缩进优化
-Plug('iamcco/markdown-preview.nvim',
-  { ['do'] = function() vim.fn['mkdp#util#install']() end, ['for'] = { 'markdown', 'vim-plug' } })   -- Markdown 浏览器实时预览
-Plug('iamcco/mathjax-support-for-mkdp')                                                              -- Markdown 数学公式支持
-Plug('dhruvasagar/vim-table-mode', { on = 'TableModeToggle' })                                       -- 强大的表格自动排版
-Plug('vimwiki/vimwiki')                                                                              -- 个人知识库系统
-Plug('kshenoy/vim-signature')                                                                        -- 侧边栏书签标记显示
-Plug('terryma/vim-multiple-cursors')                                                                 -- 类似 Sublime 的多光标编辑
-Plug('junegunn/goyo.vim')                                                                            -- 沉浸式专注写作模式
-Plug('tpope/vim-surround')                                                                           -- 快速增删改括号/引号等成对符号
-Plug('godlygeek/tabular')                                                                            -- 强大的按符号对齐工具
-Plug('gcmt/wildfire.vim')                                                                            -- 回车键智能选中文本对象
-Plug('scrooloose/nerdcommenter')                                                                     -- 代码批量注释神器
-Plug('MarcWeber/vim-addon-mw-utils')                                                                 -- 插件底层依赖
-Plug('kana/vim-textobj-user')                                                                        -- 文本对象底层依赖
-Plug('fadein/vim-FIGlet')                                                                            -- 生成 ASCII 艺术大字
-Plug('img-paste-devs/img-paste.vim')                                                                 -- Markdown 剪贴板一键贴图
-Plug('mfussenegger/nvim-dap')                                                                        -- debug辅助
-Plug('nvim-neotest/nvim-nio')                                                                        -- 提供异步I/O功能
-Plug('rcarriga/nvim-dap-ui')                                                                         -- 提供debug ui
-Plug('nvim-treesitter/nvim-treesitter', { ['do'] = ':TSUpdate' })                                    -- 供nvim-dap-virtual-text查找变量定义
-Plug('MunifTanjim/nui.nvim')                                                                         -- UI基础库插件，供noice.vim 依赖
-Plug('rcarriga/nvim-notify')                                                                         -- 供noice.nvim 依赖，接管通知
-Plug('theHamsta/nvim-dap-virtual-text')                                                              -- 调试时在行内显示变量值
-Plug('folke/noice.nvim')                                                                             -- 美化输入框
-Plug('mfussenegger/nvim-dap-python')                                                                 -- 桥接python-debugpy
-Plug('neovim/nvim-lspconfig')                                                                        -- 原生 LSP 核心配置
-Plug('williamboman/mason.nvim')                                                                      -- LSP/Linter/Formatter 安装管理器
-Plug('williamboman/mason-lspconfig.nvim')                                                            -- 桥接 mason 和 lspconfig
-Plug('hrsh7th/nvim-cmp')                                                                             -- 补全引擎核心
-Plug('hrsh7th/cmp-nvim-lsp')                                                                         -- LSP 补全源
-Plug('hrsh7th/cmp-buffer')                                                                           -- Buffer 补全源
-Plug('hrsh7th/cmp-path')                                                                             -- 路径补全源
-Plug('onsails/lspkind.nvim')                                                                         -- 补全菜单图标 (替代 suggest.completionItemKindLabels)
-Plug('stevearc/conform.nvim')                                                                        -- 格式化代码工具（替代 coc.preferences.formatOnSave）
-Plug('nvim-tree/nvim-tree.lua')                                                                      -- 文件树
-Plug('nvim-tree/nvim-web-devicons')                                                                  -- 提供文件树图标
--- Plug('folke/lazydev.nvim')                                                                           -- 提供完整的nvim lua API 的代码补全
-vim.call('plug#end')
-
-
--- ==========================================
--- 加载插件模块配置 (Plugins)
--- ==========================================
--- 让模块化配置生效，自动引入对应文件
-require('plugins.ui')
--- require('plugins.coc')
--- require('plugins.nerdtree')
-require('plugins.markdown')
--- require('plugins.ale')
-require('plugins.undotree')
-require('plugins.vimwiki')
-require('plugins.tools')
-require('plugins.nvim-dap')
-require('plugins.nvim-notify')
-require('plugins.nvim-cmp')
-require('plugins.conform')
-require('plugins.nvim-tree')
-require('plugins.tools')
-require('plugins.mason')
-
+-- 这里的 "plugin-list" 对应下方新建的 lua/plugin-list.lua 文件
+require("lazy").setup("plugins")
 
 -- ==========================================
 -- 一键编译运行 (Compile & Run)
