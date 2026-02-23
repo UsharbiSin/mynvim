@@ -114,9 +114,18 @@ return {
   -- Markdown 与笔记 (VimWiki)
   -- ==========================================
   {
+    'MeanderingProgrammer/render-markdown.nvim', -- nvim 编辑器内渲染markdown
+    dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-mini/mini.nvim' },
+    ft = { "markdown", 'vimwiki', 'Avante' },
+    opts = {},
+    config = function()
+      require('config.render-markdown')
+    end
+  },
+  {
     "iamcco/markdown-preview.nvim", -- Markdown 浏览器实时预览
     cmd = { "MarkdownPreviewToggle", "MarkdownPreview", "MarkdownPreviewStop" },
-    ft = { "markdown" },
+    ft = { "markdown", "vimwiki" },
     build = "cd app && npm install",
     config = function()
       require('config.markdown')
@@ -124,25 +133,52 @@ return {
   },
   {
     "vimwiki/vimwiki", -- 个人知识库系统
-    ft = "vimwiki",
-    config = function()
+    init = function()
       require('config.vimwiki')
     end
   },
   {
     "iamcco/mathjax-support-for-mkdp", -- Markdown 数学公式支持
-    ft = "markdown",
+    ft = { "markdown", 'vimwiki' },
   },
   {
-    "img-paste-devs/img-paste.vim", -- Markdown 剪贴板一键贴图
-    ft = "markdown",
+    "HakonHarnes/img-clip.nvim", -- Markdown 剪贴板一键贴图
+    ft = { "markdown", 'vimwiki' },
+    keys = {
+      { "<LEADER>p", "<cmd>PasteImage<CR>", desc = "从系统剪贴板粘贴图片" }
+    },
+    event = "VeryLazy",
+    config = function()
+      require('config.img-clip')
+    end
+  },
+  {
+    "bullets-vim/bullets.vim", -- 列表优化
+    ft = { "markdown", "vimwiki", "text" },
+    init = function()
+      vim.g.bullets_enabled_file_types = { 'markdown', 'vimwiki', 'text' }
+    end
+  },
+  {
+    "folke/snacks.nvim", -- 图片、LaTex公式预览
+    priority = 1000,
+    lazy = false,
+    ft = { "markdown", "vimwiki", "text" },
+    config = function()
+      require('config.snacks')
+    end
   },
 
   -- ==========================================
   -- Git 与协同
   -- ==========================================
-  { "tpope/vim-fugitive" },                         -- Git 深度集成工具
-  { "mhinz/vim-signify" },                          -- 侧边栏版本差异可视化
+  { "tpope/vim-fugitive" },    -- Git 深度集成工具
+  {
+    "lewis6991/gitsigns.nvim", -- lewis6991/gitsigns.nvim
+    config = function()
+      require('config.gitsigns')
+    end
+  },
   { "rhysd/conflict-marker.vim" },                  -- 辅助解决 Git 合并冲突
   { "gisphm/vim-gitignore",     ft = "gitignore" }, -- 快速生成 .gitignore
 
@@ -162,22 +198,29 @@ return {
     },
     event = "VeryLazy",
   },
-  { "itchyny/vim-cursorword",       event = "VeryLazy" },      -- 自动高亮当前光标下的单词
-  { "tpope/vim-surround",           event = "VeryLazy" },      -- 快速增删改括号/引号等成对符号
-  { "godlygeek/tabular",            cmd = "Tabularize" },      -- 强大的按符号对齐工具
-  { "gcmt/wildfire.vim",            event = "VeryLazy" },      -- 回车键智能选中文本对象
-  { "scrooloose/nerdcommenter",     event = "VeryLazy" },      -- 代码批量注释神器
-  { "terryma/vim-multiple-cursors", event = "VeryLazy" },      -- 类似 Sublime 的多光标编辑
-  { "dhruvasagar/vim-table-mode",   cmd = "TableModeToggle" }, -- 强大的表格自动排版
-  { "fadein/vim-FIGlet",            cmd = "FIGlet" },          -- 生成 ASCII 艺术大字
+  { "itchyny/vim-cursorword",       event = "VeryLazy" }, -- 自动高亮当前光标下的单词
+  { "tpope/vim-surround",           event = "VeryLazy" }, -- 快速增删改括号/引号等成对符号
+  { "godlygeek/tabular",            cmd = "Tabularize" }, -- 强大的按符号对齐工具
+  { "gcmt/wildfire.vim",            event = "VeryLazy" }, -- 回车键智能选中文本对象
+  { "scrooloose/nerdcommenter",     event = "VeryLazy" }, -- 代码批量注释神器
+  { "terryma/vim-multiple-cursors", event = "VeryLazy" }, -- 类似 Sublime 的多光标编辑
   {
-    "kshenoy/vim-signature",                                   -- 侧边栏书签标记显示
+    "dhruvasagar/vim-table-mode",                         -- 表格自动排版
+    cmd = "TableModeToggle",
+    config = function()
+      require('config.vim-table-mode')
+    end
+  },
+  { "fadein/vim-FIGlet",            cmd = "FIGlet" }, -- 生成 ASCII 艺术大字
+  {
+    "kshenoy/vim-signature",                          -- 侧边栏书签标记显示
     event = "BufReadPost",
     config = function()
       require('config.tools')
     end
   },
-  { "h-hg/fcitx.nvim" }, -- normal模式自动切换为英文
+  { "h-hg/fcitx.nvim" },                          -- normal模式自动切换为英文
+  { "folke/which-key.nvim",         event = "VeryLazy" }, -- 快捷键提示
 
   -- ==========================================
   -- 语言特定优化 (杂项)

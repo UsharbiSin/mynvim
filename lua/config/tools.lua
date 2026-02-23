@@ -8,12 +8,6 @@ map('n', 'T', ':TagbarOpenAutoClose<CR>', opts)
 
 
 -- ==========================================
--- Markdown 表格辅助 (vim-table-mode)
--- ==========================================
-map('n', '<LEADER>tm', ':TableModeToggle<CR>', opts)
-
-
--- ==========================================
 -- Python 语法高亮 (python-syntax)
 -- ==========================================
 vim.g.python_higlight_all = 1

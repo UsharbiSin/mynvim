@@ -63,3 +63,6 @@ map('n', '<LEADER>g', ':botright vertical terminal gemini<CR>')
 
 -- 从 terminal 模式转为 normal 模式
 map('t', '<C-t>', '<C-\\><C-n>', { noremap = true, silent = true })
+
+-- 开启 vim-table-mode
+map('n', '<LEADER>tm', ':TableModeToggle<CR>', opts)

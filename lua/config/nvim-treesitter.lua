@@ -1,4 +1,5 @@
-local parsers = { "python", "lua", "c", "cpp", "vim", "vimdoc", "query" }
+local parsers = { "python", "lua", "c", "cpp", "vim", "vimdoc", "query", "markdown", "markdown_inline", "latex", "css",
+  "html", "javascript" }
 require('nvim-treesitter').install(parsers)
 
 -- 启用代码高亮 (替代老版本的 highlight = { enable = true })
@@ -12,7 +13,7 @@ vim.api.nvim_create_autocmd('FileType', {
   end,
 })
 
--- 3. 启用代码折叠 (替代老版本的额外模块)
+-- 启用代码折叠 (替代老版本的额外模块)
 vim.api.nvim_create_autocmd('FileType', {
   pattern = '*',
   callback = function()
@@ -21,3 +22,6 @@ vim.api.nvim_create_autocmd('FileType', {
     vim.opt_local.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
   end,
 })
+
+-- 用markdown 解析器来解析 vimmarkdown 文件
+vim.treesitter.language.register('markdown', 'vimwiki')

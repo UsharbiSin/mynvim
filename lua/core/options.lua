@@ -28,6 +28,7 @@ opt.autochdir = true       -- 自动将工作目录切换到当前文件所在�
 opt.updatetime = 300       -- 设置刷新时间为300毫秒
 opt.signcolumn = 'auto'    -- 在左侧显示标记列（报错图标等）
 opt.scrolloff = 5          -- 底部永远空5行
+opt.conceallevel = 3       -- neovim 隐藏级别
 
 
 -- 遵循PEP 8 规范，python使用4格空格缩进

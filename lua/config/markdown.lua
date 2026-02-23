@@ -89,24 +89,3 @@ vim.g.mkdp_combine_preview_auto_refresh = 1
 vim.keymap.set('n', '<F8>', '<Plug>MarkdownPreview', { silent = true })
 vim.keymap.set('n', '<F9>', '<Plug>MarkdownPreviewStop', { silent = true })
 vim.keymap.set('n', '<C-p>', '<Plug>MarkdownPreviewToggle', { silent = true })
-
-
--- ==========================================
--- img-paste.vim 剪贴板图片配置 (Wayland/Hyprland 适配)
--- ==========================================
--- 检测并为 Wayland (Hyprland) 环境配置 wl-paste
-if vim.env.XDG_SESSION_TYPE == 'wayland' or vim.env.HYPRLAND_INSTANCE_SIGNATURE ~= nil then
-  vim.g.mdip_imgdir_in_script = 'img'
-  vim.g.CaptureClipboardImage = function(file_path)
-    -- 使用 vim.fn.shellescape 处理路径转义
-    local safe_path = vim.fn.shellescape(file_path)
-    -- 拼接命令
-    local cmd = 'wl-paste -t image/png > ' .. safe_path
-    -- 使用 vim.fn.system 执行系统命令
-    vim.fn.system(cmd)
-    -- 使用 vim.v 获取 Vim 内置的执行状态码 (相当于 v:shell_error)
-    return vim.v.shell_error
-  end
-end
-vim.g.mdip_imgdir = '.markdown_images'
-vim.g.mdip_imgname = 'image'

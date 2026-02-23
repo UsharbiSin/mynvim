@@ -6,3 +6,11 @@ vim.g.vimwiki_list = {
     ext = '.md'
   }
 }
+
+vim.g.vimwiki_table_auto_fmt = 0
+vim.g.vimwiki_key_mappings = {
+  all_maps = 1,
+  global = 1,
+  table_format = 0,
+  table_mappings = 0,
+}

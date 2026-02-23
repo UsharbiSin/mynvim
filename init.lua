@@ -5,13 +5,13 @@ vim.g.loaded_perl_provider = 0
 vim.g.loaded_ruby_provider = 0
 
 -- ==========================================
--- 1. 加载核心配置 (Core)
+-- 加载核心配置 (Core)
 -- ==========================================
 require('core.options')
 require('core.keymaps')
 
 -- ==========================================
--- 2. Bootstrap 自动安装 lazy.nvim
+-- Bootstrap 自动安装 lazy.nvim
 -- ==========================================
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.uv.fs_stat(lazypath) then
@@ -27,7 +27,7 @@ end
 vim.opt.rtp:prepend(lazypath)
 
 -- ==========================================
--- 3. 启动 lazy.nvim，并告诉它去读取分离的声明列表
+-- 启动 lazy.nvim，并告诉它去读取分离的声明列表
 -- ==========================================
 -- 这里的 "plugin-list" 对应下方新建的 lua/plugin-list.lua 文件
 require("lazy").setup("plugins")

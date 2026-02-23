@@ -53,11 +53,7 @@ vim.cmd([[
 -- ==========================================
 -- 底部状态栏 (vim-airline)
 -- ==========================================
--- 开启 coc.nvim 支持及自定义报错/警告图标 [cite: 32]
-vim.g["airline#extensions#coc#enabled"] = 1
-vim.g["airline#extensions#coc#error_symbol"] = '❌: '
-vim.g["airline#extensions#coc#warning_symbol"] = '⚡: '
-vim.g["airline#extensions#coc#show_coc_status"] = 1
+vim.g["airline#extensions#hunks#enable"] = 1
 
 
 -- ==========================================
