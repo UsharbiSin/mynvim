@@ -27,7 +27,7 @@ opt.laststatus = 2         -- 始终在窗口底部显示文件信息
 opt.autochdir = true       -- 自动将工作目录切换到当前文件所在的目录
 opt.updatetime = 300       -- 设置刷新时间为300毫秒
 opt.signcolumn = 'auto'    -- 在左侧显示标记列（报错图标等）
-opt.scrolloff = 5          -- 底部永远空5行
+opt.scrolloff = 10         -- 底部永远空10行
 opt.conceallevel = 3       -- neovim 隐藏级别
 
 

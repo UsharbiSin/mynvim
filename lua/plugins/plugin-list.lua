@@ -219,7 +219,7 @@ return {
       require('config.tools')
     end
   },
-  { "h-hg/fcitx.nvim" },                          -- normal模式自动切换为英文
+  { "h-hg/fcitx.nvim" },                                  -- normal模式自动切换为英文
   { "folke/which-key.nvim",         event = "VeryLazy" }, -- 快捷键提示
 
   -- ==========================================
@@ -246,4 +246,12 @@ return {
   -- 底层依赖插件 (不需要单独配置)
   { "MarcWeber/vim-addon-mw-utils" }, -- 插件底层依赖
   { "kana/vim-textobj-user" },        -- 文本对象底层依赖
+  { "nanotee/sqls.nvim" },            -- sql
+  {
+    "mfussenegger/nvim-lint",
+    event = { "BufReadPre", "BufNewFile" },
+    config = function()
+      require('config.nvim-lint')
+    end
+  },
 }

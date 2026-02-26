@@ -31,7 +31,7 @@ vim.lsp.enable("html")
 vim.lsp.enable("jsonls")
 vim.lsp.enable("lua_ls")
 vim.lsp.enable("pylsp")
-vim.lsp.enable("sqlls")
+vim.lsp.enable("sqls")
 
 
 -- ==========================================
