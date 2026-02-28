@@ -65,4 +65,8 @@ map('n', '<LEADER>g', ':botright vertical terminal gemini<CR>')
 map('t', '<C-t>', '<C-\\><C-n>', { noremap = true, silent = true })
 
 -- 开启 vim-table-mode
-map('n', '<LEADER>tm', ':TableModeToggle<CR>', opts)
+map('n', '<LEADER>tm', ':TableModeToggle<CR>')
+
+-- 数据库操作
+map('n', '<LEADER>swc', ':SqlsSwitchConnection<CR>')
+map('n', '<LEADER>swd', ':SqlsSwitchDatabase<CR>')

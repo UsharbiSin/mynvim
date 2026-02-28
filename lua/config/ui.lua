@@ -15,11 +15,12 @@ require("tokyonight").setup({
     sidebars = "dark",
     floats = "dark",
   },
+  on_colors = function(colors) end,
   -- 强制修正一些高亮组
   on_highlights = function(hl, c)
-    -- 修正之前提到的断点颜色，确保它们在 Tokyonight 下依然醒目
+    -- 断点颜色
     hl.DapBreakpoint = { fg = c.red, bold = true }
-    hl.DapStoppedLine = { bg = c.green9, bold = true } -- 那个淡绿色的背景
+    hl.DapStoppedLine = { bg = c.green, bold = true }
   end,
 })
 

@@ -10,13 +10,11 @@
 --- ```
 --- Sqls can be installed via `go install github.com/sqls-server/sqls@latest`. Instructions for compiling Sqls from the source can be found at [sqls-server/sqls](https://github.com/sqls-server/sqls).
 
-local db_user = os.getenv("DB_USER_TY")
-local db_pass = os.getenv("DB_PASSWORD_TY")
-local db_host = os.getenv("DB_HOST_TY")
-local db_port = os.getenv("DB_PORT_TY")
-local db_name = os.getenv("DB_NAME_TY")
-
-local dsn = string.format("%s:%s@tcp(%s:%s)/%s", db_user, db_pass, db_host, db_port, db_name)
+local function get_dsn(user, pass, host, port, name)
+  return string.format("%s:%s@tcp(%s:%s)/%s",
+    os.getenv(user), os.getenv(pass), os.getenv(host), os.getenv(port), os.getenv(name)
+  )
+end
 
 ---@type vim.lsp.Config
 return {
@@ -30,15 +28,29 @@ return {
     client.server_capabilities.documentFormattingProvider = false
     client.server_capabilities.documentRangeFormattingProvider = false
   end,
-  root_markers = { 'config.yml' },
   settings = {
     sqls = {
       connections = {
         {
           alias = "tongyan",
           driver = "mysql",
-          dataSourceName = dsn,
-        }
+          dataSourceName = get_dsn("DB_USER_TY", "DB_PASSWORD_TY", "DB_HOST_TY", "DB_PORT_TY", "DB_NAME_TY"),
+        },
+        {
+          alias = "tongyan_test",
+          driver = "mysql",
+          dataSourceName = get_dsn("DB_USER_TYTEST", "DB_PASSWORD_TYTEST", "DB_HOST_TYTEST", "DB_PORT_TYTEST", "DB_NAME_TYTEST"),
+        },
+        {
+          alias = "platform_st",
+          driver = "mysql",
+          dataSourceName = get_dsn("DB_USER_ST", "DB_PASSWORD_ST", "DB_HOST_ST", "DB_PORT_ST", "DB_NAME_ST"),
+        },
+        {
+          alias = "platform_st_test",
+          driver = "mysql",
+          dataSourceName = get_dsn("DB_USER_STTEST", "DB_PASSWORD_STTEST", "DB_HOST_STTEST", "DB_PORT_STTEST", "DB_NAME_STTEST"),
+        },
       }
     }
   },

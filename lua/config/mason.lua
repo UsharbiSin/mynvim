@@ -21,7 +21,7 @@ require("mason-lspconfig").setup({
     "pylsp",  -- Python
     "html",   -- HTML
     "jsonls", -- JSON
-    "sqlls",  -- SQL
+    "sqls",   -- SQL
     "lua_ls", -- Lua
     "clangd"  -- C/C++
   },

@@ -22,8 +22,8 @@ local function my_on_attach(bufnr)
   vim.keymap.set('n', 'q', api.tree.close, opts('quit: 关闭文件树'))
   vim.keymap.set('n', '?', api.tree.toggle_help, opts('help: 查看快捷键帮助'))
   vim.keymap.set('n', 'R', api.tree.reload, opts('refresh: 刷新文件树'))
-  vim.keymap.set('n', '.', api.tree.toggle_hidden_filter, opts('toggleHidden: 切换显示/隐藏文件'))
-  vim.keymap.set('n', 'zh', api.tree.toggle_hidden_filter, opts('toggleHidden: 切换显示/隐藏文件'))
+  vim.keymap.set('n', '.', api.filter.dotfiles.toggle, opts('toggleHidden: 切换显示/隐藏文件'))
+  vim.keymap.set('n', 'zh', api.filter.dotfiles.toggle, opts('toggleHidden: 切换显示/隐藏文件'))
   vim.keymap.set('n', 'X', api.node.run.system, opts('systemExecute: 使用系统默认应用打开'))
 
   -- ================= 文件操作 =================
