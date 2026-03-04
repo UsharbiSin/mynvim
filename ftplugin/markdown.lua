@@ -18,8 +18,7 @@ map('i', ',2', '## <Enter><++><Esc>kA', opts)
 map('i', ',3', '### <Enter><++><Esc>kA', opts)
 map('i', ',4', '#### <Enter><++><Esc>kA', opts)
 map('i', ',l', '--------<Enter>', opts)
-map('i', ',r', '<a style="color: red;"></a> <++><Esc>F/hi', opts)
-map('i', ',t', '<a style="color: blue;"></a> <++><Esc>F/hi', opts)
+map('i', ',k', '<a style="color: ;"><++></a> <++><Esc>F;i', opts)
 
 
 -- 拦截回车键：在表格行尾回车时，自动填充 <++> 占位符
@@ -33,7 +32,7 @@ vim.api.nvim_create_autocmd("User", {
     -- 备份当前 buffer 原有的 <CR> 映射（比如 bullets.vim 的）
     saved_cr_maps[bufnr] = vim.fn.maparg('<CR>', 'i', false, true)
 
-    -- 注入表格专用的 <CR> 拦截器 (注意：去掉了 expr=true，采用原生 feedkeys)
+    -- 注入表格专用的 <CR> 拦截器 (去掉了 expr=true，采用原生 feedkeys)
     vim.keymap.set('i', '<CR>', function()
       local line = vim.api.nvim_get_current_line()
       local lnum = vim.fn.line('.')
