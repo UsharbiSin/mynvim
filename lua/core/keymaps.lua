@@ -70,3 +70,6 @@ map('n', '<LEADER>tm', ':TableModeToggle<CR>')
 -- 数据库操作
 map('n', '<LEADER>swc', ':SqlsSwitchConnection<CR>')
 map('n', '<LEADER>swd', ':SqlsSwitchDatabase<CR>')
+
+-- 打开保存的密码
+map('n', '<LEADER>pw', ':e ~/Documents/pswd.md<CR>')
