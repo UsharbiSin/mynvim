@@ -42,10 +42,10 @@ vim.api.nvim_create_autocmd("LspAttach", {
   callback = function(event)
     local client = assert(vim.lsp.get_client_by_id(event.data.client_id))
 
-    -- 开启 LSP 语义高亮 (Semantic Tokens)
-    if client.server_capabilities.semanticTokensProvider then
-      vim.lsp.semantic_tokens.start(event.buf, client.id)
-    end
+    -- 开启 LSP 语义高亮 (Semantic Tokens)  新版已默认开启
+    -- if client.server_capabilities.semanticTokensProvider then
+    --   vim.lsp.semantic_tokens.start(event.buf, client.id)
+    -- end
 
     local function map(mode, keys, func, desc)
       vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = "LSP: " .. desc })
