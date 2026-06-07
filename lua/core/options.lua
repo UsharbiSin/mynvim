@@ -2,7 +2,7 @@ local opt = vim.opt
 opt.number = true          -- 显示行号
 opt.relativenumber = false -- 不显示相对行号
 opt.cursorline = true      -- 当前行突出显示
-opt.wrap = false           -- 不自动换行
+opt.wrap = true            -- 自动换行
 opt.showcmd = true         -- 显示执行的命令
 opt.wildmenu = true        -- 命令补全菜单
 opt.hlsearch = true        -- 搜索结果高亮
@@ -18,7 +18,7 @@ opt.shiftwidth = 2         -- 设置代码位移和自动缩进时的长度
 opt.softtabstop = 2        -- 设置缩进长度
 opt.list = true            -- 显示行尾的空格
 opt.listchars = { tab = '▸ ', trail = '·', extends = '❯', precedes = '❮', nbsp = '×' }
-opt.textwidth = 1          -- 开启自动换行
+opt.textwidth = 0          -- 每行最大字符宽度，0 为关闭
 opt.indentexpr = ''        -- 关闭智能缩进表达式
 opt.backspace = { 'indent', 'eol', 'start' }
 opt.foldmethod = 'indent'  -- 代码折叠
