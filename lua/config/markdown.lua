@@ -20,7 +20,7 @@ vim.g.mkdp_open_ip = ''
 -- 对于包含空格了路径：
 -- 有效: `/path/with\ space/xxx`
 -- 无效: `/path/with\\ space/xxx`
-vim.g.mkdp_browser = '/usr/lib/firefox/firefox'
+vim.g.mkdp_browser = 'C:/Program Files/Google/Chrome/Application/chrome-win/chrome.exe'
 -- 设置为 1 时，打开预览页面时会在命令行输出预览页面 URL，默认值为 0
 vim.g.mkdp_echo_preview_url = 0
 -- 用于打开预览页面的自定义 Vim 函数名，此函数将接收 URL 作为参数，默认值为空
@@ -62,7 +62,7 @@ vim.g.mkdp_preview_options = {
 }
 
 -- 使用自定义 Markdown 样式。必须是绝对路径。
-vim.g.mkdp_markdown_css = '/home/usharbisin/.config/nvim/markdown.css'
+vim.g.mkdp_markdown_css = vim.fn.stdpath('config') .. '/markdown.css'
 -- 使用自定义高亮样式。必须是绝对路径
 vim.g.mkdp_highlight_css = ''
 -- 使用自定义端口启动服务器，或者留空以随机分配端口。
@@ -70,7 +70,7 @@ vim.g.mkdp_port = ''
 -- 预览页面标题，${name} 将被替换为文件名
 vim.g.mkdp_page_title = '「${name}」'
 -- 使用自定义图片位置
-vim.g.mkdp_images_path = '/home/usharbisin/vimwiki/.markdown_images'
+vim.g.mkdp_images_path = '~/vimwiki/.markdown_images'
 -- 已识别的文件类型
 -- 这些文件类型将具有 MarkdownPreview... 命令
 vim.g.mkdp_filetypes = { 'markdown', 'vimwiki' }

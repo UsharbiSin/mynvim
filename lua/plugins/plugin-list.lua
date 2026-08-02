@@ -219,7 +219,17 @@ return {
       require('config.tools')
     end
   },
-  { "h-hg/fcitx.nvim" },                                  -- normal模式自动切换为英文
+  -- { "h-hg/fcitx.nvim" },                                  -- normal模式自动切换为英文
+  {
+    "keaising/im-select.nvim",                        -- normal模式自动切换为英文（windows）
+    config = function()
+      require("im_select").setup({
+        -- 英文输入法代码，运行 im-select获得
+        default_im_select = "1033",
+        default_command = "im-select.exe",
+      })
+    end,
+  },
   { "folke/which-key.nvim",         event = "VeryLazy" }, -- 快捷键提示
 
   -- ==========================================

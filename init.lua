@@ -46,12 +46,12 @@ local function compile_run()
   if ft == 'c' then
     vim.opt.splitbelow = true
     vim.cmd('split | resize -5')
-    vim.cmd('term gcc ' .. file .. ' -o ' .. file_no_ext .. ' && time ./' .. file_no_ext)
+    vim.cmd('term gcc ' .. file .. ' -o ' .. file_no_ext .. '.exe && ' .. file_no_ext .. '.exe')
   elseif ft == 'cpp' then
     vim.opt.splitbelow = true
-    vim.cmd('!g++ -std=c++11 ' .. file .. ' -Wall -o ' .. file_no_ext)
+    vim.cmd('!g++ -std=c++11 ' .. file .. ' -Wall -o ' .. file_no_ext .. '.exe')
     vim.cmd('split | resize -15')
-    vim.cmd('term ./' .. file_no_ext)
+    vim.cmd('term ./' .. file_no_ext .. '.exe')
   elseif ft == 'cs' then
     vim.opt.splitbelow = true
     vim.cmd('silent! !mcs ' .. file)
@@ -62,7 +62,7 @@ local function compile_run()
     vim.cmd('split | resize -5')
     vim.cmd('term javac ' .. file .. ' && time java ' .. file_no_ext)
   elseif ft == 'sh' then
-    vim.cmd('!time bash ' .. file)
+    vim.cmd('!bash ' .. file)
   elseif ft == 'python' then
     vim.opt.splitbelow = true
     vim.cmd('split')

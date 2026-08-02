@@ -30,7 +30,7 @@ dap.adapters.cudagdb = {
 
 dap.adapters.python = {
   type = "executable",
-  command = "/home/usharbisin/.virtualenvs/debugpy/bin/python",
+  command = "python3",
   args = { "-m", "debugpy.adapter" }
 }
 
@@ -57,7 +57,7 @@ dap.configurations.cuda = {
     type = "cppdbg",
     MIMode = "gdb",
     request = "launch",
-    miDebuggerPath = "/usr/bin/gdb",
+    miDebuggerPath = "gdb.exe",
     program = function()
       return vim.fn.input("可执行文件路径: ", vim.fn.getcwd() .. "/", "file")
     end,
@@ -134,7 +134,7 @@ vim.list_extend(dap.configurations.python, {
       -- cicromamba 激活後，会自动注入 CONDA_PREFIX 环境变量
       local conda_prefix = os.getenv("CONDA_PREFIX")
       if conda_prefix then
-        return conda_prefix .. "/bin/python"
+        return conda_prefix .. "/python.exe"
       end
       -- 如果没激活 micromamba，就降级使用终端默认的 python
       return vim.fn.exepath("python")
@@ -158,7 +158,7 @@ vim.list_extend(dap.configurations.python, {
       -- cicromamba 激活後，会自动注入 CONDA_PREFIX 环境变量
       local conda_prefix = os.getenv("CONDA_PREFIX")
       if conda_prefix then
-        return conda_prefix .. "/bin/python"
+        return conda_prefix .. "/python.exe"
       end
       -- 如果没激活 micromamba，就降级使用终端默认的 python
       return vim.fn.exepath("python")

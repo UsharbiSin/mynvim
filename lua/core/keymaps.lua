@@ -50,7 +50,7 @@ map('v', '<C-k>', ":m '<-2<CR>gv=gv")
 map('n', '<LEADER>nh', ':nohl<CR>')
 
 -- 快速打开 init.lua
-map('n', '<LEADER>rc', ':e ~/.config/nvim/init.lua<CR>')
+map('n', '<LEADER>rc', ':e ' .. vim.fn.stdpath('config') .. '/init.lua<CR>')
 
 -- 开关拼写检查
 map('n', '<LEADER>sc', ':set spell!')
@@ -70,3 +70,5 @@ map('n', '<LEADER>tm', ':TableModeToggle<CR>')
 -- 数据库操作
 map('n', '<LEADER>swc', ':SqlsSwitchConnection<CR>')
 map('n', '<LEADER>swd', ':SqlsSwitchDatabase<CR>')
+-- 密码查看
+map('n', '<LEADER>pw', ':e $USERPROFILE/Documents/pswd.md<CR>')
