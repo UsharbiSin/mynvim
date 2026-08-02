@@ -33,7 +33,7 @@ return {
   -- ==========================================
   {
     "nvim-tree/nvim-tree.lua", -- 文件树
-    dependencies = { "nvim-tree/nvim-web-devicons" },
+    dependencies = { "nvim-tree/nvim-web-devicons" },     -- 图标支持
     keys = {
       { "tt", "<cmd>NvimTreeToggle<CR>", desc = "打开/关闭文件树" },
       { "<leader>f", "<cmd>NvimTreeFindFile<CR>", desc = "在文件树中定位当前文件" }
