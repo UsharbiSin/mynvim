@@ -70,5 +70,6 @@ map('n', '<LEADER>tm', ':TableModeToggle<CR>')
 -- 数据库操作
 map('n', '<LEADER>swc', ':SqlsSwitchConnection<CR>')
 map('n', '<LEADER>swd', ':SqlsSwitchDatabase<CR>')
+
 -- 密码查看
 map('n', '<LEADER>pw', ':e $USERPROFILE/Documents/pswd.md<CR>')
