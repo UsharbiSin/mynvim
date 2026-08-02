@@ -1,8 +1,8 @@
 local opt = vim.opt
 opt.number = true          -- 显示行号
 opt.relativenumber = false -- 不显示相对行号
-opt.cursorline = false     -- 当前行不加下划线
-opt.wrap = false           -- 不自动换行
+opt.cursorline = true      -- 当前行不加下划线
+opt.wrap = true            -- 自动换行
 opt.showcmd = true         -- 显示执行的命令
 opt.wildmenu = true        -- 命令补全菜单
 opt.hlsearch = true        -- 搜索结果高亮
