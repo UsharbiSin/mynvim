@@ -13,15 +13,15 @@ vim.api.nvim_create_autocmd('FileType', {
   end,
 })
 
--- 启用代码折叠 (替代老版本的额外模块)
-vim.api.nvim_create_autocmd('FileType', {
-  pattern = '*',
-  callback = function()
-    -- 使用 treesitter 原生的折叠表达式
-    vim.opt_local.foldmethod = 'expr'
-    vim.opt_local.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
-  end,
-})
+-- 代码折叠 (替代老版本的额外模块)
+-- vim.api.nvim_create_autocmd('FileType', {
+--   pattern = '*',
+--   callback = function()
+--     -- 使用 treesitter 原生的折叠表达式
+--     vim.opt_local.foldmethod = 'expr'
+--     vim.opt_local.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+--   end,
+-- })
 
 -- 用markdown 解析器来解析 vimmarkdown 文件
 vim.treesitter.language.register('markdown', 'vimwiki')
