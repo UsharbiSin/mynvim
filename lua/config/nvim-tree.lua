@@ -96,7 +96,7 @@ require("nvim-tree").setup({
     enable = true,
     show_on_dirs = true,
     show_on_open_dirs = true,
-    icons = { hint = "\u{f864}", info = "\u{f129}", warning = "\u{f071}", error = "\u{f467}" },
+    icons = { hint = "\u{f0335}", info = "\u{f129}", warning = "\u{f071}", error = "\u{f467}" },
   },
 
   view = { width = 30, side = "left" },

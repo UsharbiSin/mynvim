@@ -149,6 +149,18 @@ vim.api.nvim_create_autocmd("LspAttach", {
       })
     end
 
+    -- 侧边栏图标
+    local signs = {
+      Error = "󰅚 ",
+      Warn  = "󰀪 ",
+      Info  = "󰋽 ",
+      Hint  = " ",
+    }
+    for type, icon in pairs(signs) do
+      local hl = "DiagnosticSign" .. type
+      vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })
+    end
+
     -- 诊断样式配置
     vim.diagnostic.config({
       virtual_text = false,  -- 行尾报错文本
