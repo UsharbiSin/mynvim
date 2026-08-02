@@ -35,7 +35,7 @@ opt.conceallevel = 3       -- neovim 隐藏级别
 vim.api.nvim_create_autocmd("FileType", {
   pattern = "python",
   callback = function()
-    -- 注意这里使用的是 opt_local，这意味着它只对当前 Python 缓冲区生效，不会污染全局的 2 空格设置
+    -- 只对当前 Python 缓冲区生效，不会污染全局的 2 空格设置
     vim.opt_local.tabstop = 4
     vim.opt_local.shiftwidth = 4
     vim.opt_local.softtabstop = 4
