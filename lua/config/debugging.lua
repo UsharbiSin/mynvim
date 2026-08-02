@@ -28,10 +28,17 @@ dap.adapters.cudagdb = {
   command = "cuda-gdb",
 }
 
+local is_win = vim.fn.has("win32") == 1
+local mason_path = vim.fn.stdpath("data")
+  .. "/mason/packages/debugpy/venv/"
+  .. (is_win and "Scripts/python.exe" or "bin/python")
 dap.adapters.python = {
   type = "executable",
-  command = "python3",
-  args = { "-m", "debugpy.adapter" }
+  command = mason_path,
+  args = { "-m", "debugpy.adapter" },
+  options = {
+    detached = false,
+  }
 }
 
 -- ==========================================
