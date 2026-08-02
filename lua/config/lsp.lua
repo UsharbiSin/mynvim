@@ -122,8 +122,9 @@ vim.api.nvim_create_autocmd("LspAttach", {
     -- 代码折叠
     if client and client:supports_method("textDocument/foldingRange") then
       local win = vim.api.nvim_get_current_win()
-      vim.wo[win][0].foldmethod = "expr"
-      vim.wo[win][0].foldexpr = "v:lua.vim.lsp.foldexpr()"
+      vim.wo[win].foldmethod = "expr"
+      vim.wo[win].foldexpr = "v:lua.vim.lsp.foldexpr()"
+      vim.wo[win].foldlevel = 99
     end
 
     -- 光标下单词高亮
