@@ -163,7 +163,7 @@ vim.api.nvim_create_autocmd("LspAttach", {
 
     -- 诊断样式配置
     vim.diagnostic.config({
-      virtual_text = false,  -- 行尾报错文本
+      virtual_text = true,  -- 行尾报错文本
       virtual_lines = false, -- 报错文本的虚拟行
       signs = true,          -- 图标
       underline = true,      -- 报错代码的波浪线提示
