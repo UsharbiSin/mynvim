@@ -84,7 +84,7 @@ local function compile_run()
   elseif ft == 'javascript' then
     vim.opt.splitbelow = true
     vim.cmd('split')
-    vim.cmd('term export DEBUG="INFO,ERROR,WARNING"; node --trace-warnings .')
+    vim.cmd('term node --trace-warnings .')
   elseif ft == 'racket' then
     vim.opt.splitbelow = true
     vim.cmd('split | resize -5')
