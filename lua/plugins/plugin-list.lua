@@ -145,7 +145,7 @@ return {
     "HakonHarnes/img-clip.nvim", -- Markdown 剪贴板一键贴图
     ft = { "markdown", 'vimwiki' },
     keys = {
-      { "<LEADER>p", "<cmd>PasteImage<CR>", desc = "从系统剪贴板粘贴图片" }
+      { "<LEADER>pi", "<cmd>PasteImage<CR>", desc = "从系统剪贴板粘贴图片" }
     },
     event = "VeryLazy",
     config = function()
