@@ -160,10 +160,9 @@ return {
     end
   },
   {
-    "folke/snacks.nvim", -- 图片、LaTex公式预览
+    "folke/snacks.nvim", -- 图片、LaTex公式预览及 Codex 终端
     priority = 1000,
     lazy = false,
-    ft = { "markdown", "vimwiki", "text" },
     config = function()
       require('config.snacks')
     end

@@ -1,5 +1,6 @@
 -- snacks.nvim 动态模式渲染配置 (Normal渲染，其他模式纯文本)
 require("snacks").setup({
+  terminal = { enabled = true },
   toggle = { enable = true },
   notifier = { enable = true },
   image = {
@@ -13,6 +14,8 @@ require("snacks").setup({
     },
   }
 })
+
+require("config.codex").setup()
 
 -- 悬浮窗响应速度
 vim.opt.updatetime = 200
