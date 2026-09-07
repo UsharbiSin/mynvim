@@ -1,5 +1,6 @@
 local parsers = { "python", "lua", "c", "cpp", "vim", "vimdoc", "query", "markdown", "markdown_inline", "latex", "css",
   "html", "javascript", "sql" }
+require('nvim-treesitter.install').compilers = { "gcc" }
 require('nvim-treesitter').install(parsers)
 
 -- 启用代码高亮 (替代老版本的 highlight = { enable = true })
