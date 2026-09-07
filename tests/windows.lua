@@ -108,30 +108,78 @@ local function test()
   local markdown_file = vim.fs.joinpath(tmp, "input.md")
   vim.fn.writefile({ "| first | second |" }, markdown_file)
   vim.cmd("edit! " .. vim.fn.fnameescape(markdown_file))
-  vim.bo.filetype = "markdown"
+  check(vim.bo.filetype == "vimwiki", "Table Mode must exercise the actual Markdown filetype")
   vim.cmd("TableModeToggle")
   local cr_map = vim.fn.maparg("<CR>", "i", false, true)
   check(type(cr_map.callback) == "function", "Markdown table mode must install its Enter callback")
+  local pipe_map = vim.fn.maparg("|", "i", false, true)
+  check(type(pipe_map.rhs) == "string" and pipe_map.rhs ~= "", "Table Mode must install a safe pipe mapping")
 
-  local original_feedkeys = vim.api.nvim_feedkeys
-  local function table_enter_keys(lines, row)
+  vim.api.nvim_buf_set_lines(0, 0, -1, false, { "| first | second | third |" })
+  vim.api.nvim_win_set_cursor(0, { 1, 0 })
+  local table_insert_leaves = 0
+  local observed_table_insert_leaves
+  local observed_header_lines
+  local table_event_group = vim.api.nvim_create_augroup("TableModeEnterEventsTest", { clear = true })
+  vim.api.nvim_create_autocmd("InsertLeave", {
+    group = table_event_group,
+    callback = function()
+      table_insert_leaves = table_insert_leaves + 1
+    end,
+  })
+  vim.keymap.set("i", "<F20>", function()
+    observed_table_insert_leaves = table_insert_leaves
+    observed_header_lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+  end, { buffer = true })
+  vim.fn.feedkeys(vim.api.nvim_replace_termcodes("A<CR><F20>", true, false, true), "xt")
+  vim.api.nvim_del_augroup_by_id(table_event_group)
+  check(observed_table_insert_leaves == 0, "Table Mode Enter must remain in Insert mode")
+  check(observed_header_lines[2] == "|---|---|---|", "Markdown header Enter must preserve every column")
+  check(observed_header_lines[3] == "| <++> | <++> | <++> |", "Markdown header Enter must create a matching data row")
+
+  vim.api.nvim_buf_set_lines(0, 0, -1, false, {
+    "| first | second |",
+    "|---|---|",
+    "| value | value | added ",
+  })
+  vim.api.nvim_win_set_cursor(0, { 3, 0 })
+  check(not pipe_map.rhs:find("<Esc>", 1, true), "Table Mode pipe mapping must remain in Insert mode")
+  local pipe_insert_leaves = 0
+  local observed_pipe_insert_leaves
+  local observed_pipe_lines
+  local pipe_event_group = vim.api.nvim_create_augroup("TableModePipeEventsTest", { clear = true })
+  vim.api.nvim_create_autocmd("InsertLeave", {
+    group = pipe_event_group,
+    callback = function()
+      pipe_insert_leaves = pipe_insert_leaves + 1
+    end,
+  })
+  vim.keymap.set("i", "<F20>", function()
+    observed_pipe_insert_leaves = pipe_insert_leaves
+    observed_pipe_lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+  end, { buffer = true })
+  vim.fn.feedkeys(vim.api.nvim_replace_termcodes("A|<F20>", true, false, true), "xt")
+  vim.api.nvim_del_augroup_by_id(pipe_event_group)
+  check(observed_pipe_insert_leaves == 0, "Table Mode separator must remain in Insert mode")
+  check(observed_pipe_lines[1] == "| first | second | <++> |", "Adding a separator must extend the header")
+  check(observed_pipe_lines[2] == "|---|---|---|", "Adding a separator must extend the border")
+
+  local function table_enter(lines, row)
     vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
     vim.api.nvim_win_set_cursor(0, { row, 0 })
-    local captured
-    vim.api.nvim_feedkeys = function(keys)
-      captured = keys
-    end
     local ok, err = pcall(cr_map.callback)
-    vim.api.nvim_feedkeys = original_feedkeys
     assert(ok, err)
-    return assert(captured, "Markdown Enter callback must feed keys")
+    return vim.api.nvim_buf_get_lines(0, 0, -1, false)
   end
 
-  local escape = vim.api.nvim_replace_termcodes("<Esc>", true, false, true)
-  local header_keys = table_enter_keys({ "| first | second |" }, 1)
-  check(not header_keys:find(escape, 1, true), "Markdown header Enter must not leave Insert mode")
-  local row_keys = table_enter_keys({ "| first | second |", "|---|---|" }, 2)
-  check(not row_keys:find(escape, 1, true), "Markdown row Enter must not leave Insert mode")
+  local extended_lines = table_enter({
+    "| first | second |",
+    "|---|---|",
+    "| value | value | added |",
+  }, 3)
+  check(extended_lines[1] == "| first | second | <++> |", "Adding a data column must extend the header")
+  check(extended_lines[2] == "|---|---|---|", "Adding a data column must extend the separator")
+  check(extended_lines[4] == "| <++> | <++> | <++> |", "Table Enter must use the synchronized column count")
   vim.cmd("TableModeDisable")
 
   run_file("hello world.c", {
