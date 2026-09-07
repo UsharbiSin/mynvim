@@ -61,6 +61,10 @@ map('n', 'tx', ':r !figlet ')
 -- 按下 <LEADER>g 在右侧垂直分屏打开 Gemini CLI
 map('n', '<LEADER>g', ':botright vertical terminal gemini<CR>')
 
+-- Codex：按项目复用终端，恢复历史会话；配置由 Snacks 初始化。
+map('n', '<LEADER>ac', '<cmd>Codex<CR>', { desc = "开关当前项目的 Codex" })
+map('n', '<LEADER>ar', '<cmd>CodexResume<CR>', { desc = "恢复 Codex 历史会话" })
+
 -- 从 terminal 模式转为 normal 模式
 map('t', '<C-t>', '<C-\\><C-n>', { noremap = true, silent = true })
 
