@@ -122,6 +122,15 @@ winget install --id GoLang.Go -e
 go version
 ```
 
+可编辑数据库表格还需要 MySQL 命令行客户端。安装后确认：
+
+```powershell
+mysql.exe --version
+```
+
+在 Neovim 中按 `<Space>sg` 打开 Dadbod Grip；具体编辑与事务提交步骤见
+[dadbod-grip.nvim](../plugins/language/dadbod-grip.nvim.md)。
+
 每打开一种语言都用以下命令确认真实状态：
 
 ```vim

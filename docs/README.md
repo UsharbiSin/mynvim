@@ -32,6 +32,7 @@
 - [conform.nvim](plugins/language/conform.nvim.md) / [nvim-lint](plugins/language/nvim-lint.md)
 - [nvim-treesitter](plugins/language/nvim-treesitter.md)
 - [sqls.nvim](plugins/language/sqls.nvim.md)
+- [dadbod-grip.nvim](plugins/language/dadbod-grip.nvim.md)
 - [lazydev.nvim](plugins/language/lazydev.nvim.md) / [luvit-meta](plugins/dependencies/luvit-meta.md)
 - [vim-json](plugins/language/vim-json.md)、[vim-css3-syntax](plugins/language/vim-css3-syntax.md)、[PIV](plugins/language/PIV.md)、[vim-coloresque](plugins/language/vim-coloresque.md)、[vim-javascript](plugins/language/vim-javascript.md)、[emmet-vim](plugins/language/emmet-vim.md)、[indentpython.vim](plugins/language/indentpython.vim.md)
 

@@ -276,6 +276,15 @@ return {
   { "kana/vim-textobj-user" },        -- 文本对象底层依赖
   { "nanotee/sqls.nvim" },            -- sql
   {
+    "joryeugene/dadbod-grip.nvim",
+    keys = {
+      { "<leader>sg", "<cmd>GripConnect<CR>", desc = "SQL：打开可编辑数据库界面" },
+    },
+    config = function()
+      require("config.dadbod-grip")
+    end,
+  },
+  {
     "mfussenegger/nvim-lint",
     event = { "BufReadPre", "BufNewFile" },
     config = function()

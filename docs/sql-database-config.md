@@ -103,9 +103,16 @@ SELECT 1;
 :SqlsExecuteQueryVertical
 ```
 
+## 6. 可视化编辑表数据
+
+Dadbod Grip 复用上述完整连接。在 Neovim 中按 `空格 sg` 打开连接选择器，从结构树选择表后
+即可编辑单元格。修改先暂存在内存；按 `gs` 审核生成的 SQL，再在审核窗口按 `a` 以一个事务
+提交。Windows 还需确保 `mysql.exe --version` 能正常执行。详细流程见
+[dadbod-grip.nvim](plugins/language/dadbod-grip.nvim.md)。
+
 这些命令会把 SQL 真正发送到当前数据库。执行修改或删除语句前，应先确认当前连接和数据库。
 
-## 6. 常见问题
+## 7. 常见问题
 
 - `:SqlsShowConnections` 为空：同一后缀的五个环境变量不完整，或 Neovim 没有继承环境变量。
 - 找不到 `Sqls*` 命令：确认当前文件扩展名为 `.sql`，并检查 SQLS 是否已经附着。
