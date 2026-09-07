@@ -71,4 +71,24 @@ mysql.exe --version
 只读账号或数据库权限。JOIN、聚合以及无法唯一定位原始行的查询结果不能安全地直接回写；
 需要修改数据时应从结构树打开原始表。
 
+
+## 使用方式
+
+当前配置把数据库操作分成两类：
+
+| 按键 | 功能 |
+| --- | --- |
+| `<Space>sg` | 打开 Dadbod Grip 数据库工作区，用于浏览结构和编辑表格 |
+| `<Space>sc` | 为当前 `.sql` 缓冲区选择数据库连接，不离开当前文件 |
+| `<Space>sr` | 普通模式执行整个 `.sql` 缓冲区 |
+| `<Space>sr` | 可视模式执行选中的 SQL |
+
+### Dadbod Grip 工作区
+
+按 `<Space>sg` 或执行：
+
+```vim
+:GripConnect
+```
+
 上游：[dadbod-grip.nvim](https://github.com/joryeugene/dadbod-grip.nvim)。

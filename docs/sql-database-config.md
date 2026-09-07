@@ -103,15 +103,23 @@ SELECT 1;
 :SqlsExecuteQueryVertical
 ```
 
-## 6. 可视化编辑表数据
+## 6. Dadbod Grip 可视化数据库工作区
 
-Dadbod Grip 复用上述完整连接。在 Neovim 中按 `空格 sg` 打开连接选择器，从结构树选择表后
-即可编辑单元格。修改先暂存在内存；按 `gs` 审核生成的 SQL，再在审核窗口按 `a` 以一个事务
-提交。Windows 还需安装 MySQL Command-Line Client，加入 `Path` 并确保
-`mysql.exe --version` 能正常执行。下载、安装和排错步骤见
-[dadbod-grip.nvim](plugins/language/dadbod-grip.nvim.md)。
+按 `空格 sg` 打开 Dadbod Grip 连接选择器。
 
-这些命令会把 SQL 真正发送到当前数据库。执行修改或删除语句前，应先确认当前连接和数据库。
+Dadbod Grip 会打开独立的 `grip://` 工作区，用于：
+
+- 浏览数据库结构；
+- 打开和编辑原始表；
+- 暂存单元格修改；
+- 审核生成的 SQL；
+- 在事务中提交修改。
+
+如果只希望继续留在当前 `.sql` 文件中执行查询，应使用 `空格 sc` +
+`空格 sr`，而不是 `空格 sg`。
+
+Windows 配置关闭了 Docker 自动发现，以避免连接选择器因同步 Docker
+探测阻塞 Neovim。预先配置的四组 MySQL 连接不受影响。
 
 ## 7. 常见问题
 
