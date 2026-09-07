@@ -175,6 +175,7 @@ function M.run(sql)
     "--port=" .. conn.port,
     "--user=" .. conn.user,
     "--database=" .. conn.database,
+    "--default-character-set=utf8mb4",
     "--table",
     "--raw",
   }, {
