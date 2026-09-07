@@ -122,9 +122,17 @@ winget install --id GoLang.Go -e
 go version
 ```
 
-可编辑数据库表格还需要 MySQL 命令行客户端。安装后确认：
+可编辑数据库表格还需要 MySQL 命令行客户端。到
+[MySQL Community Downloads](https://dev.mysql.com/downloads/) 下载 Windows MySQL Community
+Server 8.4 MSI。运行安装向导；仅连接远程数据库时可选择 `Custom` 并安装包含 MySQL
+Command-Line Client 的客户端程序，不必配置本地数据库服务。
+
+MSI 的默认客户端位置是
+`C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe`。将其所在的 `bin` 目录加入
+Windows 的用户或系统 `Path`，关闭旧终端和 Neovim，重新打开 PowerShell 后确认：
 
 ```powershell
+Get-Command mysql.exe
 mysql.exe --version
 ```
 

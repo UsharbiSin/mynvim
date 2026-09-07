@@ -107,7 +107,8 @@ SELECT 1;
 
 Dadbod Grip 复用上述完整连接。在 Neovim 中按 `空格 sg` 打开连接选择器，从结构树选择表后
 即可编辑单元格。修改先暂存在内存；按 `gs` 审核生成的 SQL，再在审核窗口按 `a` 以一个事务
-提交。Windows 还需确保 `mysql.exe --version` 能正常执行。详细流程见
+提交。Windows 还需安装 MySQL Command-Line Client，加入 `Path` 并确保
+`mysql.exe --version` 能正常执行。下载、安装和排错步骤见
 [dadbod-grip.nvim](plugins/language/dadbod-grip.nvim.md)。
 
 这些命令会把 SQL 真正发送到当前数据库。执行修改或删除语句前，应先确认当前连接和数据库。

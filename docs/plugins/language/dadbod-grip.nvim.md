@@ -21,6 +21,39 @@ mysql.exe --version
 :checkhealth dadbod-grip
 ```
 
+### Windows 安装 mysql.exe
+
+1. 打开 [MySQL Community Downloads](https://dev.mysql.com/downloads/)，下载 Windows 的
+   MySQL Community Server 8.4 MSI 并运行。Oracle 官方推荐使用 MSI 和随附的 MySQL
+   Configurator。
+2. 只需要连接远程数据库时，在安装向导中使用 `Custom`，确保安装包含 MySQL
+   Command-Line Client 的客户端程序；不需要在本机创建或启动 MySQL Server 服务。需要本地
+   数据库时则按向导配置 Server。
+3. 安装完成后找到 `mysql.exe`。MSI 默认目录通常是：
+
+   ```text
+   C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe
+   ```
+
+4. 把对应的 `bin` 目录加入 Windows 用户或系统 `Path`：打开“编辑系统环境变量”→“环境
+   变量”→选择 `Path`→“新建”，加入：
+
+   ```text
+   C:\Program Files\MySQL\MySQL Server 8.4\bin
+   ```
+
+5. 关闭已经打开的终端和 Neovim，重新打开 PowerShell 后验证：
+
+   ```powershell
+   Get-Command mysql.exe
+   mysql.exe --version
+   ```
+
+若安装时修改了目标目录，以实际的 `bin` 路径为准。`Get-Command` 仍找不到程序时，可以先用
+完整路径运行 `& 'C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe' --version`，确认
+文件存在，再检查 `Path`。官方安装说明见
+[Installing MySQL on Microsoft Windows](https://dev.mysql.com/doc/refman/8.4/en/windows-installation.html)。
+
 ## 编辑并保存
 
 1. 按 `<Space>sg`，选择连接。
