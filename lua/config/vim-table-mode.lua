@@ -135,7 +135,8 @@ function M.sync_current()
   local cells = split_table_row(line)
   local inserted_column
   if cells then
-    local pipe_position = cursor[2] + 1
+    -- 插入模式的光标位于刚输入字符之后；0-based 光标列正好等于 | 的 1-based 字节位置。
+    local pipe_position = cursor[2]
     for index, position in ipairs(cells.separators) do
       if position == pipe_position then
         local left = index - 1

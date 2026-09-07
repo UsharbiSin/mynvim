@@ -160,7 +160,8 @@ local function test()
   })
   local middle_line = vim.api.nvim_buf_get_lines(0, 2, 3, false)[1]
   local _, inserted_pipe = middle_line:find("||", 1, true)
-  vim.api.nvim_win_set_cursor(0, { 3, inserted_pipe - 1 })
+  -- 模拟插入模式刚输入第二个 | 后，光标位于该字符之后。
+  vim.api.nvim_win_set_cursor(0, { 3, inserted_pipe })
   require("config.vim-table-mode").sync_current()
   local middle_lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
   check(middle_lines[1] == "| h1 | h2 | <++> | h3 | h4 |", "A middle column must extend the header in place")
