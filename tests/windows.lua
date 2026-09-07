@@ -41,14 +41,18 @@ local function test()
   vim.fn.writefile({ "select 1;" }, sql_file)
   vim.cmd("edit! " .. vim.fn.fnameescape(sql_file))
   vim.bo.filetype = "sql"
+  local sql_client
   check(vim.wait(10000, function()
     for _, client in ipairs(vim.lsp.get_clients({ bufnr = 0 })) do
       if client.name == "sqls" then
+        sql_client = client
         return true
       end
     end
     return false
   end, 50), "sqls must attach without database environment variables")
+  check(vim.fn.exists(":SqlsSwitchConnection") == 2, "sqls.nvim buffer commands must be registered")
+  check(sql_client.server_capabilities.documentFormattingProvider == false, "SQLS formatting must be disabled")
 
   require("config.debugging")
   local dap = require("dap")
