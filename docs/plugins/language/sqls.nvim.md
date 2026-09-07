@@ -36,14 +36,15 @@ Windows 专项测试已确认 SQLS 无数据库连接时能附着、第二条命
 | --- | --- |
 | `空格 swc` / `:SqlsSwitchConnection` | 选择连接 |
 | `空格 swd` / `:SqlsSwitchDatabase` | 选择数据库 |
-| `:SqlsShowConnections` | 查看连接 |
-| `:SqlsShowDatabases` | 查看数据库 |
-| `:SqlsShowTables` | 查看表 |
-| `:SqlsExecuteQuery` | 执行当前缓冲区查询 |
-| 可视行选中后 `:'<,'>SqlsExecuteQuery` | 执行选中行 |
-| `:SqlsExecuteQueryVertical` | 纵向显示结果 |
+| `空格 ssc` / `:SqlsShowConnections` | 查看连接列表 |
+| `空格 ssd` / `:SqlsShowDatabases` | 查看数据库列表 |
+| `空格 sst` / `:SqlsShowTables` | 查看数据表 |
+| 普通模式 `空格 se` / `:SqlsExecuteQuery` | 执行整个 SQL 缓冲区 |
+| 可视行模式 `空格 se` | 执行选中的 SQL 行 |
+| 普通模式 `空格 sv` / `:SqlsExecuteQueryVertical` | 纵向显示整个缓冲区的查询结果 |
+| 可视行模式 `空格 sv` | 纵向显示选中 SQL 行的查询结果 |
 
-第一次连通测试使用 `SELECT 1;`，先明确当前连接再执行自己的 SQL。查询命令会真正发送语句到数据库，不只是语法检查。没有另外设置“执行 SQL”快捷键；切换键虽全局存在，底层命令要在 SQL 客户端附着后才可能可用。
+第一次连通测试使用 `SELECT 1;`，先明确当前连接再执行自己的 SQL。查询命令会真正发送语句到数据库，不只是语法检查。以上快捷键只在 `sql` 或 `mysql` 缓冲区中创建；底层命令要在 SQL 客户端附着后才可用。可视模式执行只支持按行选择。
 
 ## 诊断与平台说明
 
