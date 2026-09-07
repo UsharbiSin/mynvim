@@ -1,31 +1,36 @@
 local dap = require("dap")
 
+local function adapter_command(name)
+  local path = vim.fn.exepath(name)
+  return path ~= "" and path or name
+end
+
 -- ==========================================
 -- 配置调试适配器 (Adapters)
 -- 适配器是 Neovim 和底层调试器 (如 gdb, lldb) 之间的桥梁
 -- ==========================================
 dap.adapters.codelldb = {
   type = "executable",
-  command = "codelldb", -- 如果不在系统环境变量 $PATH 中，请修改为绝对路径，例如："/absolute/path/to/codelldb"
+  command = adapter_command("codelldb"),
 }
 
 dap.adapters.cppdbg = {
   id = "cppdbg",
   type = "executable",
-  command = "OpenDebugAD7", -- 如果不在 $PATH 中："/absolute/path/to/OpenDebugAD7"
+  command = adapter_command("OpenDebugAD7"),
   options = { detached = false },
 }
 
 dap.adapters.gdb = {
   type = "executable",
-  command = "gdb",
+  command = adapter_command("gdb"),
   -- 启用美化打印输出 (pretty-printing)
   args = { "--interpreter=dap", "--eval-command", "set print pretty on" },
 }
 
 dap.adapters.cudagdb = {
   type = "executable",
-  command = "cuda-gdb",
+  command = adapter_command("cuda-gdb"),
 }
 
 local is_win = vim.fn.has("win32") == 1
@@ -46,28 +51,30 @@ dap.adapters.python = {
 -- 定义了如何启动或附加到特定语言的程序
 -- ==========================================
 
--- CUDA 程序的调试配置
-dap.configurations.cuda = {
-  {
+local function program()
+  return vim.fn.input("可执行文件路径: ", vim.fn.getcwd() .. "/", "file")
+end
+
+-- CUDA 程序的调试配置，仅列出当前环境可用的适配器。
+dap.configurations.cuda = {}
+if vim.fn.executable("cuda-gdb") == 1 then
+  table.insert(dap.configurations.cuda, {
     name = "Launch (cuda-gdb)", -- 启动选项的名称
     type = "cudagdb",           -- 使用的适配器
     request = "launch",         -- 请求类型：启动 (launch) 或附加 (attach)
-    program = function()
-      -- 交互式输入要调试的可执行文件路径
-      return vim.fn.input("可执行文件路径: ", vim.fn.getcwd() .. "/", "file")
-    end,
+    program = program,
     cwd = "${workspaceFolder}", -- 工作目录设为当前工作区
     stopOnEntry = false,        -- 启动时不在入口点自动暂停
-  },
-  {
+  })
+end
+if vim.fn.executable("OpenDebugAD7") == 1 and vim.fn.executable("gdb") == 1 then
+  table.insert(dap.configurations.cuda, {
     name = "Launch (gdb)",
     type = "cppdbg",
     MIMode = "gdb",
     request = "launch",
-    miDebuggerPath = "gdb.exe",
-    program = function()
-      return vim.fn.input("可执行文件路径: ", vim.fn.getcwd() .. "/", "file")
-    end,
+    miDebuggerPath = vim.fn.exepath("gdb"),
+    program = program,
     cwd = "${workspaceFolder}",
     setupCommands = {
       {
@@ -77,56 +84,71 @@ dap.configurations.cuda = {
       },
     },
     stopAtBeginningOfMainSubprogram = false,
-  },
-}
+  })
+end
 
--- C/C++ 程序的调试配置
-dap.configurations.cpp = dap.configurations.cpp or {}
-vim.list_extend(dap.configurations.cpp, {
-  {
-    name = "Launch (codelldb)",
-    type = "codelldb",
-    request = "launch",
-    program = function()
-      return vim.fn.input("可执行文件路径: ", vim.fn.getcwd() .. "/", "file")
-    end,
-    cwd = "${workspaceFolder}",
-    stopOnEntry = false,
-  },
-  {
-    name = "Launch (gdb)",
-    type = "cppdbg",
-    MIMode = "gdb",
-    request = "launch",
-    miDebuggerPath = "/usr/bin/gdb",
-    program = function()
-      return vim.fn.input("可执行文件路径: ", vim.fn.getcwd() .. "/", "file")
-    end,
-    cwd = "${workspaceFolder}",
-    setupCommands = {
-      {
-        description = "为 gdb 启用美化打印",
-        ignoreFailures = true,
-        text = "-enable-pretty-printing",
+local function native_configurations()
+  local configurations = {}
+
+  if vim.fn.executable("gdb") == 1 then
+    table.insert(configurations, {
+      name = "Launch (gdb DAP)",
+      type = "gdb",
+      request = "launch",
+      program = program,
+      cwd = "${workspaceFolder}",
+      stopAtBeginningOfMainSubprogram = false,
+    })
+  end
+
+  if vim.fn.executable("codelldb") == 1 then
+    table.insert(configurations, {
+      name = "Launch (codelldb)",
+      type = "codelldb",
+      request = "launch",
+      program = program,
+      cwd = "${workspaceFolder}",
+      stopOnEntry = false,
+    })
+  end
+
+  if vim.fn.executable("OpenDebugAD7") == 1 and vim.fn.executable("gdb") == 1 then
+    table.insert(configurations, {
+      name = "Launch (cppdbg)",
+      type = "cppdbg",
+      MIMode = "gdb",
+      request = "launch",
+      miDebuggerPath = vim.fn.exepath("gdb"),
+      program = program,
+      cwd = "${workspaceFolder}",
+      setupCommands = {
+        {
+          description = "为 gdb 启用美化打印",
+          ignoreFailures = true,
+          text = "-enable-pretty-printing",
+        },
       },
-    },
-    stopAtBeginningOfMainSubprogram = false,
-  },
-  {
-    name = "Select and attach to process (选择并附加到进程)",
-    type = "cppdbg",
-    request = "attach",
-    program = function()
-      return vim.fn.input("可执行文件路径: ", vim.fn.getcwd() .. "/", "file")
-    end,
-    pid = function()
-      -- 允许用户输入过滤器并从进程列表中选择 PID
-      local name = vim.fn.input("可执行文件名称 (用于过滤): ")
-      return require("dap.utils").pick_process({ filter = name })
-    end,
-    cwd = "${workspaceFolder}",
-  },
-})
+      stopAtBeginningOfMainSubprogram = false,
+    })
+    table.insert(configurations, {
+      name = "Select and attach to process (选择并附加到进程)",
+      type = "cppdbg",
+      request = "attach",
+      program = program,
+      pid = function()
+        local name = vim.fn.input("可执行文件名称 (用于过滤): ")
+        return require("dap.utils").pick_process({ filter = name })
+      end,
+      cwd = "${workspaceFolder}",
+    })
+  end
+
+  return configurations
+end
+
+-- C 和 C++ 共用本机可用的调试配置。
+dap.configurations.cpp = native_configurations()
+dap.configurations.c = native_configurations()
 
 -- Python 及特定项目 (如 Gaudi/Moore) 的高级调试配置
 dap.configurations.python = dap.configurations.python or {}

@@ -50,6 +50,12 @@ local function test()
     return false
   end, 50), "sqls must attach without database environment variables")
 
+  require("config.debugging")
+  local dap = require("dap")
+  check(dap.adapters.gdb.command == vim.fn.exepath("gdb"), "DAP must use the installed gdb executable")
+  check(dap.configurations.cpp[1].type == "gdb", "C++ must prefer the available gdb DAP adapter")
+  check(dap.configurations.c[1].type == "gdb", "C must provide the available gdb DAP adapter")
+
   run_file("hello world.c", {
     "#include <stdio.h>",
     "int main(void) { puts(\"runner-c-ok\"); return 0; }",
