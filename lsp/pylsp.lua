@@ -42,6 +42,7 @@ return {
         pycodestyle = { enabled = false }, -- 关闭默认较弱的检查器
         flake8 = {
           enabled = true,
+          maxLineLength = 88,
           -- 你可以在这里按需添加 ignore = {'W391'} 等规则
         },
         mypy = {
