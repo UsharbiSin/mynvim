@@ -277,6 +277,7 @@ return {
   { "nanotee/sqls.nvim" },            -- sql
   {
     "joryeugene/dadbod-grip.nvim",
+    lazy = false,
     keys = {
       { "<leader>sg", "<cmd>GripConnect<CR>", desc = "SQL：打开可编辑数据库界面" },
     },

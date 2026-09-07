@@ -3,7 +3,8 @@
 # dadbod-grip.nvim：可编辑数据库表格
 
 仓库：`joryeugene/dadbod-grip.nvim`。按 `<Space>sg` 或执行 `:GripConnect` 打开数据库连接
-选择器和工作区。插件要求 Neovim 0.10 以上；MySQL 连接还要求 `mysql.exe` 位于 `PATH`。
+选择器和工作区。插件随 Neovim 启动加载，因此可以直接运行健康检查，不必先打开工作区。
+插件要求 Neovim 0.10 以上；MySQL 连接还要求 `mysql.exe` 位于 `PATH`。
 
 ## 连接
 
@@ -20,6 +21,10 @@ mysql.exe --version
 ```vim
 :checkhealth dadbod-grip
 ```
+
+使用 MySQL 时看到 `mysql found` 即表示所需客户端可用。`psql`、`duckdb`、`sqlcmd` 未安装的
+警告只影响各自的数据库适配器；本配置已关闭 Grip AI，因此没有 AI provider 的警告也不影响
+数据库浏览和编辑。
 
 ### Windows 安装 mysql.exe
 
