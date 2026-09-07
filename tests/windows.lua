@@ -143,13 +143,29 @@ local function test()
     "|---|---|",
     "| value | value ||",
   })
-  vim.api.nvim_win_set_cursor(0, { 3, 0 })
+  local appended_line = vim.api.nvim_buf_get_lines(0, 2, 3, false)[1]
+  vim.api.nvim_win_set_cursor(0, { 3, #appended_line - 1 })
   check(not pipe_map.rhs:find("<Esc>", 1, true), "Table Mode pipe mapping must remain in Insert mode")
   require("config.vim-table-mode").sync_current()
   local synchronized_lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
   check(synchronized_lines[1] == "| first | second | <++> |", "Adding a separator must extend the header")
   check(synchronized_lines[2] == "|---|---|---|", "Adding a separator must extend the border")
   check(synchronized_lines[3] == "| value | value | <++> |", "Adding a separator must fill the current cell")
+
+  vim.api.nvim_buf_set_lines(0, 0, -1, false, {
+    "| h1 | h2 | h3 | h4 |",
+    "|---|---|---|---|",
+    "| v1 | v2 || v3 | v4 |",
+    "| x1 | x2 | x3 | x4 |",
+  })
+  local middle_line = vim.api.nvim_buf_get_lines(0, 2, 3, false)[1]
+  local _, inserted_pipe = middle_line:find("||", 1, true)
+  vim.api.nvim_win_set_cursor(0, { 3, inserted_pipe - 1 })
+  require("config.vim-table-mode").sync_current()
+  local middle_lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+  check(middle_lines[1] == "| h1 | h2 | <++> | h3 | h4 |", "A middle column must extend the header in place")
+  check(middle_lines[2] == "|---|---|---|---|---|", "A middle column must extend the border in place")
+  check(middle_lines[4] == "| x1 | x2 | <++> | x3 | x4 |", "A middle column must extend other rows in place")
 
   local function table_enter(lines, row)
     vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)

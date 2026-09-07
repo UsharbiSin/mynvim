@@ -32,11 +32,15 @@ local function split_table_row(line)
     local left = separators[index]
     local right = separators[index + 1]
     cells[#cells + 1] = {
+      raw = line:sub(left + 1, right - 1),
       value = vim.trim(line:sub(left + 1, right - 1)),
       left = left,
       right = right,
     }
   end
+  cells.prefix = line:sub(1, separators[1] - 1)
+  cells.suffix = line:sub(separators[#separators] + 1)
+  cells.separators = separators
   return cells
 end
 
@@ -51,26 +55,28 @@ local function is_separator_row(cells)
   return has_marker
 end
 
-local function normalize_table_row(line, cells, column_count)
+local function normalize_table_row(line, cells, column_count, inserted_column)
   local separator = is_separator_row(cells)
-  local result = line
-  for index = #cells, 1, -1 do
+  local normalized = {}
+  for index = 1, #cells do
     local cell = cells[index]
     if cell.value == "" then
-      local value = separator and "---" or " <++> "
-      result = result:sub(1, cell.left) .. value .. result:sub(cell.right)
+      normalized[index] = separator and "---" or " <++> "
+    else
+      normalized[index] = cell.raw
     end
   end
 
-  if #cells < column_count then
-    result = result:gsub("|%s*$", "")
-    local cell = separator and "|---" or "| <++> "
-    result = result .. cell:rep(column_count - #cells) .. "|"
+  local column = inserted_column or (#normalized + 1)
+  while #normalized < column_count do
+    local value = separator and "---" or " <++> "
+    table.insert(normalized, math.min(column, #normalized + 1), value)
+    column = column + 1
   end
-  return result
+  return cells.prefix .. "|" .. table.concat(normalized, "|") .. "|" .. cells.suffix
 end
 
-function M.sync_columns(bufnr, lnum)
+function M.sync_columns(bufnr, lnum, inserted_column)
   local current = vim.api.nvim_buf_get_lines(bufnr, lnum - 1, lnum, false)[1]
   if not current or not split_table_row(current) then
     return nil
@@ -109,7 +115,7 @@ function M.sync_columns(bufnr, lnum)
   local changed = false
   for index, line in ipairs(lines) do
     local cells = split_table_row(line)
-    local normalized = normalize_table_row(line, cells, column_count)
+    local normalized = normalize_table_row(line, cells, column_count, inserted_column)
     if normalized ~= line then
       lines[index] = normalized
       changed = true
@@ -126,7 +132,26 @@ function M.sync_current()
   local cursor = vim.api.nvim_win_get_cursor(0)
   local line = vim.api.nvim_get_current_line()
   local at_end = cursor[2] >= math.max(#line - 1, 0)
-  M.sync_columns(bufnr, cursor[1])
+  local cells = split_table_row(line)
+  local inserted_column
+  if cells then
+    local pipe_position = cursor[2] + 1
+    for index, position in ipairs(cells.separators) do
+      if position == pipe_position then
+        local left = index - 1
+        local right = index
+        if right <= #cells and cells[right].value == "" then
+          inserted_column = right
+        elseif left >= 1 and cells[left].value == "" then
+          inserted_column = left
+        else
+          inserted_column = math.min(right, #cells)
+        end
+        break
+      end
+    end
+  end
+  M.sync_columns(bufnr, cursor[1], inserted_column)
   if at_end then
     local normalized = vim.api.nvim_get_current_line()
     vim.api.nvim_win_set_cursor(0, { cursor[1], #normalized })
