@@ -6,19 +6,12 @@ vim.g.table_mode_align_char = ':'
 local M = {}
 
 local function split_table_row(line)
-  local body = line:match("^%s*|(.*)|%s*$")
-  if not body then
-    return nil
-  end
-
-  local cells = {}
-  local start = 1
+  local separators = {}
   local escaped = false
-  for index = 1, #body do
-    local char = body:sub(index, index)
+  for index = 1, #line do
+    local char = line:sub(index, index)
     if char == "|" and not escaped then
-      cells[#cells + 1] = vim.trim(body:sub(start, index - 1))
-      start = index + 1
+      separators[#separators + 1] = index
     end
     if char == "\\" then
       escaped = not escaped
@@ -26,27 +19,55 @@ local function split_table_row(line)
       escaped = false
     end
   end
-  cells[#cells + 1] = vim.trim(body:sub(start))
+
+  if #separators < 2
+    or not line:sub(1, separators[1] - 1):match("^%s*$")
+    or not line:sub(separators[#separators] + 1):match("^%s*$")
+  then
+    return nil
+  end
+
+  local cells = {}
+  for index = 1, #separators - 1 do
+    local left = separators[index]
+    local right = separators[index + 1]
+    cells[#cells + 1] = {
+      value = vim.trim(line:sub(left + 1, right - 1)),
+      left = left,
+      right = right,
+    }
+  end
   return cells
 end
 
 local function is_separator_row(cells)
+  local has_marker = false
   for _, cell in ipairs(cells) do
-    if not cell:match("^:?-+:?$") then
+    if cell.value ~= "" and not cell.value:match("^:?-+:?$") then
       return false
     end
+    has_marker = has_marker or cell.value ~= ""
   end
-  return #cells > 0
+  return has_marker
 end
 
-local function pad_table_row(line, cells, column_count)
-  if #cells >= column_count then
-    return line
+local function normalize_table_row(line, cells, column_count)
+  local separator = is_separator_row(cells)
+  local result = line
+  for index = #cells, 1, -1 do
+    local cell = cells[index]
+    if cell.value == "" then
+      local value = separator and "---" or " <++> "
+      result = result:sub(1, cell.left) .. value .. result:sub(cell.right)
+    end
   end
 
-  local result = line:gsub("|%s*$", "")
-  local cell = is_separator_row(cells) and "|---" or "| <++> "
-  return result .. cell:rep(column_count - #cells) .. "|"
+  if #cells < column_count then
+    result = result:gsub("|%s*$", "")
+    local cell = separator and "|---" or "| <++> "
+    result = result .. cell:rep(column_count - #cells) .. "|"
+  end
+  return result
 end
 
 function M.sync_columns(bufnr, lnum)
@@ -88,9 +109,9 @@ function M.sync_columns(bufnr, lnum)
   local changed = false
   for index, line in ipairs(lines) do
     local cells = split_table_row(line)
-    local padded = pad_table_row(line, cells, column_count)
-    if padded ~= line then
-      lines[index] = padded
+    local normalized = normalize_table_row(line, cells, column_count)
+    if normalized ~= line then
+      lines[index] = normalized
       changed = true
     end
   end
@@ -101,7 +122,15 @@ function M.sync_columns(bufnr, lnum)
 end
 
 function M.sync_current()
-  M.sync_columns(vim.api.nvim_get_current_buf(), vim.api.nvim_win_get_cursor(0)[1])
+  local bufnr = vim.api.nvim_get_current_buf()
+  local cursor = vim.api.nvim_win_get_cursor(0)
+  local line = vim.api.nvim_get_current_line()
+  local at_end = cursor[2] >= math.max(#line - 1, 0)
+  M.sync_columns(bufnr, cursor[1])
+  if at_end then
+    local normalized = vim.api.nvim_get_current_line()
+    vim.api.nvim_win_set_cursor(0, { cursor[1], #normalized })
+  end
 end
 
 function M.insert_row(bufnr, lnum)

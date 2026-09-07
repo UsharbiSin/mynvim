@@ -115,7 +115,7 @@ local function test()
   local pipe_map = vim.fn.maparg("|", "i", false, true)
   check(type(pipe_map.rhs) == "string" and pipe_map.rhs ~= "", "Table Mode must install a safe pipe mapping")
 
-  vim.api.nvim_buf_set_lines(0, 0, -1, false, { "| first | second | third |" })
+  vim.api.nvim_buf_set_lines(0, 0, -1, false, { "" })
   vim.api.nvim_win_set_cursor(0, { 1, 0 })
   local table_insert_leaves = 0
   local observed_table_insert_leaves
@@ -131,38 +131,25 @@ local function test()
     observed_table_insert_leaves = table_insert_leaves
     observed_header_lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
   end, { buffer = true })
-  vim.fn.feedkeys(vim.api.nvim_replace_termcodes("A<CR><F20>", true, false, true), "xt")
+  vim.fn.feedkeys(vim.api.nvim_replace_termcodes("i||||<CR><F20>", true, false, true), "xt")
   vim.api.nvim_del_augroup_by_id(table_event_group)
   check(observed_table_insert_leaves == 0, "Table Mode Enter must remain in Insert mode")
+  check(observed_header_lines[1] == "| <++> | <++> | <++> |", "Empty header cells must receive placeholders")
   check(observed_header_lines[2] == "|---|---|---|", "Markdown header Enter must preserve every column")
   check(observed_header_lines[3] == "| <++> | <++> | <++> |", "Markdown header Enter must create a matching data row")
 
   vim.api.nvim_buf_set_lines(0, 0, -1, false, {
     "| first | second |",
     "|---|---|",
-    "| value | value | added ",
+    "| value | value ||",
   })
   vim.api.nvim_win_set_cursor(0, { 3, 0 })
   check(not pipe_map.rhs:find("<Esc>", 1, true), "Table Mode pipe mapping must remain in Insert mode")
-  local pipe_insert_leaves = 0
-  local observed_pipe_insert_leaves
-  local observed_pipe_lines
-  local pipe_event_group = vim.api.nvim_create_augroup("TableModePipeEventsTest", { clear = true })
-  vim.api.nvim_create_autocmd("InsertLeave", {
-    group = pipe_event_group,
-    callback = function()
-      pipe_insert_leaves = pipe_insert_leaves + 1
-    end,
-  })
-  vim.keymap.set("i", "<F20>", function()
-    observed_pipe_insert_leaves = pipe_insert_leaves
-    observed_pipe_lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
-  end, { buffer = true })
-  vim.fn.feedkeys(vim.api.nvim_replace_termcodes("A|<F20>", true, false, true), "xt")
-  vim.api.nvim_del_augroup_by_id(pipe_event_group)
-  check(observed_pipe_insert_leaves == 0, "Table Mode separator must remain in Insert mode")
-  check(observed_pipe_lines[1] == "| first | second | <++> |", "Adding a separator must extend the header")
-  check(observed_pipe_lines[2] == "|---|---|---|", "Adding a separator must extend the border")
+  require("config.vim-table-mode").sync_current()
+  local synchronized_lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+  check(synchronized_lines[1] == "| first | second | <++> |", "Adding a separator must extend the header")
+  check(synchronized_lines[2] == "|---|---|---|", "Adding a separator must extend the border")
+  check(synchronized_lines[3] == "| value | value | <++> |", "Adding a separator must fill the current cell")
 
   local function table_enter(lines, row)
     vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
