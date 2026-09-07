@@ -55,7 +55,9 @@ clangd 成功附着后可用 `:LspClangdSwitchSourceHeader` 和 `:LspClangdShowS
 
 ## 平台差异与已知限制
 
-main 关闭诊断行尾文本，只保留符号、下划线和浮窗；windows 启用行尾文本，并显式启动 semantic tokens。其他主要快捷键一致。Windows 11 未实机测试，程序路径、工程工具链及 SQL 网络连接需当地验证。
+main 关闭诊断行尾文本，只保留符号、下划线和浮窗；windows 启用行尾文本，并使用
+Neovim 0.12 的接口显式启用 semantic tokens。Windows 实机已确认 clangd、html、jsonls、
+lua_ls、pylsp 与 sqls 均能附着；工程工具链和 SQL 网络连接仍需按项目验证。
 
 本项目没有统一调用 `cmp_nvim_lsp.default_capabilities()`，也没有配置补全 snippet 展开器，复杂补全能力需另见 [cmp-nvim-lsp](cmp-nvim-lsp.md)。SQL 命令注册可能被自定义回调覆盖，详见 [sqls.nvim](sqls.nvim.md)。
 

@@ -11,8 +11,8 @@
 外的转换通常需要 ImageMagick，数学公式还可能需要 Typst，实际终端必须支持图像协议。
 运行 `:checkhealth snacks` 查看终端、转换器与环境探测。
 
-main 还启用 terminal 并初始化 [Codex 模块](../../codex.md)：`<Space>ac` 开关项目终端，
-`<Space>ar` 恢复会话。windows 分支删除了这部分，不能使用相同按键。Snacks notifier 与
-nvim-notify/Noice 可能竞争通知接管者，出现重复通知时检查加载顺序。
+两个分支都启用 terminal 并初始化 [Codex 模块](../../codex.md)：`<Space>ac` 开关项目终端，
+`<Space>ar` 恢复会话。Snacks notifier 与 nvim-notify/Noice 可能竞争通知接管者，出现重复
+通知时检查加载顺序。
 
 上游：[snacks.nvim](https://github.com/folke/snacks.nvim)。

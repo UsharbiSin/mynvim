@@ -10,6 +10,6 @@
 加载 DAP 时才调用。因此在只编辑普通文本的会话里，Noice 可能已加载代码但尚未初始化；
 这与“始终美化命令行”的注释不完全一致。
 
-用 `:lua print(require('noice.config').is_running())`、`:Noice history` 与 `:checkhealth noice`
-检查。若希望所有会话启用，应把 setup 放到插件自身 config。上游：
+用 `:lua print(require('noice.config').is_running())`、`:Noice history` 与 `:messages` 检查；
+当前插件没有专用 health provider。若希望所有会话启用，应把 setup 放到插件自身 config。上游：
 [noice.nvim](https://github.com/folke/noice.nvim)。

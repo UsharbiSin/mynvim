@@ -2,10 +2,10 @@
 
 [返回项目使用说明](../../README.md) · [插件索引](../README.md) · [分支差异](../branch-differences.md)
 
-本文面向 Windows 11 原生 Neovim，不是 WSL。内容基于 `windows` 分支静态审计；当前没有
-Windows 实机，因此所有路径、剪贴板、终端图像、编译器和调试器都需要在目标机器验证。
-若项目实际在 WSL 内开发，通常应在 WSL 内安装 Neovim 并使用 `main` 分支，避免混用
-Windows 路径与 Linux 工具链。
+本文面向 Windows 11 原生 Neovim，不是 WSL。2026-09-07 已在 Windows 11、Neovim 0.12.4、
+PowerShell 5.1 和 WezTerm 环境完成实机验证。数据库网络、未安装的可选语言运行时和所有终端
+图像协议仍需在使用机器验证。若项目实际在 WSL 内开发，通常应在 WSL 内安装 Neovim 并使用
+`main` 分支，避免混用 Windows 路径与 Linux 工具链。
 
 ## 1. 安装基础软件
 
@@ -42,6 +42,10 @@ tar --version
 curl.exe --version
 ```
 
+若 PowerShell profile 把 `nvim` 定义成启动 GUI 的函数，普通 `nvim --headless` 并不会执行
+无界面检查。先运行 `Get-Command nvim -All` 和 `where.exe nvim`，测试时直接调用返回的
+`nvim.exe` 路径。
+
 本仓库锁定的 nvim-treesitter 还要求 Tree-sitter CLI >= 0.26.1 和 C 编译器。可安装 Rust
 后用 Cargo 安装 CLI：
 
@@ -54,8 +58,8 @@ tree-sitter --version
 
 也可使用 Tree-sitter 官方发布的 Windows 二进制，但必须把所在目录加入用户 PATH。C/C++
 请选择一套原生工具链并保持一致：Visual Studio Build Tools（MSVC）或 LLVM/MinGW。配置的
-F10 使用 `gcc`/`g++`，DAP 又配置 `gdb`、`codelldb`、`OpenDebugAD7`，所以仅装 MSVC 并不能
-让所有现有命令自动工作。
+F10 使用 `gcc`/`g++`，C/C++ 调试优先使用支持 DAP 的 `gdb`。`codelldb`、
+`OpenDebugAD7` 和 `cuda-gdb` 是可选适配器，只有命令存在时才显示对应启动项。
 
 安装任一 Nerd Font，在 Windows Terminal 的配置中将当前 profile 字体设为它；仅下载字体
 文件而不选择字体，图标仍会显示成方块。
@@ -131,22 +135,9 @@ go version
 
 ### Markdown 浏览器
 
-`lua/config/markdown.lua` 当前写的是：
-
-```text
-C:/Program Files/Google/Chrome/Application/chrome-win/chrome.exe
-```
-
-这不是 Chrome 最常见的安装路径，而且 `init.lua` 直接拼 shell 字符串，路径中的空格可能
-导致 HTML F10 失败。先在 PowerShell 检查自己的路径，例如：
-
-```powershell
-Test-Path "$env:ProgramFiles\Google\Chrome\Application\chrome.exe"
-Test-Path "$env:ProgramFiles(x86)\Microsoft\Edge\Application\msedge.exe"
-```
-
-把 `vim.g.mkdp_browser` 改成真实路径后，用 Markdown 的 F8 测试。F8 由插件自己启动浏览器，
-比 HTML 的 F10 shell 拼接更可靠。
+`lua/config/markdown.lua` 将 `vim.g.mkdp_browser` 留空，由系统默认浏览器处理预览 URL；HTML
+的 F10 也通过 `vim.ui.open()` 调用系统关联。用 F8 启动 Markdown 预览、F9 停止。若要固定
+浏览器，再把 `vim.g.mkdp_browser` 设置为本机可执行文件路径。
 
 ### 输入法
 
@@ -165,7 +156,8 @@ Get-Command im-select.exe
 
 - Vimwiki 默认 `~/vimwiki/`；在 Neovim 中用 `:echo expand('~/vimwiki')` 查看解析结果。
 - `<Space>pw` 打开 `$USERPROFILE/Documents/pswd.md`。不用此个人映射就删除。
-- SQL 数据库信息读取 `DB_USER_*` 等环境变量；可在启动 Neovim 前临时设置：
+- SQL 数据库信息读取 `DB_USER_*` 等环境变量；只有同一连接的五项变量完整时才把该连接传给
+  SQLS，未配置数据库不会阻止 SQLS 启动。可在启动 Neovim 前临时设置：
 
 ```powershell
 $env:DB_USER_TY = 'user'
@@ -192,31 +184,26 @@ Python adapter 已指向 Mason debugpy 的：
 :lua print(vim.fn.stdpath('data') .. '/mason/packages/debugpy/venv/Scripts/python.exe')
 ```
 
-C/C++ 部分仍需人工修复：
+C 和 C++ 共用本机可用的启动配置。若 `gdb` 在 PATH，首项是 `Launch (gdb DAP)`；安装
+`codelldb` 或 `OpenDebugAD7` 后会自动增加对应选项。当前实机的 GDB 16.2 已完成真实协议
+会话测试：含空格路径的 C 程序可加载，断点可验证并命中，会话以退出码 0 结束。可用以下
+命令先确认适配器本身：
 
-- `codelldb` 必须在 PATH，或把 adapter command 改成 Mason/本机绝对路径；
-- `OpenDebugAD7` 必须来自可用的 cppdbg 安装；
-- `gdb` adapter 需要支持 DAP 的 gdb；
-- C++ 的 `Launch (gdb)` 仍写 `/usr/bin/gdb`，必须改成 `gdb.exe` 或真实绝对路径；
-- CUDA 的另一条 cppdbg 配置已写 `gdb.exe`，但 CUDA 工具链本身也需安装。
+```powershell
+gdb --version
+gdb --interpreter=dap --batch -ex quit
+```
 
-当前只给 `cpp`、`cuda`、`python`、`qmt` 注册了启动配置；插件虽对 `c` filetype 加载，
-`dap.configurations.c` 并未定义。每个 adapter 的 wire protocol 也应以实际安装版本验证。
+CUDA 启动项同样只在 `cuda-gdb` 或 cppdbg 依赖齐全时显示。
 
-## 7. 修正 F10 一键运行
+## 7. F10 一键运行
 
-windows 分支的 F10 尚未完成 Windows 化。推荐在使用前编辑 `init.lua`：
+Windows 分支由 `lua/core/runner.lua` 生成参数数组，不通过 PowerShell 拼接文件名。当前实机
+已在含空格临时目录完成 C 编译和执行测试。Python 自动优先选择 Windows 的 `python`，HTML
+使用系统关联，Markdown/Vimwiki 使用 `MarkdownPreview`，JavaScript 运行当前文件。
 
-- `python3` 改为本机 `python` 或 `py -3`；
-- 去掉 GNU `time`，或改用 PowerShell `Measure-Command`；
-- C/C++ 运行 `.\name.exe`，并给文件路径做可靠引用；
-- JavaScript 的 `export DEBUG=...` 改为 PowerShell 环境变量语法，或直接运行项目脚本；
-- HTML 浏览器路径必须可靠引用；
-- Markdown 使用 `MarkdownPreview`/F8，当前 `InstantMarkdownPreview` 不存在；
-- 未安装 Vimtex 和 coc.nvim 时，不要依赖 TeX/Dart 分支。
-
-这些修改涉及你的编译器和默认 shell，仓库当前没有一种能覆盖所有 Windows 工具链的通用
-写法。修改后在含空格和不含空格的临时目录各测试一次。
+每种语言仍需安装对应编译器或运行时。TeX 分支需要当前未声明的 Vimtex，Dart 分支需要当前
+未启用的 Coc；缺少程序或命令时会显示错误，不会静默执行失败。
 
 ## 8. 图片与剪贴板
 
@@ -225,9 +212,11 @@ img-clip 会调用 `magick convert`，保存 AVIF 到当前 Markdown 文件旁�
 
 ```vim
 :echo executable('magick')
-:checkhealth img-clip
 :checkhealth snacks
 ```
+
+img-clip.nvim 当前没有专用 health provider。用 `<Space>pi` 后检查 `.markdown_images/` 是否
+生成 AVIF 文件；也可用 `:messages` 查看转换错误。实机 ImageMagick 已确认支持 AVIF 读写。
 
 Snacks 行内图片还取决于 Windows Terminal/终端模拟器是否支持相应图像协议。图片粘贴成功
 但行内不显示时，先看文件是否真正生成，再分别排查 ImageMagick 与终端显示能力。
@@ -236,14 +225,26 @@ Snacks 行内图片还取决于 Windows Terminal/终端模拟器是否支持相�
 
 1. `nvim --version` 至少 0.11，`tree-sitter --version` 至少 0.26.1。
 2. `:Lazy` 无 failed，`:Mason` 六个 LSP 已安装。
-3. `:checkhealth`、`:checkhealth nvim-treesitter` 没有阻断项。
+3. 检查 `:checkhealth`、`:checkhealth nvim-treesitter`、`:checkhealth snacks`；无界面模式会因
+   `TERM=dumb` 报图像协议错误，未启用的 lazygit/picker 项也可忽略。
 4. 打开 Lua/Python/C++/Markdown/SQL 文件检查 filetype、LSP 和高亮。
 5. `tt`、`L`、`T` 可打开文件树、撤销树、Tagbar（Tagbar 还需 ctags）。
 6. F8/F9 能启动/停止 Markdown 预览。
 7. `<Space>pi` 能生成 AVIF 文件并插入链接。
-8. Python debugpy 实际启动；C++ adapter 逐一按安装路径测试。
+8. Python debugpy 路径存在；C/C++ 的 GDB DAP 能命中断点。
 9. 输入中文后按 Esc 返回 Normal，确认输入法切回英文。
 10. `:checkhealth codex` 无错误，`<Space>ac` 能打开当前项目的 Codex 终端。
 
 windows 分支已经包含 Codex 集成，但仍未安装 main 的 boole.nvim。具体差异见
 [分支差异](../branch-differences.md)。
+
+仓库提供可重复的 Windows 专项检查。PowerShell 中先解析真实应用路径，再执行：
+
+```powershell
+$nvimExe = (Get-Command nvim.exe).Source
+& $nvimExe --headless -u init.lua -l tests/windows.lua
+```
+
+当前结果为 16 项通过，覆盖平台识别、带空格路径的一键运行、SQLS 空连接启动与命令注册、
+GDB 配置、默认浏览器与 Vimwiki 图表集成。若机器缺少 gcc、gdb 或六个 Mason LSP，测试会
+明确失败。

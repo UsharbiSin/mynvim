@@ -5,7 +5,7 @@ Arch Linux，`windows` 分支用于 Windows 11 原生 Neovim。本文以当前�
 为准，既说明已经可用的功能，也标出仍需按机器修改的个人路径和未完成迁移项。
 
 > 当前文档审计日期：2026-09-07。`main` 已在 Arch Linux / Neovim 0.12.5 上完成
-> 无界面启动检查；Windows 11 文档来自 `windows` 分支静态审计，尚未实机测试。
+> 无界面启动检查；`windows` 已在 Windows 11 / Neovim 0.12.4 上完成原生实机检查。
 
 ## 文档入口
 
@@ -67,7 +67,7 @@ nvim
 
 Windows 分支需要先安装 Neovim、Git、Node.js、Python、C/C++ 编译器、Tree-sitter CLI、
 ImageMagick 和 Nerd Font，并把命令加入 PATH。插件下载完成后执行 `:Lazy sync`、`:Mason`
-和 `:checkhealth`。Windows 仍有必须手工调整的 DAP 与一键运行命令，详见平台文档。
+和 `:checkhealth`。语言编译器、数据库凭据和可选图表渲染器仍按实际用途安装。
 
 ## 项目架构
 
@@ -88,13 +88,14 @@ ImageMagick 和 Nerd Font，并把命令加入 PATH。插件下载完成后执�
 ├── lua/
 │   ├── core/
 │   │   ├── options.lua       # 编辑器全局选项与 Python 缩进
-│   │   └── keymaps.lua       # 全局快捷键
+│   │   ├── keymaps.lua       # 全局快捷键
+│   │   └── runner.lua        # 跨平台 F10 编译运行
 │   ├── plugins/
 │   │   └── plugin-list.lua   # 所有插件声明、依赖和加载条件
 │   ├── config/               # 各插件实际 setup 与快捷键
-│   └── codex/                # main 分支的 :checkhealth codex
+│   └── codex/                # Codex 命令、终端与 :checkhealth codex
 ├── docs/                     # 中文总文档、平台文档和插件单页
-└── tests/                    # main 分支 Codex 的无界面测试
+└── tests/                    # Codex 与 Windows 配置的无界面测试
 ```
 
 启动链为：
@@ -107,7 +108,7 @@ init.lua
   │    └─ lua/plugins/plugin-list.lua
   │         ├─ lua/config/*.lua
   │         └─ lsp/*.lua
-  └─ 注册 <F10> compile_run
+  └─ 注册 <F10> core.runner.run_current
 ```
 
 `plugin-list.lua` 决定插件是否安装、何时加载；`config/*.lua` 决定本项目真正开启了哪些
@@ -195,7 +196,7 @@ LSP 按键只在语言服务器成功附着后存在。
 | `<Space>pi` | 从系统剪贴板保存图片并插入 Markdown 链接 |
 | `<Space>tm` | 切换 Markdown 表格模式 |
 | `<Space>g` | 在右侧终端运行 `gemini` |
-| `<Space>ac` / `<Space>ar` | main：开关 Codex / 恢复 Codex 历史会话 |
+| `<Space>ac` / `<Space>ar` | 开关 Codex / 恢复 Codex 历史会话 |
 | `F10` | 按 filetype 保存、编译或运行当前文件 |
 
 `<Space>pw` 会直接打开个人密码文档（Linux 为 `~/Documents/pswd.md`，Windows 为
@@ -204,27 +205,27 @@ LSP 按键只在语言服务器成功附着后存在。
 
 ## F10 一键运行的真实范围
 
-`F10` 在执行前保存当前文件。它直接把文件名拼进 shell 命令，含空格或 shell 特殊字符的
-路径可能失败，因此复杂项目更适合使用项目自身的构建命令。
+`F10` 在执行前保存当前文件。编译器和解释器参数以 argv 传递，因此 Windows 路径中的
+空格不会被 shell 拆开；复杂项目仍更适合使用项目自身的构建命令。
 
 | filetype | 当前命令或行为 | 额外依赖 |
 | --- | --- | --- |
-| `c` | `gcc 文件 -o 输出 && time ./输出` | gcc、GNU time；Windows 写法不兼容 |
-| `cpp` | `g++ -std=c++11 ...` 后运行 | g++；Windows 运行路径写法不兼容 |
+| `c` | `gcc 文件 -o 输出` 后运行 | gcc |
+| `cpp` | `g++ -std=c++11 -Wall ...` 后运行 | g++ |
 | `cs` | `mcs` 后 `mono` | Mono |
-| `java` | `javac` 后 `time java` | JDK、GNU time |
-| `sh` | `time bash 文件` | Bash、time |
-| `python` | `python3 文件` | Windows 常见命令是 `python`，当前未适配 |
-| `html` | 用 `vim.g.mkdp_browser` 打开文件 | 浏览器；路径含空格时当前命令可能失败 |
-| `markdown` | `:InstantMarkdownPreview` | 当前插件未提供此命令；请改用 F8 |
+| `java` | `javac` 后按 classpath 运行主类 | JDK |
+| `sh` | `bash 文件` | Bash |
+| `python` | Windows 优先 `python`，其他平台优先 `python3` | Python |
+| `html` | 用 `vim.ui.open()` 交给系统默认程序 | 默认浏览器 |
+| `markdown` / `vimwiki` | `:MarkdownPreview` | markdown-preview.nvim |
 | `tex` | `:VimtexStop`、`:VimtexCompile` | 当前未声明 vimtex |
 | `dart` | `:CocCommand flutter...` | 当前启动链未启用 coc.nvim |
-| `javascript` | `node --trace-warnings .` | Node.js；命令含 POSIX `export`，Windows 不兼容 |
+| `javascript` | `node --trace-warnings 文件` | Node.js |
 | `racket` | `racket 文件` | Racket |
 | `go` | `go run .` | Go；受 `autochdir` 影响 |
 
-这张表描述现状，并不表示所有语言都已完整配好。Windows 分支首次使用时应优先修改
-`init.lua` 的 `compile_run()`。
+这张表描述现状，并不表示所有语言运行时都已安装。命令生成与执行逻辑位于
+`lua/core/runner.lua`。
 
 ## LSP、补全、格式化和检查的关系
 
@@ -272,9 +273,9 @@ export DB_NAME_TY='database'
 nvim query.sql
 ```
 
-不要把密码写进本仓库。`<Space>swc` / `<Space>swd` 依赖 sqls.nvim 注册对应命令；当前
-自定义 `on_attach` 可能覆盖插件回调，若提示命令不存在请看
-[sqls.nvim 排错](docs/plugins/language/sqls.nvim.md)。
+不要把密码写进本仓库。`<Space>swc` / `<Space>swd` 依赖 sqls.nvim 在 SQL buffer 注册命令；
+Windows 专项测试会同时检查命令存在和 SQLS 格式化已关闭。排错见
+[sqls.nvim](docs/plugins/language/sqls.nvim.md)。
 
 ## Markdown 与 Vimwiki
 
@@ -284,11 +285,12 @@ Vimwiki 默认目录是 `~/vimwiki/`，语法为 Markdown，扩展名为 `.md`�
 - `render-markdown.nvim` 美化当前 Neovim buffer；
 - `markdown-preview.nvim` 用 F8/F9 控制浏览器预览；
 - `img-clip.nvim` 把剪贴板图像转为 AVIF，放进当前目录的 `.markdown_images/`；
+- `diagram.nvim` 调用 Mermaid、PlantUML、D2 或 Gnuplot 渲染代码块；
 - `vim-table-mode` 用 `<Space>tm` 开关表格排版。
 
 main 的 Markdown CSS 与图片路径含作者的绝对路径；更换用户名或配置目录后应修改
-`lua/config/markdown.lua`。Windows 分支已把 CSS 改成 `stdpath('config')`，但 Chrome 路径
-仍需核对。详细说明见[Markdown 插件分类](docs/README.md#markdown-与知识库)。
+`lua/config/markdown.lua`。Windows 分支使用 `stdpath('config')` 定位 CSS，并交给系统默认
+浏览器打开预览。详细说明见[Markdown 插件分类](docs/README.md#markdown-与知识库)。
 
 ## 更新、回滚与诊断
 
@@ -316,12 +318,13 @@ restore；不要无理由删除 `lazy-lock.json`。Mason 的 LSP、formatter 和
 
 ## 本机验证结果
 
-在 Arch Linux 当前工作区完成了以下验证：
+当前文档记录了以下验证：
 
-- Neovim 0.12.5 能完整读取配置并退出；
-- Lazy 注册 65 个插件条目；
+- Arch Linux / Neovim 0.12.5 与 Windows 11 / Neovim 0.12.4 均能完整读取配置并退出；
+- Windows 的 Lazy 注册 66 个插件条目，锁文件中的插件均有安装目录；
 - `:Codex` / `:CodexResume` 命令已注册；
-- 当前安装目录存在配置列出的 14 个 Tree-sitter parser 和 6 个 Mason LSP。
+- Windows 配置列出的 14 个 Tree-sitter parser 均可加载，6 个 Mason LSP 均能附着；
+- 带空格路径的 C 文件可由 F10 编译运行，GDB DAP 可命中 C 断点并正常退出。
 
-这不代表每个外部编译器、数据库、调试适配器和 GUI/剪贴板组合都已逐一运行。Windows 11
-尚未实机验证，平台文档提供了可复现的检查步骤。
+数据库网络、未安装的可选编译器和所有 GUI/剪贴板组合没有逐一验证。平台文档提供了可复现
+的检查步骤，并区分必需依赖与可选工具。

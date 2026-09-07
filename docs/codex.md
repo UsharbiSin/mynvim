@@ -116,8 +116,8 @@ nvim --headless -u NONE -l tests/codex.lua
 
 测试默认读取 `stdpath('data')/lazy/snacks.nvim`，也可通过 `SNACKS_RTP` 环境变量指定
 锁定版本的插件目录。测试使用本机 Neovim 子进程模拟持续运行的 CLI，不调用模型。
-Linux 测试中的 Windows 解析用例只验证函数逻辑，不能替代 Windows 11 原生终端及真实
-登录的验证。
+Windows 11 实机已通过 28 项 Codex 集成检查，health 能解析 npm 安装的 JS 入口；登录状态
+仍应在系统终端用 `codex login status` 单独确认。
 
 ## 参考
 

@@ -9,4 +9,6 @@
 英文输入法 ID 不同就修改 `default_im_select`。若每次切换都闪烁或无法恢复，先在普通
 PowerShell 中验证 executable，再执行 `:checkhealth`。main 不安装此插件。
 
-上游：[im-select.nvim](https://github.com/keaising/im-select.nvim)。Windows 行为尚未实机验证。
+Windows 实机已确认 `im-select.exe` 可读取当前输入法、切换到 `1033`，并恢复原输入法。不同
+机器的 IME ID 可能不同，先手工执行 `im-select.exe` 核对。上游：
+[im-select.nvim](https://github.com/keaising/im-select.nvim)。

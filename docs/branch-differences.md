@@ -2,8 +2,8 @@
 
 [返回项目使用说明](../README.md) · [插件索引](README.md)
 
-本页基于 `main` 的 `fd118cb` 与当前 `windows` 配置静态比较。两个分支共享主体插件和
-大多数快捷键，但不能视为仅换了一条路径。
+本页按 2026-09-07 的两个分支配置比较。两个分支共享主体插件和大多数快捷键，但不能
+视为仅换了一条路径。
 
 | 方面 | main（Arch Linux） | windows（Windows 11） |
 | --- | --- | --- |
@@ -11,33 +11,31 @@
 | 布尔值切换 | `boole.nvim`，`Ctrl-a`/`Ctrl-x` | 未安装 |
 | Codex | Snacks terminal、命令、health、测试和文档均存在 | 已完整接入，并兼容原生程序与 npm 启动脚本 |
 | Snacks | 启动即加载，图片、公式、通知、终端 | 启动即加载，图片、公式、通知、终端 |
-| Markdown 浏览器 | `/usr/lib/firefox/firefox` | 硬编码 Chrome `C:/Program Files/.../chrome-win/chrome.exe` |
+| Markdown 浏览器 | `/usr/lib/firefox/firefox` | 系统默认浏览器 |
 | Markdown CSS | 作者 Linux 绝对路径 | `stdpath('config')/markdown.css` |
 | Vimwiki 图片 | 作者 Linux 绝对路径 | `~/vimwiki/.markdown_images` |
 | 快速打开配置 | `~/.config/nvim/init.lua` | `stdpath('config')/init.lua` |
 | 密码文档 | `~/Documents/pswd.md` | `$USERPROFILE/Documents/pswd.md` |
 | Python DAP adapter | 作者 virtualenv 绝对路径 | Mason 的 `debugpy/venv/Scripts/python.exe` |
 | Conda Python | `$CONDA_PREFIX/bin/python` | `$CONDA_PREFIX/python.exe` |
-| CUDA gdb 条目 | `/usr/bin/gdb` | `gdb.exe` |
-| C++ gdb 条目 | `/usr/bin/gdb` | 仍是 `/usr/bin/gdb`，需修复 |
+| C/C++ 调试 | codelldb/cppdbg，含 `/usr/bin/gdb` | 优先原生 GDB DAP，并按已安装程序生成菜单 |
+| CUDA 调试 | cuda-gdb/cppdbg | 仅在对应程序已安装时显示 |
 | LSP 诊断 | 行尾 virtual text 关闭 | 行尾 virtual text 开启 |
-| Semantic tokens | 依赖新版默认行为 | 附着时显式 start |
+| Semantic tokens | 依赖新版默认行为 | 附着时调用 0.12 的 `enable()` 接口 |
 | 默认折叠 | manual，起始层 99 | indent，层 99 |
 
-## Windows 尚未迁移的 POSIX 行为
+## F10 一键运行
 
-两个分支的 `init.lua` 一键运行主体基本相同，所以 windows 仍包含：
+windows 分支已把 F10 拆到 `lua/core/runner.lua`，编译和运行参数不再经过 shell 拼接，并已
+实测带空格路径。它会：
 
-- C/C++ 的 `./程序` 和 GNU `time`；
-- Python 的 `python3`；
-- Java/sh 的 `time`、`bash`；
-- JavaScript 的 `export DEBUG=...`；
-- HTML 浏览器命令末尾 `&`，且未可靠引用含空格路径；
-- Markdown 的不存在命令 `InstantMarkdownPreview`；
-- TeX 的未安装 Vimtex、Dart 的未启用 Coc。
+- 为 Windows C/C++ 输出 `.exe`，编译成功后再启动；
+- Windows 优先使用 `python`，JavaScript 直接运行当前文件；
+- HTML 交给 `vim.ui.open()`，Markdown/Vimwiki 调用 `MarkdownPreview`；
+- 找不到外部程序或命令时显示明确错误。
 
-这些不是 Windows 平台文档可以“测试通过”的功能。使用前按
-[Windows 11 指南](platforms/windows11.md)修改，或者在 PowerShell/任务系统中单独运行项目命令。
+TeX 仍依赖当前未声明的 Vimtex，Dart 仍依赖当前未启用的 Coc。main 分支保留原有 shell
+实现，跨分支同步这部分时应保留平台差异。详见 [Windows 11 指南](platforms/windows11.md)。
 
 ## 插件锁差异
 
