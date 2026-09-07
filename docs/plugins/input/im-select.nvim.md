@@ -12,3 +12,6 @@ PowerShell 中验证 executable，再执行 `:checkhealth`。main 不安装此�
 Windows 实机已确认 `im-select.exe` 可读取当前输入法、切换到 `1033`，并恢复原输入法。不同
 机器的 IME ID 可能不同，先手工执行 `im-select.exe` 核对。上游：
 [im-select.nvim](https://github.com/keaising/im-select.nvim)。
+
+Markdown 表格模式的回车逻辑保持在插入模式内，不会为了移动到行尾发送 `<Esc>`；因此按
+回车生成表格行时不会误触 `InsertLeave` 并把中文输入法切回英文。

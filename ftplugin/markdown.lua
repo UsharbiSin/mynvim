@@ -58,14 +58,15 @@ vim.api.nvim_create_autocmd("User", {
             end
             sep_row = sep_row .. "|"
             data_row = data_row .. "|"
-            result_keys = "<Esc>A<CR>" .. sep_row .. "<CR>" .. data_row
+            -- 保持插入模式，避免触发 im-select 的 InsertLeave 后异步切回英文。
+            result_keys = "<End><CR>" .. sep_row .. "<CR>" .. data_row
           else
             local data_row = ""
             for i = 1, cols do
               data_row = data_row .. "| <++> "
             end
             data_row = data_row .. "|"
-            result_keys = "<Esc>A<CR>" .. data_row
+            result_keys = "<End><CR>" .. data_row
           end
 
           -- 发送按键生成表格，并阻断其他插件

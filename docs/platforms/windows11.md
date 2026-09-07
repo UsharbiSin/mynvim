@@ -245,6 +245,6 @@ $nvimExe = (Get-Command nvim.exe).Source
 & $nvimExe --headless -u init.lua -l tests/windows.lua
 ```
 
-当前结果为 16 项通过，覆盖平台识别、带空格路径的一键运行、SQLS 空连接启动与命令注册、
-GDB 配置、默认浏览器与 Vimwiki 图表集成。若机器缺少 gcc、gdb 或六个 Mason LSP，测试会
-明确失败。
+当前结果为 19 项通过，覆盖平台识别、带空格路径的一键运行、SQLS 空连接启动与命令注册、
+GDB 配置、默认浏览器、Vimwiki 图表集成及 Markdown 表格回车的输入模式保持。若机器缺少
+gcc、gdb 或六个 Mason LSP，测试会明确失败。

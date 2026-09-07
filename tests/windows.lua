@@ -66,6 +66,35 @@ local function test()
   local diagram_markdown = require("diagram.integrations.markdown")
   check(vim.tbl_contains(diagram_markdown.filetypes, "vimwiki"), "diagram.nvim must support Vimwiki buffers")
 
+  local markdown_file = vim.fs.joinpath(tmp, "input.md")
+  vim.fn.writefile({ "| first | second |" }, markdown_file)
+  vim.cmd("edit! " .. vim.fn.fnameescape(markdown_file))
+  vim.bo.filetype = "markdown"
+  vim.cmd("TableModeToggle")
+  local cr_map = vim.fn.maparg("<CR>", "i", false, true)
+  check(type(cr_map.callback) == "function", "Markdown table mode must install its Enter callback")
+
+  local original_feedkeys = vim.api.nvim_feedkeys
+  local function table_enter_keys(lines, row)
+    vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
+    vim.api.nvim_win_set_cursor(0, { row, 0 })
+    local captured
+    vim.api.nvim_feedkeys = function(keys)
+      captured = keys
+    end
+    local ok, err = pcall(cr_map.callback)
+    vim.api.nvim_feedkeys = original_feedkeys
+    assert(ok, err)
+    return assert(captured, "Markdown Enter callback must feed keys")
+  end
+
+  local escape = vim.api.nvim_replace_termcodes("<Esc>", true, false, true)
+  local header_keys = table_enter_keys({ "| first | second |" }, 1)
+  check(not header_keys:find(escape, 1, true), "Markdown header Enter must not leave Insert mode")
+  local row_keys = table_enter_keys({ "| first | second |", "|---|---|" }, 2)
+  check(not row_keys:find(escape, 1, true), "Markdown row Enter must not leave Insert mode")
+  vim.cmd("TableModeDisable")
+
   run_file("hello world.c", {
     "#include <stdio.h>",
     "int main(void) { puts(\"runner-c-ok\"); return 0; }",
