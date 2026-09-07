@@ -123,6 +123,16 @@ return {
     end
   },
   {
+    "3rd/diagram.nvim", -- 在文档中渲染 Mermaid、PlantUML、D2 和 Gnuplot 图表
+    dependencies = {
+      { "3rd/image.nvim", opts = {} },
+    },
+    ft = { "markdown", "norg" },
+    config = function()
+      require('config.diagram')
+    end
+  },
+  {
     "iamcco/markdown-preview.nvim", -- Markdown 浏览器实时预览
     cmd = { "MarkdownPreviewToggle", "MarkdownPreview", "MarkdownPreviewStop" },
     ft = { "markdown", "vimwiki" },
