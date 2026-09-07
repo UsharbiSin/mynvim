@@ -37,4 +37,5 @@ vim.g.dbs = connections
 require("dadbod-grip").setup({
   ai = false,
   completion = false,
+  discovery = false,
 })
