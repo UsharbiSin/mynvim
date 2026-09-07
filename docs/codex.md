@@ -1,5 +1,7 @@
 # 在 Neovim 中使用 Codex
 
+[返回项目使用说明](../README.md) · [插件索引](README.md)
+
 本配置采用 **官方 Codex CLI + 已有的 Snacks terminal**。`main`（Arch Linux）和
 `windows`（Windows 11 原生 Neovim）使用同一份 Codex 模块，各自保留平台配置。
 
@@ -31,7 +33,8 @@ codex login status
 
 登录时选择 **Sign in with ChatGPT**，使用账号可用的 Codex 权益；额度和模型以该
 账号的 CLI 显示为准。API Key 是另一种认证和计费方式，不需要为了这套配置额外申请。
-配置不写入任何登录凭据，也不固定模型；在 CLI 中用 `/model` 选择可用模型。
+配置不写入任何登录凭据，也不固定模型；在 CLI 中用 `/model` 选择可用模型，用
+`/permissions` 查看或更改当前权限。
 
 也可使用[官方安装页面](https://learn.chatgpt.com/docs/codex/cli)提供的独立安装器。
 安装后重启 Neovim，使它获得新的 PATH，然后执行 `:checkhealth codex`。
@@ -113,7 +116,8 @@ nvim --headless -u NONE -l tests/codex.lua
 
 测试默认读取 `stdpath('data')/lazy/snacks.nvim`，也可通过 `SNACKS_RTP` 环境变量指定
 锁定版本的插件目录。测试使用本机 Neovim 子进程模拟持续运行的 CLI，不调用模型。
-Linux 测试中的 Windows 解析用例不能替代 Windows 11 原生终端及真实登录的验证。
+Linux 测试中的 Windows 解析用例只验证函数逻辑，不能替代 Windows 11 原生终端及真实
+登录的验证。
 
 ## 参考
 
