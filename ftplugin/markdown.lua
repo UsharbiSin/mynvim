@@ -4,7 +4,18 @@ local table_mode = require('config.vim-table-mode')
 local opts = { buffer = true, silent = true }
 
 -- 插入模式下的标记补全
-map('i', ',f', '<Esc>/<++><CR>:nohlsearch<CR>c4l', opts)
+map('i', ',f', function()
+  local position = vim.fn.searchpos([[\V<++>]], '')
+  if position[1] == 0 then
+    return
+  end
+
+  local row = position[1] - 1
+  local column = position[2] - 1
+  vim.api.nvim_buf_set_text(0, row, column, row, column + 4, { '' })
+  vim.api.nvim_win_set_cursor(0, { position[1], column })
+  vim.cmd('nohlsearch')
+end, vim.tbl_extend('force', opts, { desc = "替换下一个 Markdown 占位符" }))
 map('i', ',n', '---<Enter><Enter>', opts)
 map('i', ',b', '**** <++><Esc>F*hi', opts)
 map('i', ',s', '~~~~ <++><Esc>F~hi', opts)
