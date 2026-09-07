@@ -85,7 +85,7 @@ LSP 配置声明了 flake8、mypy/isort 插件，但布尔配置不会安装 Pyt
 5. `lsp/sqls.lua` 的数据库别名与环境变量。不要把密码直接写进 Lua。
 6. `<Space>g` 需要 PATH 中有 `gemini`；不用就删除该映射。
 
-## 6. Codex（main 独有）
+## 6. Codex
 
 当前 OpenAI 官方 Linux 安装器：
 

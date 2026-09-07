@@ -9,8 +9,8 @@
 时间，调用 `magick convert - -quality 75 avif:-` 转成 AVIF，并插入带 `image<++>` 替代文本
 和文件路径的 Markdown 图片链接；完成后保持 Normal 模式。之后可按两次 Space 跳到 `<++>`。
 
-需系统剪贴板工具和 ImageMagick，且 ImageMagick 构建支持 AVIF。执行
-`:checkhealth img-clip`，再检查目标目录是否生成文件；保存成功但不显示属于 Snacks/终端问题。
-路径权限和远程 SSH 剪贴板也会影响结果。
+需系统剪贴板工具和 ImageMagick，且 ImageMagick 构建支持 AVIF。该插件没有专用 health
+provider；按 `<Space>pi` 后检查目标目录和 `:messages`。保存成功但不显示属于 Snacks/终端
+问题，可运行 `:checkhealth snacks`。路径权限和远程 SSH 剪贴板也会影响结果。
 
 上游：[img-clip.nvim](https://github.com/HakonHarnes/img-clip.nvim)。

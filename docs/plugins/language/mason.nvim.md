@@ -38,4 +38,4 @@ Mason 的可执行文件目录默认加入 **Neovim 进程** 的 PATH。终端�
 - 六个 LSP 已安装仍无提示：检查 [LSP 连接](nvim-lspconfig.md)，安装成功与成功附着是两个步骤。
 - npm/pip/解压错误：先看 Mason 日志里的首个失败程序，在启动 Neovim 的同一个 shell 检查它。
 - 项目没有锁定 Mason 下载的全部外部工具版本；`lazy-lock.json` 锁定的是 Neovim 插件提交。
-- Windows 本文仅依据分支配置和上游说明编写，尚未进行 Windows 11 实机验证。
+- Windows 实机已确认六个 LSP 与 debugpy 安装目录存在；Mason UI 可正常读取状态。

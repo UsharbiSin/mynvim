@@ -41,4 +41,4 @@ dialect = mysql
 
 ## 排错与平台
 
-用 `:ConformInfo` 查看程序和日志，用 `:lua print(vim.fn.exepath("prettier"))` 查 Neovim 的 PATH。保存结果意外变化时检查同时运行的 LSP formatter 与项目工具配置。两分支相同；Windows 需确保 Mason 的可执行入口和 Node/Python 可用，Windows 11 未实机验证。[Conform 上游说明](https://github.com/stevearc/conform.nvim)
+用 `:ConformInfo` 查看程序和日志，用 `:lua print(vim.fn.exepath("prettier"))` 查 Neovim 的 PATH。保存结果意外变化时检查同时运行的 LSP formatter 与项目工具配置。Windows 实机可解析 black、isort 与 sqlfluff；prettier、stylua 仍需安装。[Conform 上游说明](https://github.com/stevearc/conform.nvim)

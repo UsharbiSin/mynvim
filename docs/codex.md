@@ -2,10 +2,8 @@
 
 [返回项目使用说明](../README.md) · [插件索引](README.md)
 
-`main` 分支采用 **官方 Codex CLI + 已有的 Snacks terminal**。截至本文审计的
-`windows` 分支 `516a36e` 尚未包含 Codex 模块、命令、快捷键、health 或测试；本文中的
-Neovim 集成操作只适用于 main。模块源码保留了 Windows 启动器解析与模拟测试，供以后整体
-移植时使用，不能据此认定 windows 分支已经启用。
+本配置采用 **官方 Codex CLI + 已有的 Snacks terminal**。`main`（Arch Linux）和
+`windows`（Windows 11 原生 Neovim）使用同一份 Codex 模块，各自保留平台配置。
 
 ## 方案选择
 
@@ -24,16 +22,19 @@ Gitsigns 和 Fugitive 继续负责原来的功能。本方案不提供 AI 行内
 需要 Neovim 0.11 或更新版本，以及 `lazy-lock.json` 中锁定的 Snacks 版本。
 本模块已经按仓库中的 Snacks 提交检查接口，无需为接入 Codex 批量升级插件。
 
-已有 Node.js/npm 时可以安装 CLI：
+在两台机器的系统终端中分别安装 CLI。已有 Node.js/npm 时可使用同一条命令：
 
 ```sh
 npm install -g @openai/codex
 codex --version
-codex
+codex login
+codex login status
 ```
 
-首次运行按官方 CLI 提示选择可用的登录方式。配置不写入任何登录凭据，也不固定模型；
-在 CLI 中用 `/model` 选择账号可用的模型，用 `/permissions` 查看或更改当前权限。
+登录时选择 **Sign in with ChatGPT**，使用账号可用的 Codex 权益；额度和模型以该
+账号的 CLI 显示为准。API Key 是另一种认证和计费方式，不需要为了这套配置额外申请。
+配置不写入任何登录凭据，也不固定模型；在 CLI 中用 `/model` 选择可用模型，用
+`/permissions` 查看或更改当前权限。
 
 也可使用[官方安装页面](https://learn.chatgpt.com/docs/codex/cli)提供的独立安装器。
 安装后重启 Neovim，使它获得新的 PATH，然后执行 `:checkhealth codex`。
@@ -43,11 +44,17 @@ codex
 在运行 Neovim 的同一个 Linux 环境中安装、登录。终端检查通过后，打开项目中的文件，
 按 `<Space>ac` 即可。
 
-### Windows 启动器代码（windows 分支尚未移植）
+### Windows 11 / windows
 
-main 中的启动器会优先寻找 `codex.exe`。如果通过 npm 安装并得到 `codex.cmd`，模块会尝试
-定位同级 `node_modules/@openai/codex/bin/codex.js`，通过 `node.exe` 启动。路径和参数用数组
-传递。移植到 Windows 后若使用自定义安装位置，可在 `init.lua` 加载插件前指定：
+在 Windows 本机安装 Codex，与原生 Neovim 使用同一套文件路径、Git 和构建工具。
+当前官方支持原生 Windows；首次运行请按 CLI 提示完成 Windows sandbox 设置。
+本配置继承 CLI 自身的权限设置。
+
+启动器优先寻找 `codex.exe`。如果通过 npm 安装并得到 `codex.cmd`，模块会定位同级
+`node_modules/@openai/codex/bin/codex.js`，通过 `node.exe` 启动；不依赖把 shell 改成
+PowerShell，也无需修改系统执行策略。路径和参数使用数组传递，支持含空格的路径。
+
+若使用自定义安装位置，可在 `init.lua` 加载插件前指定，例如：
 
 ```lua
 vim.g.codex_cmd = { "C:/Tools/Codex/codex.exe" }
@@ -55,9 +62,8 @@ vim.g.codex_cmd = { "C:/Tools/Codex/codex.exe" }
 -- vim.g.codex_cmd = { "C:/Program Files/nodejs/node.exe", "C:/Tools/codex/bin/codex.js" }
 ```
 
-移植时必须同步 `plugin-list.lua`、`snacks.lua`、`codex.lua`、health、keymaps 与测试。若项目
-本来在 WSL，建议把 Neovim、Codex、Git 和项目全放进 WSL 并使用 main；模块不会自动从
-原生 Windows Neovim 调用 WSL Codex 或转换路径。
+如果项目的构建环境本来就在 WSL，建议把 Neovim、Codex、Git 和项目全部放到 WSL 内，
+并使用 Linux 配置。本模块不会自动从原生 Windows Neovim 调用 WSL Codex 或转换路径。
 
 ## 快捷键和工作流程
 
@@ -110,8 +116,8 @@ nvim --headless -u NONE -l tests/codex.lua
 
 测试默认读取 `stdpath('data')/lazy/snacks.nvim`，也可通过 `SNACKS_RTP` 环境变量指定
 锁定版本的插件目录。测试使用本机 Neovim 子进程模拟持续运行的 CLI，不调用模型。
-Linux 测试中的 Windows 解析用例只验证函数逻辑，不能替代 Windows 11 原生终端、真实登录
-及 windows 分支移植后的验证。
+Windows 11 实机已通过 28 项 Codex 集成检查，health 能解析 npm 安装的 JS 入口；登录状态
+仍应在系统终端用 `codex login status` 单独确认。
 
 ## 参考
 
@@ -119,6 +125,6 @@ Linux 测试中的 Windows 解析用例只验证函数逻辑，不能替代 Wind
 - [Codex 登录方式](https://learn.chatgpt.com/docs/auth)
 - [Windows sandbox](https://learn.chatgpt.com/docs/windows/windows-sandbox)
 - [Codex 命令与会话恢复](https://learn.chatgpt.com/docs/developer-commands?surface=cli)
-- [Snacks terminal 接口](https://github.com/folke/snacks.nvim/blob/fe7cfe9800a182274d0f868a74b7263b8c0c020b/docs/terminal.md)
+- [Snacks terminal 接口](https://github.com/folke/snacks.nvim/blob/882c996cf28183f4d63640de0b4c02ec886d01f2/docs/terminal.md)
 - [Sidekick](https://github.com/folke/sidekick.nvim)
 - [CodeCompanion](https://github.com/olimorris/codecompanion.nvim)

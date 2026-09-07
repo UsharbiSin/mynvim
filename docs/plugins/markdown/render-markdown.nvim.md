@@ -10,8 +10,9 @@
 callout，并扩展 `[?]`、`[>]`、`[-]`、`[!]`、`[~]` checkbox。sign 关闭；标题在插入模式
 仍渲染，Normal 模式的 anti-conceal 被关闭，因此源码标记可能隐藏。
 
-用 `:RenderMarkdown toggle` 切换，`:checkhealth render-markdown` 排错。它要求 Markdown 与
-markdown_inline parser；图标要求 Nerd Font。配置开启 blink/LSP completion，但本项目没有
+用 `:RenderMarkdown toggle` 切换；该插件没有专用 health provider，可用
+`:checkhealth nvim-treesitter` 和 `:messages` 排错。它要求 Markdown 与 markdown_inline
+parser；图标要求 Nerd Font。配置开启 blink/LSP completion，但本项目没有
 blink.cmp，不能据此假定该补全已存在。
 
 上游：[render-markdown.nvim](https://github.com/MeanderingProgrammer/render-markdown.nvim)。

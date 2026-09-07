@@ -7,7 +7,8 @@
 描述可以出现在提示窗中。
 
 本项目通过 `vim.keymap.set(..., { desc = ... })` 写了 LSP、DAP、Gitsigns、Codex 等描述，
-但一些旧式字符串映射没有描述，提示内容会不完整。用 `:checkhealth which-key` 检查，
-`:WhichKey` 手动打开。要定制分组或延迟，应在插件 spec 增加正式的 `opts`。
+但一些旧式字符串映射没有描述，提示内容会不完整。该插件当前没有专用 health provider；
+用 `:WhichKey` 手动打开，并用 `:messages` 检查错误。要定制分组或延迟，应在插件 spec 增加
+正式的 `opts`。
 
 上游：[which-key.nvim](https://github.com/folke/which-key.nvim)。

@@ -32,4 +32,4 @@ Arch 安装根目录指南中的编译工具和 tree-sitter CLI。Windows 11 需
 
 `:Inspect` 查看光标位置高亮来源；`:InspectTree` 打开语法树；`:lua print(vim.treesitter.language.get_lang(vim.bo.filetype))` 查看 filetype 映射。如果一个冷门文件没有语法树，先看它是否在安装列表内。
 
-本项目的 pcall 会隐藏高亮启动失败，不能因为没有弹错就认定 parser 安装成功。若报 query/ABI/编译错误，先检查 `:checkhealth` 与 `:messages`。两个分支策略一致，Windows 11 未实机测试。
+本项目的 pcall 会隐藏高亮启动失败，不能因为没有弹错就认定 parser 安装成功。若报 query/ABI/编译错误，先检查 `:checkhealth` 与 `:messages`。Windows 实机已确认配置列出的 14 个 parser 均能加载，Tree-sitter CLI 0.26.12 可用。

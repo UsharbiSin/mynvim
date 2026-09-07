@@ -15,20 +15,20 @@
 | `platform_st` | `ST` |
 | `platform_st_test` | `STTEST` |
 
-每组都有 `DB_USER_<后缀>`、`DB_PASSWORD_<后缀>`、`DB_HOST_<后缀>`、`DB_PORT_<后缀>`、`DB_NAME_<后缀>`。这些是作者环境约定，不是可直接使用的公共数据库；请将连接列表改成自己的连接，删除不需要的组。环境变量必须在启动 Neovim 前设置，缺项会形成无效 DSN 或启动错误。
+每组都有 `DB_USER_<后缀>`、`DB_PASSWORD_<后缀>`、`DB_HOST_<后缀>`、`DB_PORT_<后缀>`、`DB_NAME_<后缀>`。这些是作者环境约定，不是可直接使用的公共数据库；请将连接列表改成自己的连接，删除不需要的组。环境变量必须在启动 Neovim 前设置；任一项缺失时整组连接会被省略，SQLS 仍可启动。
 
 例如 Bash 使用 `export DB_HOST_TY='127.0.0.1'`，PowerShell 使用 `$env:DB_HOST_TY='127.0.0.1'`；其余四项同理，密码应在自己的本地环境管理，不写进仓库。Linux 已运行的 Neovim 和 Windows 已打开的终端不会自动继承后来修改的环境变量。
 
-## 当前集成限制：先检查命令是否注册
+## 命令注册与格式化职责
 
-本地锁定 sqls.nvim 通过自身 `lsp/sqls.lua` 的 `on_attach` 创建 `Sqls*` 缓冲区命令。本项目自己的同名 LSP 文件又声明 `on_attach`，仅用于关闭格式化能力，因此合并后可能覆盖插件的注册逻辑。下面的功能是 **上游支持的目标用法，需先确认命令存在**：
+本地锁定 sqls.nvim 通过自身 `lsp/sqls.lua` 的 `on_attach` 创建 `Sqls*` 缓冲区命令。本项目在统一 `LspAttach` 回调里关闭 SQLS 格式化，不再覆盖插件回调。可用以下命令检查当前状态：
 
 ```vim
 :lua vim.print(vim.lsp.get_clients({ bufnr = 0 }))
 :echo exists(':SqlsSwitchConnection')
 ```
 
-第二条为 0 时，不是快捷键写错；应检查最终 `vim.lsp.config.sqls.on_attach` 与插件回调是否组合执行。修复需保留插件原有命令注册，同时关闭格式化，本文没有修改配置。[上游 SQL 客户端说明](https://github.com/nanotee/sqls.nvim)
+Windows 专项测试已确认 SQLS 无数据库连接时能附着、第二条命令已注册，且 SQLS 格式化能力为关闭状态。第二条为 0 时先确认当前是 SQL buffer 且客户端已经附着。[上游 SQL 客户端说明](https://github.com/nanotee/sqls.nvim)
 
 ## 命令与操作顺序
 
@@ -49,4 +49,4 @@
 
 项目关闭 sqls 的格式化与 publishDiagnostics，分别交给 [Conform](conform.nvim.md)、[nvim-lint](nvim-lint.md)。SQL 补全和表结构信息仍需要有效连接。
 
-两分支连接方式相同，Windows 11 未实机测试。无候选时先区分 SQL 服务器进程未启动、环境变量缺失、连接网络不可达、账号权限不足与插件命令未注册；不要输出整个 DSN 排错，以免把密码写入日志。
+Windows 11 已实测 SQLS 在没有数据库环境变量时仍能附着；真实数据库网络未测试。无候选时先区分 SQL 服务器进程未启动、环境变量缺失、连接网络不可达、账号权限不足与插件命令未注册；不要输出整个 DSN 排错，以免把密码写入日志。
