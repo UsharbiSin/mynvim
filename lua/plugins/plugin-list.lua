@@ -279,13 +279,42 @@ return {
     "joryeugene/dadbod-grip.nvim",
     lazy = false,
     keys = {
-      { "<leader>sg", "<cmd>GripConnect<CR>", desc = "SQL：打开可编辑数据库界面" },
+      {
+        "<leader>sg",
+        "<cmd>GripConnect<CR>",
+        desc = "SQL：打开数据库工作区",
+      },
+      {
+        "<leader>sc",
+        function()
+          require("config.sql-runner").select_connection()
+        end,
+        ft = { "sql", "mysql" },
+        desc = "SQL：选择当前文件数据库",
+      },
+      {
+        "<leader>sr",
+        function()
+          require("config.sql-runner").run_buffer()
+        end,
+        ft = { "sql", "mysql" },
+        desc = "SQL：执行当前文件",
+      },
+      {
+        "<leader>sr",
+        function()
+          require("config.sql-runner").run_visual()
+        end,
+        mode = "v",
+        ft = { "sql", "mysql" },
+        desc = "SQL：执行选中内容",
+      },
     },
-    config = function()
-      require("config.dadbod-grip")
-    end,
-  },
-  {
+  config = function()
+    require("config.dadbod-grip")
+  end,
+},
+{
     "mfussenegger/nvim-lint",
     event = { "BufReadPre", "BufNewFile" },
     config = function()
