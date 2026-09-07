@@ -66,6 +66,45 @@ local function test()
   local diagram_markdown = require("diagram.integrations.markdown")
   check(vim.tbl_contains(diagram_markdown.filetypes, "vimwiki"), "diagram.nvim must support Vimwiki buffers")
 
+  local im_select_events = {}
+  for _, autocmd in ipairs(vim.api.nvim_get_autocmds({ group = "im-select" })) do
+    im_select_events[autocmd.event] = true
+  end
+  check(im_select_events.InsertLeave, "im-select must switch to English after leaving Insert mode")
+  check(not im_select_events.CmdlineLeave, "im-select must ignore expression-register CmdlineLeave events")
+
+  local vimwiki_file = vim.fs.joinpath(tmp, "notes.md")
+  vim.fn.writefile({ "- first item" }, vimwiki_file)
+  vim.cmd("edit! " .. vim.fn.fnameescape(vimwiki_file))
+  check(vim.bo.filetype == "vimwiki", "Markdown files must exercise the active Vimwiki configuration")
+
+  local insert_leaves = 0
+  local cmdline_leaves = 0
+  local observed_insert_leaves
+  local observed_cmdline_leaves
+  local event_group = vim.api.nvim_create_augroup("MarkdownEnterEventsTest", { clear = true })
+  vim.api.nvim_create_autocmd("InsertLeave", {
+    group = event_group,
+    callback = function()
+      insert_leaves = insert_leaves + 1
+    end,
+  })
+  vim.api.nvim_create_autocmd("CmdlineLeave", {
+    group = event_group,
+    callback = function()
+      cmdline_leaves = cmdline_leaves + 1
+    end,
+  })
+  vim.keymap.set("i", "<F20>", function()
+    observed_insert_leaves = insert_leaves
+    observed_cmdline_leaves = cmdline_leaves
+  end, { buffer = true })
+  local enter_keys = vim.api.nvim_replace_termcodes("A<CR><F20>", true, false, true)
+  vim.fn.feedkeys(enter_keys, "xt")
+  vim.api.nvim_del_augroup_by_id(event_group)
+  check(observed_insert_leaves == 0, "Markdown Enter must remain in Insert mode")
+  check(observed_cmdline_leaves == 1, "Markdown Enter must exercise bullets.vim's expression register")
+
   local markdown_file = vim.fs.joinpath(tmp, "input.md")
   vim.fn.writefile({ "| first | second |" }, markdown_file)
   vim.cmd("edit! " .. vim.fn.fnameescape(markdown_file))
