@@ -1,6 +1,9 @@
+local markdown = require("diagram.integrations.markdown")
+markdown.filetypes = { "markdown", "vimwiki" }
+
 require("diagram").setup({
   integrations = {
-    require("diagram.integrations.markdown"),
+    markdown,
     require("diagram.integrations.neorg"),
   },
   renderer_options = {

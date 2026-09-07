@@ -16,11 +16,8 @@ vim.g.mkdp_open_to_the_word = 0
 -- 更多详情请见: https://github.com/iamcco/markdown-preview.nvim/pull/9
 -- 默认值为空
 vim.g.mkdp_open_ip = ''
--- 指定要打开预览页面的浏览器
--- 对于包含空格了路径：
--- 有效: `/path/with\ space/xxx`
--- 无效: `/path/with\\ space/xxx`
-vim.g.mkdp_browser = 'C:/Program Files/Google/Chrome/Application/chrome-win/chrome.exe'
+-- 留空时使用系统默认浏览器，避免依赖某台机器上的 Chrome 安装路径。
+vim.g.mkdp_browser = ''
 -- 设置为 1 时，打开预览页面时会在命令行输出预览页面 URL，默认值为 0
 vim.g.mkdp_echo_preview_url = 0
 -- 用于打开预览页面的自定义 Vim 函数名，此函数将接收 URL 作为参数，默认值为空

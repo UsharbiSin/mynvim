@@ -127,7 +127,7 @@ return {
     dependencies = {
       { "3rd/image.nvim", opts = {} },
     },
-    ft = { "markdown", "norg" },
+    ft = { "markdown", "vimwiki", "norg" },
     config = function()
       require('config.diagram')
     end

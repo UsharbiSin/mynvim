@@ -56,6 +56,12 @@ local function test()
   check(dap.configurations.cpp[1].type == "gdb", "C++ must prefer the available gdb DAP adapter")
   check(dap.configurations.c[1].type == "gdb", "C must provide the available gdb DAP adapter")
 
+  require("config.markdown")
+  check(vim.g.mkdp_browser == "", "Markdown preview must use the Windows default browser")
+  require("config.diagram")
+  local diagram_markdown = require("diagram.integrations.markdown")
+  check(vim.tbl_contains(diagram_markdown.filetypes, "vimwiki"), "diagram.nvim must support Vimwiki buffers")
+
   run_file("hello world.c", {
     "#include <stdio.h>",
     "int main(void) { puts(\"runner-c-ok\"); return 0; }",
