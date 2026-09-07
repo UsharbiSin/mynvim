@@ -273,8 +273,10 @@ export DB_NAME_TY='database'
 nvim query.sql
 ```
 
-不要把密码写进本仓库。`<Space>swc` / `<Space>swd` 依赖 sqls.nvim 在 SQL buffer 注册命令；
-Windows 专项测试会同时检查命令存在和 SQLS 格式化已关闭。排错见
+不要把密码写进本仓库。SQL 缓冲区使用 `<Space>swc` / `<Space>swd` 切换连接和数据库，
+`<Space>ssc` / `<Space>ssd` / `<Space>sst` 查看连接、数据库和表，`<Space>se` 执行全部或可视
+选中的 SQL 行，`<Space>sv` 纵向显示结果。这些快捷键依赖 sqls.nvim 注册缓冲区命令；
+Windows 专项测试会同时检查命令存在、快捷键范围和 SQLS 格式化已关闭。排错见
 [sqls.nvim](docs/plugins/language/sqls.nvim.md)。
 
 ## Markdown 与 Vimwiki

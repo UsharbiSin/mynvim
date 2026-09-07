@@ -72,9 +72,9 @@ $env:DB_NAME_TYTEST = '测试数据库名'
 | --- | --- |
 | `空格 swc` / `:SqlsSwitchConnection` | 选择数据库连接 |
 | `空格 swd` / `:SqlsSwitchDatabase` | 选择数据库 |
-| `:SqlsShowConnections` | 显示连接列表 |
-| `:SqlsShowDatabases` | 显示数据库列表 |
-| `:SqlsShowTables` | 显示数据表 |
+| `空格 ssc` / `:SqlsShowConnections` | 显示连接列表 |
+| `空格 ssd` / `:SqlsShowDatabases` | 显示数据库列表 |
+| `空格 sst` / `:SqlsShowTables` | 显示数据表 |
 
 ## 5. 测试和执行 SQL
 
@@ -84,19 +84,20 @@ $env:DB_NAME_TYTEST = '测试数据库名'
 SELECT 1;
 ```
 
-执行整个 SQL 缓冲区：
+普通模式按 `空格 se`，或执行命令，运行整个 SQL 缓冲区：
 
 ```vim
 :SqlsExecuteQuery
 ```
 
-可视模式选中部分 SQL 后执行：
+可视行模式选中部分 SQL 后按 `空格 se`，等价于：
 
 ```vim
 :'<,'>SqlsExecuteQuery
 ```
 
-纵向显示查询结果：
+普通模式按 `空格 sv` 纵向显示整个缓冲区的查询结果；可视行模式按 `空格 sv` 只执行并纵向
+显示选中行。对应命令为：
 
 ```vim
 :SqlsExecuteQueryVertical

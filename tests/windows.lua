@@ -31,7 +31,18 @@ local function test()
   local python = assert(runner.spec("python", base .. ".py"))
   check(python.run[2] == base .. ".py", "Python source path must remain one argv item")
 
+  local sql_env = {}
+  for _, suffix in ipairs({ "TY", "TYTEST", "ST", "STTEST" }) do
+    for _, field in ipairs({ "USER", "PASSWORD", "HOST", "PORT", "NAME" }) do
+      local name = "DB_" .. field .. "_" .. suffix
+      sql_env[name] = vim.env[name]
+      vim.env[name] = nil
+    end
+  end
   local sqls = dofile(vim.fs.joinpath(vim.fn.getcwd(), "lsp", "sqls.lua"))
+  for name, value in pairs(sql_env) do
+    vim.env[name] = value
+  end
   check(
     #sqls.settings.sqls.connections == 0,
     "SQL connections must be omitted when their environment variables are incomplete"
@@ -53,6 +64,27 @@ local function test()
   end, 50), "sqls must attach without database environment variables")
   check(vim.fn.exists(":SqlsSwitchConnection") == 2, "sqls.nvim buffer commands must be registered")
   check(sql_client.server_capabilities.documentFormattingProvider == false, "SQLS formatting must be disabled")
+
+  local sql_normal_maps = {
+    ["<leader>swc"] = "SqlsSwitchConnection",
+    ["<leader>swd"] = "SqlsSwitchDatabase",
+    ["<leader>ssc"] = "SqlsShowConnections",
+    ["<leader>ssd"] = "SqlsShowDatabases",
+    ["<leader>sst"] = "SqlsShowTables",
+    ["<leader>se"] = "SqlsExecuteQuery",
+    ["<leader>sv"] = "SqlsExecuteQueryVertical",
+  }
+  for lhs, command in pairs(sql_normal_maps) do
+    local mapping = vim.fn.maparg(lhs, "n", false, true)
+    check(mapping.buffer == 1 and mapping.rhs:find(command, 1, true), lhs .. " must be a SQL buffer mapping")
+  end
+  for lhs, command in pairs({
+    ["<leader>se"] = "'<,'>SqlsExecuteQuery",
+    ["<leader>sv"] = "'<,'>SqlsExecuteQueryVertical",
+  }) do
+    local mapping = vim.fn.maparg(lhs, "x", false, true)
+    check(mapping.buffer == 1 and mapping.rhs:find(command, 1, true), lhs .. " must preserve the visual line range")
+  end
 
   require("config.debugging")
   local dap = require("dap")

@@ -71,9 +71,27 @@ map('t', '<C-t>', '<C-\\><C-n>', { noremap = true, silent = true })
 -- 开启 vim-table-mode
 map('n', '<LEADER>tm', ':TableModeToggle<CR>')
 
--- 数据库操作
-map('n', '<LEADER>swc', ':SqlsSwitchConnection<CR>')
-map('n', '<LEADER>swd', ':SqlsSwitchDatabase<CR>')
+-- SQLS 命令是 buffer-local，只在 SQL 文件中创建对应快捷键。
+local sql_keymaps = vim.api.nvim_create_augroup('SqlKeymaps', { clear = true })
+vim.api.nvim_create_autocmd('FileType', {
+  group = sql_keymaps,
+  pattern = { 'sql', 'mysql' },
+  callback = function(event)
+    local function sql_map(mode, lhs, rhs, desc)
+      map(mode, lhs, rhs, { buffer = event.buf, silent = true, desc = desc })
+    end
+
+    sql_map('n', '<LEADER>swc', '<cmd>SqlsSwitchConnection<CR>', 'SQL：切换连接')
+    sql_map('n', '<LEADER>swd', '<cmd>SqlsSwitchDatabase<CR>', 'SQL：切换数据库')
+    sql_map('n', '<LEADER>ssc', '<cmd>SqlsShowConnections<CR>', 'SQL：显示连接列表')
+    sql_map('n', '<LEADER>ssd', '<cmd>SqlsShowDatabases<CR>', 'SQL：显示数据库列表')
+    sql_map('n', '<LEADER>sst', '<cmd>SqlsShowTables<CR>', 'SQL：显示数据表')
+    sql_map('n', '<LEADER>se', '<cmd>SqlsExecuteQuery<CR>', 'SQL：执行整个缓冲区')
+    sql_map('x', '<LEADER>se', ":<C-U>'<,'>SqlsExecuteQuery<CR>", 'SQL：执行选中行')
+    sql_map('n', '<LEADER>sv', '<cmd>SqlsExecuteQueryVertical<CR>', 'SQL：纵向显示查询结果')
+    sql_map('x', '<LEADER>sv', ":<C-U>'<,'>SqlsExecuteQueryVertical<CR>", 'SQL：纵向显示选中行结果')
+  end,
+})
 
 -- 密码查看
 map('n', '<LEADER>pw', ':e $USERPROFILE/Documents/pswd.md<CR>')
