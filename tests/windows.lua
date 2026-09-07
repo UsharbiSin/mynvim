@@ -31,6 +31,25 @@ local function test()
   local python = assert(runner.spec("python", base .. ".py"))
   check(python.run[2] == base .. ".py", "Python source path must remain one argv item")
 
+  local sqls = dofile(vim.fs.joinpath(vim.fn.getcwd(), "lsp", "sqls.lua"))
+  check(
+    #sqls.settings.sqls.connections == 0,
+    "SQL connections must be omitted when their environment variables are incomplete"
+  )
+
+  local sql_file = vim.fs.joinpath(tmp, "query.sql")
+  vim.fn.writefile({ "select 1;" }, sql_file)
+  vim.cmd("edit! " .. vim.fn.fnameescape(sql_file))
+  vim.bo.filetype = "sql"
+  check(vim.wait(10000, function()
+    for _, client in ipairs(vim.lsp.get_clients({ bufnr = 0 })) do
+      if client.name == "sqls" then
+        return true
+      end
+    end
+    return false
+  end, 50), "sqls must attach without database environment variables")
+
   run_file("hello world.c", {
     "#include <stdio.h>",
     "int main(void) { puts(\"runner-c-ok\"); return 0; }",
