@@ -235,7 +235,8 @@ Snacks 行内图片还取决于 Windows Terminal/终端模拟器是否支持相�
 9. 输入中文后按 Esc 返回 Normal，确认输入法切回英文。
 10. `:checkhealth codex` 无错误，`<Space>ac` 能打开当前项目的 Codex 终端。
 
-windows 分支已经包含 Codex 集成，但仍未安装 main 的 boole.nvim。具体差异见
+windows 分支已经包含 Codex 集成与 boole.nvim。普通模式下可用 `Ctrl-a` 向前切换、
+`Ctrl-x` 向后切换 `true` / `false`、`enable` / `disable` 等值。具体差异见
 [分支差异](../branch-differences.md)。
 
 仓库提供可重复的 Windows 专项检查。PowerShell 中先解析真实应用路径，再执行：

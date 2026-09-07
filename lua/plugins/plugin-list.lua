@@ -242,6 +242,13 @@ return {
     end,
   },
   { "folke/which-key.nvim",         event = "VeryLazy" }, -- 快捷键提示
+  {
+    "nat-418/boole.nvim",
+    event = "VeryLazy",
+    config = function()
+      require('config.nvim-boole')
+    end,
+  }, -- 快捷键切换布尔值
 
   -- ==========================================
   -- 语言特定优化 (杂项)

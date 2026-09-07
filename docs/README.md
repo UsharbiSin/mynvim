@@ -74,7 +74,7 @@
 - [vim-multiple-cursors](plugins/editing/vim-multiple-cursors.md)
 - [vim-FIGlet](plugins/editing/vim-FIGlet.md)
 - [vim-signature](plugins/editing/vim-signature.md)
-- [boole.nvim](plugins/editing/boole.nvim.md)（仅 main）
+- [boole.nvim](plugins/editing/boole.nvim.md)
 
 ## 输入法
 
