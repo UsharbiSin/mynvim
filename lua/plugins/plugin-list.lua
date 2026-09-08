@@ -293,6 +293,20 @@ return {
         desc = "SQL：打开数据库工作区",
       },
       {
+        "<leader>sb",
+        function()
+          require("config.sql-browser").toggle()
+        end,
+        desc = "SQL：打开带中文注释的表浏览器",
+      },
+      {
+        "<leader>sk",
+        function()
+          require("config.sql-browser").show_result_comments()
+        end,
+        desc = "SQL：显示查询结果列注释",
+      },
+      {
         "<leader>sc",
         function()
           require("config.sql-runner").select_connection()

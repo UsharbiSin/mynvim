@@ -93,6 +93,14 @@ local function test()
     check(mapping.buffer == 1 and mapping.rhs:find(command, 1, true), lhs .. " must preserve the visual line range")
   end
 
+  for lhs, desc in pairs({
+    ["<leader>sb"] = "SQL：打开带中文注释的表浏览器",
+    ["<leader>sk"] = "SQL：显示查询结果列注释",
+  }) do
+    local mapping = vim.fn.maparg(lhs, "n", false, true)
+    check(mapping.desc == desc, lhs .. " must expose SQL metadata comments")
+  end
+
   require("config.debugging")
   local dap = require("dap")
   check(dap.adapters.gdb.command == vim.fn.exepath("gdb"), "DAP must use the installed gdb executable")

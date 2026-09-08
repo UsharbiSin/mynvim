@@ -39,7 +39,7 @@ local function get_connection(item)
   }
 end
 
-local function connections()
+function M.connections()
   local result = {}
 
   for _, item in ipairs(connection_defs) do
@@ -53,8 +53,20 @@ local function connections()
   return result
 end
 
-function M.select_connection()
-  local items = connections()
+function M.current_connection(bufnr)
+  bufnr = bufnr or vim.api.nvim_get_current_buf()
+  local url = vim.b[bufnr].sql_connection_url
+  if url and url ~= "" then
+    return {
+      name = vim.b[bufnr].sql_connection_name or "current",
+      url = url,
+    }
+  end
+end
+
+function M.select_connection(on_select)
+  local items = M.connections()
+  local source_buf = vim.api.nvim_get_current_buf()
 
   if #items == 0 then
     vim.notify(
@@ -75,18 +87,33 @@ function M.select_connection()
       return
     end
 
-    vim.b.sql_connection_name = choice.name
-    vim.b.sql_connection_url = choice.url
+    if vim.api.nvim_buf_is_valid(source_buf) then
+      vim.b[source_buf].sql_connection_name = choice.name
+      vim.b[source_buf].sql_connection_url = choice.url
+    end
 
     vim.notify(
       "当前 SQL 连接：" .. choice.name,
       vim.log.levels.INFO
     )
+    if on_select then
+      on_select(choice)
+    end
   end)
 end
 
+function M.with_connection(callback)
+  local current = M.current_connection()
+  if current then
+    callback(current)
+    return
+  end
+  M.select_connection(callback)
+end
+
 function M.run(sql)
-  local url = vim.b.sql_connection_url
+  local current = M.current_connection()
+  local url = current and current.url
 
   if not url then
     vim.notify(
