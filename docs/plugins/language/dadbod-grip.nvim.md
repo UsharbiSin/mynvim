@@ -59,6 +59,58 @@ mysql.exe --version
 文件存在，再检查 `Path`。官方安装说明见
 [Installing MySQL on Microsoft Windows](https://dev.mysql.com/doc/refman/8.4/en/windows-installation.html)。
 
+### Windows MySQL 客户端字符集
+
+Neovim 和 `.sql` 文件使用 UTF-8。Windows 下 `mysql.exe` 的客户端字符集如果
+不是 `utf8mb4`，Dadbod Grip 执行包含中文字符串的查询时可能出现：
+
+```text
+ERROR 1267 (HY000): Illegal mix of collations
+(utf8mb4_general_ci,IMPLICIT) and (gbk_chinese_ci,COERCIBLE)
+```
+
+本机使用的 MySQL 8.0 客户端会按以下位置依次查找配置文件：
+
+```text
+C:\Windows\my.ini
+C:\Windows\my.cnf
+C:\my.ini
+C:\my.cnf
+C:\Program Files\MySQL\my.ini
+C:\Program Files\MySQL\my.cnf
+```
+
+推荐创建：
+
+```text
+C:\Program Files\MySQL\my.ini
+```
+
+内容：
+
+```ini
+[client]
+default-character-set=utf8mb4
+```
+
+配置后执行：
+
+```powershell
+mysql.exe --print-defaults
+```
+
+正常应包含：
+
+```text
+--default-character-set=utf8mb4
+```
+
+也可以检查当前 `mysql.exe` 实际使用的默认配置文件搜索路径：
+
+```powershell
+mysql.exe --help | findstr /C:"Default options" /C:"my.ini" /C:"my.cnf"
+```
+
 ## 编辑并保存
 
 1. 按 `<Space>sg`，选择连接。
