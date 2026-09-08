@@ -239,6 +239,98 @@ function M.show_result_comments()
   vim.lsp.util.open_floating_preview(lines, "markdown", { border = "rounded" })
 end
 
+function M.reorder_result_column(direction)
+  local bufnr = vim.api.nvim_get_current_buf()
+  local view = require("dadbod-grip.view")
+  local session = view._sessions[bufnr]
+  if not session or not session.state or not session._render then
+    vim.notify("当前窗口不是 Dadbod Grip 查询结果", vim.log.levels.WARN)
+    return
+  end
+
+  local cursor = vim.api.nvim_win_get_cursor(0)
+  local visible = session._render.visible_columns or session.state.columns
+  local column = view._resolve_col_at(session._render, visible, cursor[1], cursor[2])
+  if not column then
+    vim.notify("请先把光标移到需要调整的列", vim.log.levels.INFO)
+    return
+  end
+
+  local visible_index
+  for index, name in ipairs(visible) do
+    if name == column then
+      visible_index = index
+      break
+    end
+  end
+  local adjacent = visible[visible_index and (visible_index + direction) or 0]
+  if not adjacent then
+    vim.notify(direction < 0 and "当前列已经在最左侧" or "当前列已经在最右侧", vim.log.levels.INFO)
+    return
+  end
+
+  local column_index, adjacent_index
+  for index, name in ipairs(session.state.columns) do
+    if name == column then column_index = index end
+    if name == adjacent then adjacent_index = index end
+  end
+  if not column_index or not adjacent_index then return end
+
+  session.state.columns[column_index], session.state.columns[adjacent_index] =
+      session.state.columns[adjacent_index], session.state.columns[column_index]
+  view.render(bufnr, session.state)
+
+  local render = session._render
+  local positions
+  if cursor[1] == 2 then
+    positions = render.hdr_byte_positions
+  elseif render.type_row_byte_positions and cursor[1] == 3 then
+    positions = render.type_row_byte_positions
+  elseif cursor[1] >= render.data_start then
+    positions = render.byte_positions[cursor[1] - render.data_start + 1]
+  end
+  local target = positions and positions[column]
+  if target then
+    vim.api.nvim_win_set_cursor(0, { cursor[1], target.start })
+  end
+end
+
+function M.sort_result_column(direction)
+  local bufnr = vim.api.nvim_get_current_buf()
+  local view = require("dadbod-grip.view")
+  local session = view._sessions[bufnr]
+  if not session or not session.query_spec or not session._render then
+    vim.notify("当前窗口没有可用的列排序功能", vim.log.levels.WARN)
+    return
+  end
+
+  local cursor = vim.api.nvim_win_get_cursor(0)
+  local visible = session._render.visible_columns or session.state.columns
+  local column = view._resolve_col_at(session._render, visible, cursor[1], cursor[2])
+  if not column then
+    vim.notify("请先把光标移到需要排序的列", vim.log.levels.INFO)
+    return
+  end
+
+  local data = require("dadbod-grip.data")
+  if data.has_changes(session.state) then
+    local staged = data.count_staged(session.state)
+    local choice = vim.fn.confirm(
+      ("排序会放弃 %d 项尚未提交的修改，是否继续？"):format(staged),
+      "&继续\n&取消",
+      2
+    )
+    if choice ~= 1 then return end
+  end
+
+  local spec = vim.deepcopy(session.query_spec)
+  spec.sorts = { { column = column, dir = direction } }
+  spec.page = 1
+  if session.on_requery then
+    session.on_requery(bufnr, spec)
+  end
+end
+
 function M.setup()
   local group = vim.api.nvim_create_augroup("SqlResultComments", { clear = true })
   vim.api.nvim_create_autocmd("BufEnter", {
@@ -253,6 +345,34 @@ function M.setup()
           buffer = event.buf,
           silent = true,
           desc = "SQL：显示光标所在字段的类型和注释",
+        })
+        vim.keymap.set("n", "<C-h>", function()
+          M.reorder_result_column(-1)
+        end, {
+          buffer = event.buf,
+          silent = true,
+          desc = "SQL：将当前列向左移动",
+        })
+        vim.keymap.set("n", "<C-l>", function()
+          M.reorder_result_column(1)
+        end, {
+          buffer = event.buf,
+          silent = true,
+          desc = "SQL：将当前列向右移动",
+        })
+        vim.keymap.set("n", "<C-s>", function()
+          M.sort_result_column("ASC")
+        end, {
+          buffer = event.buf,
+          silent = true,
+          desc = "SQL：按当前列升序排列",
+        })
+        vim.keymap.set("n", "<C-d>", function()
+          M.sort_result_column("DESC")
+        end, {
+          buffer = event.buf,
+          silent = true,
+          desc = "SQL：按当前列降序排列",
         })
       end)
     end,
