@@ -177,7 +177,8 @@ mysql.exe --help | findstr /C:"Default options" /C:"my.ini" /C:"my.cnf"
 | `Ctrl-d` | 按光标所在列降序排列 |
 
 列移动只改变当前结果网格的显示顺序，不会修改 SQL、数据库字段顺序或数据。排序会替换
-原有排序条件并重新查询当前结果；存在尚未提交的单元格修改时，会先询问是否放弃修改。
+原有排序条件并重新查询当前结果，但不会重置已经调整的列顺序；查询新增的字段会追加在现有
+列顺序之后。存在尚未提交的单元格修改时，会先询问是否放弃修改。
 这些映射只在结果网格中覆盖全局 `Ctrl-s` 保存和普通模式 `Ctrl-d` 向下滚动半页。
 
 上游：[dadbod-grip.nvim](https://github.com/joryeugene/dadbod-grip.nvim)。

@@ -2,6 +2,8 @@ local M = {}
 
 local metadata = require("config.sql-metadata")
 local namespace = vim.api.nvim_create_namespace("SqlCommentBrowser")
+local result_column_orders = {}
+local result_cleanup_registered = {}
 local state = {
   bufnr = nil,
   winid = nil,
@@ -14,6 +16,36 @@ local state = {
   expanded = {},
   filter = "",
 }
+
+local function merge_column_order(saved, current)
+  local available = {}
+  for _, column in ipairs(current or {}) do
+    available[column] = true
+  end
+
+  local ordered = {}
+  for _, column in ipairs(saved or {}) do
+    if available[column] then
+      table.insert(ordered, column)
+      available[column] = nil
+    end
+  end
+  for _, column in ipairs(current or {}) do
+    if available[column] then
+      table.insert(ordered, column)
+      available[column] = nil
+    end
+  end
+  return ordered
+end
+
+local function restore_result_column_order(bufnr, view)
+  local saved = result_column_orders[bufnr]
+  local session = view._sessions[bufnr]
+  if not saved or not session or not session.state then return end
+  session.state.columns = merge_column_order(saved, session.state.columns)
+  view.render(bufnr, session.state)
+end
 
 local function valid_win(winid)
   return winid and vim.api.nvim_win_is_valid(winid)
@@ -278,6 +310,7 @@ function M.reorder_result_column(direction)
 
   session.state.columns[column_index], session.state.columns[adjacent_index] =
       session.state.columns[adjacent_index], session.state.columns[column_index]
+  result_column_orders[bufnr] = vim.deepcopy(session.state.columns)
   view.render(bufnr, session.state)
 
   local render = session._render
@@ -328,8 +361,11 @@ function M.sort_result_column(direction)
   spec.page = 1
   if session.on_requery then
     session.on_requery(bufnr, spec)
+    restore_result_column_order(bufnr, view)
   end
 end
+
+M._merge_column_order = merge_column_order
 
 function M.setup()
   local group = vim.api.nvim_create_augroup("SqlResultComments", { clear = true })
@@ -341,6 +377,17 @@ function M.setup()
         if not vim.api.nvim_buf_is_valid(event.buf) then return end
         local ok, view = pcall(require, "dadbod-grip.view")
         if not ok or not view._sessions[event.buf] then return end
+        if not result_cleanup_registered[event.buf] then
+          result_cleanup_registered[event.buf] = true
+          vim.api.nvim_create_autocmd("BufWipeout", {
+            buffer = event.buf,
+            once = true,
+            callback = function()
+              result_column_orders[event.buf] = nil
+              result_cleanup_registered[event.buf] = nil
+            end,
+          })
+        end
         vim.keymap.set("n", "K", M.show_result_comments, {
           buffer = event.buf,
           silent = true,

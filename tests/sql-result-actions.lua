@@ -33,15 +33,25 @@ assert(vim.deep_equal(session.state.columns, { "name", "id", "created_at" }))
 
 browser.reorder_result_column(1)
 assert(vim.deep_equal(session.state.columns, { "id", "name", "created_at" }))
+browser.reorder_result_column(-1)
+assert(vim.deep_equal(session.state.columns, { "name", "id", "created_at" }))
+
+assert(vim.deep_equal(
+  browser._merge_column_order({ "name", "id" }, { "id", "status", "name" }),
+  { "name", "id", "status" }
+))
 
 local sorted
 session.on_requery = function(_, spec)
   sorted = spec
+  session.state.columns = { "id", "name", "created_at" }
 end
 browser.sort_result_column("ASC")
 assert(sorted.sorts[1].column == "name" and sorted.sorts[1].dir == "ASC")
 assert(sorted.page == 1)
+assert(vim.deep_equal(session.state.columns, { "name", "id", "created_at" }))
 browser.sort_result_column("DESC")
 assert(sorted.sorts[1].column == "name" and sorted.sorts[1].dir == "DESC")
+assert(vim.deep_equal(session.state.columns, { "name", "id", "created_at" }))
 
 print("PASS: SQL result column actions")
