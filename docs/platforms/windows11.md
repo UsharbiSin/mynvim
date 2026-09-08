@@ -171,7 +171,7 @@ Get-Command im-select.exe
 
 ### Vimwiki 和个人文件
 
-- Vimwiki 默认 `~/vimwiki/`；在 Neovim 中用 `:echo expand('~/vimwiki')` 查看解析结果。
+- Vimwiki 使用 Linux 分区中的 `E:/@home/usharbisin/vimwiki/`；可用 `:lua =vim.g.vimwiki_list[1].path` 查看实际配置。
 - `<Space>pw` 打开 `$USERPROFILE/Documents/pswd.md`。不用此个人映射就删除。
 - SQL 数据库信息读取 `DB_USER_*` 等环境变量；只有同一连接的五项变量完整时才把该连接传给
   SQLS，未配置数据库不会阻止 SQLS 启动。可在启动 Neovim 前临时设置：

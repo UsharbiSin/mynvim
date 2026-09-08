@@ -15,6 +15,7 @@
 | 文档图表 | diagram.nvim + image.nvim；Linux 待实机验证 | diagram.nvim + image.nvim；Windows 已实测 |
 | Markdown 浏览器 | `/usr/lib/firefox/firefox` | 系统默认浏览器 |
 | Markdown CSS | 作者 Linux 绝对路径 | `stdpath('config')/markdown.css` |
+| Vimwiki 目录 | `~/vimwiki/` | `E:/@home/usharbisin/vimwiki/`，直接使用 Linux 分区中的笔记 |
 | Vimwiki 图片 | 作者 Linux 绝对路径 | `~/vimwiki/.markdown_images` |
 | 快速打开配置 | `~/.config/nvim/init.lua` | `stdpath('config')/init.lua` |
 | 密码文档 | `~/Documents/pswd.md` | 使用 Neovim 展开的用户目录，即 `~/Documents/pswd.md` |

@@ -19,6 +19,11 @@ local function test()
   check(vim.fn.has("win32") == 1, "this test requires native Windows Neovim")
   vim.fn.mkdir(tmp, "p")
 
+  check(
+    vim.g.vimwiki_list[1].path == "E:/@home/usharbisin/vimwiki/",
+    "Windows Vimwiki index must use the Linux partition"
+  )
+
   local runner = require("core.runner")
   local base = vim.fs.joinpath(tmp, "source file")
   local c = assert(runner.spec("c", base .. ".c"))

@@ -285,7 +285,7 @@ Windows 专项测试会同时检查命令存在、快捷键范围和 SQLS 格式
 
 ## Markdown 与 Vimwiki
 
-Vimwiki 默认目录是 `~/vimwiki/`，语法为 Markdown，扩展名为 `.md`。浏览器预览、编辑器内
+Vimwiki 在 Linux 使用 `~/vimwiki/`，在 Windows 使用 `E:/@home/usharbisin/vimwiki/`，语法为 Markdown，扩展名为 `.md`。浏览器预览、编辑器内
 渲染、图片粘贴和表格编辑是四套独立能力：
 
 - `render-markdown.nvim` 美化当前 Neovim buffer；
