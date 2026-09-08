@@ -9,4 +9,7 @@
 与 ImageMagick；无界面检查的 `TERM=dumb` 不具备图像协议，因此该环境里的协议警告不能代表
 交互式 WezTerm 失败。先在正常终端会话测试，再检查 `magick`、渲染器和终端设置。
 
+两个分支使用相同依赖声明。Windows 已实测，Linux 尚需在实际终端中确认图像协议和
+ImageMagick 后端。
+
 上游：[image.nvim](https://github.com/3rd/image.nvim)。
