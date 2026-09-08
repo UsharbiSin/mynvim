@@ -2,7 +2,7 @@
 
 [返回项目使用说明](../README.md) · [插件索引](README.md)
 
-本页按 2026-09-07 的两个分支配置比较。两个分支共享主体插件和大多数快捷键，但不能
+本页按 2026-09-08 的两个分支配置比较。两个分支共享主体插件和大多数快捷键，但不能
 视为仅换了一条路径。
 
 | 方面 | main（Arch Linux） | windows（Windows 11） |
@@ -11,6 +11,8 @@
 | 布尔值切换 | `boole.nvim`，`Ctrl-a`/`Ctrl-x` | `boole.nvim`，`Ctrl-a`/`Ctrl-x` |
 | Codex | Snacks terminal、命令、health、测试和文档均存在 | 已完整接入，并兼容原生程序与 npm 启动脚本 |
 | Snacks | 启动即加载，图片、公式、通知、终端 | 启动即加载，图片、公式、通知、终端 |
+| SQL 数据库 | SQLS、SQL Runner、Dadbod Grip；Linux 待实机验证 | SQLS、SQL Runner、Dadbod Grip；Windows 已实测 |
+| 文档图表 | diagram.nvim + image.nvim；Linux 待实机验证 | diagram.nvim + image.nvim；Windows 已实测 |
 | Markdown 浏览器 | `/usr/lib/firefox/firefox` | 系统默认浏览器 |
 | Markdown CSS | 作者 Linux 绝对路径 | `stdpath('config')/markdown.css` |
 | Vimwiki 图片 | 作者 Linux 绝对路径 | `~/vimwiki/.markdown_images` |

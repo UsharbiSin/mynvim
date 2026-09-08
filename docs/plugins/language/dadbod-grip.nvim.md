@@ -7,8 +7,8 @@
 插件要求 Neovim 0.10 以上；MySQL 连接还要求相应客户端位于 `PATH`，Windows 命令名为
 `mysql.exe`，Linux 命令名为 `mysql`。
 
-main 分支使用同一套配置，但目前只在 Windows 实机验证。Linux 后续需要安装提供 `mysql`
-命令的客户端包，再验证连接、查询结果网格与事务提交。
+两个分支使用同一套配置。目前 Windows 已实测；Linux 后续需要安装提供 `mysql` 命令的
+客户端包，再验证连接、查询结果网格与事务提交。
 
 ## 连接
 
