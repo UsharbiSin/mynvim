@@ -39,12 +39,46 @@ local function merge_column_order(saved, current)
   return ordered
 end
 
+local function reorder_result_state(state, desired_order)
+  local current = state.columns or {}
+  local ordered = merge_column_order(desired_order, current)
+
+  -- 当前字段名对应当前 rows 中的物理位置。
+  local source_index = {}
+  for index, column in ipairs(current) do
+    source_index[column] = index
+  end
+
+  -- columns 改顺序时，rows 必须按完全相同的顺序一起重排。
+  local rows = {}
+  for row_index, row in ipairs(state.rows or {}) do
+    local reordered_row = {}
+    for column_index, column in ipairs(ordered) do
+      reordered_row[column_index] = row[source_index[column]]
+    end
+    rows[row_index] = reordered_row
+  end
+
+  -- 不原地修改 dadbod-grip 的 columns/rows。
+  -- 新建 state，并保留 changes/deleted/inserted 等其它状态。
+  local next_state = {}
+  for key, value in pairs(state) do
+    next_state[key] = value
+  end
+
+  next_state.columns = ordered
+  next_state.rows = rows
+
+  return next_state
+end
+
 local function restore_result_column_order(bufnr, view)
   local saved = result_column_orders[bufnr]
   local session = view._sessions[bufnr]
   if not saved or not session or not session.state then return end
-  session.state.columns = merge_column_order(saved, session.state.columns)
-  view.render(bufnr, session.state)
+
+  local next_state = reorder_result_state(session.state, saved)
+  view.render(bufnr, next_state)
 end
 
 local function valid_win(winid)
@@ -308,10 +342,15 @@ function M.reorder_result_column(direction)
   end
   if not column_index or not adjacent_index then return end
 
-  session.state.columns[column_index], session.state.columns[adjacent_index] =
-      session.state.columns[adjacent_index], session.state.columns[column_index]
-  result_column_orders[bufnr] = vim.deepcopy(session.state.columns)
-  view.render(bufnr, session.state)
+  local next_order = vim.deepcopy(session.state.columns)
+
+  next_order[column_index], next_order[adjacent_index] =
+      next_order[adjacent_index], next_order[column_index]
+
+  local next_state = reorder_result_state(session.state, next_order)
+
+  result_column_orders[bufnr] = vim.deepcopy(next_state.columns)
+  view.render(bufnr, next_state)
 
   local render = session._render
   local positions
