@@ -21,7 +21,7 @@ opt.listchars = { tab = '▸ ', trail = '·', extends = '❯', precedes = '❮',
 opt.textwidth = 0          -- 关闭自动换行
 opt.indentexpr = ''        -- 关闭智能缩进表达式
 opt.backspace = { 'indent', 'eol', 'start' }
-opt.foldmethod = vim.g.is_win == 1 and 'indent' or 'manual' -- 按平台保留原有折叠习惯
+opt.foldmethod = 'manual'  -- Tree-sitter 就绪后启用语法折叠，LSP 附着后优先使用 LSP
 opt.foldlevel = 99         -- 默认显示折叠层数
 opt.foldlevelstart = 99    -- 新缓冲区默认全部展开
 opt.laststatus = 2         -- 始终在窗口底部显示文件信息

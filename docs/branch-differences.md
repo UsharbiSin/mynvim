@@ -21,8 +21,8 @@
 | debugpy | Mason 环境的 `bin/python` | Mason 环境的 `Scripts/python.exe` |
 | Conda Python | `$CONDA_PREFIX/bin/python` | `$CONDA_PREFIX/python.exe` |
 | C/C++ 与 CUDA 调试 | 按 PATH 中可用的 gdb、codelldb、OpenDebugAD7、cuda-gdb 生成配置 | 同左 |
-| LSP 行尾诊断 | 关闭 virtual text | 开启 virtual text |
-| 默认折叠 | `manual` | `indent` |
+| LSP 行尾诊断 | 开启 virtual text | 开启 virtual text |
+| 代码折叠 | LSP 语法折叠优先，Tree-sitter 回退 | LSP 语法折叠优先，Tree-sitter 回退 |
 | WezTerm 配置快捷键 | 不创建 | `<leader>wezt` 打开用户目录下的 WezTerm 配置 |
 
 SQLS、SQL Runner、Dadbod Grip、diagram.nvim、image.nvim、Codex、Markdown 表格和布尔值切换

@@ -1,7 +1,13 @@
 -- 使用任意平台的 Neovim 模拟 Linux，检查 windows 分支的运行时平台选择。
 vim.g.is_win = 0
 dofile(vim.fs.joinpath(vim.fn.getcwd(), "lua", "core", "options.lua"))
-assert(vim.o.foldmethod == "manual", "Linux must use manual folds by default")
+assert(vim.o.foldmethod == "manual", "folding must wait for a syntax provider")
+
+local folding = require("config.folding")
+folding.use_treesitter(0)
+assert(vim.wo.foldexpr == "v:lua.vim.treesitter.foldexpr()", "Tree-sitter must provide fallback folds")
+folding.use_lsp(0)
+assert(vim.wo.foldexpr == "v:lua.vim.lsp.foldexpr()", "LSP folds must override Tree-sitter")
 
 local plugins = dofile(vim.fs.joinpath(vim.fn.getcwd(), "lua", "plugins", "plugin-list.lua"))
 local by_name = {}

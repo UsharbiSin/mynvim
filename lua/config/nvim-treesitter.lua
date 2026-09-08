@@ -4,6 +4,8 @@ if vim.g.is_win == 1 then
   require('nvim-treesitter.install').compilers = { "gcc" }
 end
 require('nvim-treesitter').install(parsers)
+local folding = require('config.folding')
+folding.setup()
 
 -- 启用代码高亮 (替代老版本的 highlight = { enable = true })
 -- 新版强制要求用 Neovim 原生 API (vim.treesitter.start) 配合自动命令来启动
@@ -12,19 +14,13 @@ vim.api.nvim_create_autocmd('FileType', {
   pattern = '*',
   callback = function(args)
     -- pcall 这里的作用是：如果遇到没装 parser 的冷门文件，安静地跳过，绝不报错弹窗
-    pcall(vim.treesitter.start, args.buf)
+    if pcall(vim.treesitter.start, args.buf) then
+      vim.schedule(function()
+        folding.refresh(args.buf)
+      end)
+    end
   end,
 })
-
--- 启用代码折叠 (替代老版本的额外模块)
--- vim.api.nvim_create_autocmd('FileType', {
---   pattern = '*',
---   callback = function()
---     -- 使用 treesitter 原生的折叠表达式
---     vim.opt_local.foldmethod = 'expr'
---     vim.opt_local.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
---   end,
--- })
 
 -- 用markdown 解析器来解析 vimmarkdown 文件
 vim.treesitter.language.register('markdown', 'vimwiki')

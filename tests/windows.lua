@@ -18,7 +18,8 @@ end
 local function test()
   check(vim.fn.has("win32") == 1, "this test requires native Windows Neovim")
   vim.fn.mkdir(tmp, "p")
-  check(vim.o.foldmethod == "indent", "Windows must use indent folds by default")
+  check(vim.o.foldmethod == "manual", "folding must wait for a syntax provider")
+  check(vim.diagnostic.config().virtual_text == true, "LSP virtual text must be enabled on both platforms")
 
   check(
     vim.g.vimwiki_list[1].path == "E:/@home/usharbisin/vimwiki/",
@@ -115,6 +116,15 @@ local function test()
   vim.fn.writefile({ "- first item" }, vimwiki_file)
   vim.cmd("edit! " .. vim.fn.fnameescape(vimwiki_file))
   check(vim.bo.filetype == "vimwiki", "Markdown files must exercise the active Vimwiki configuration")
+  check(vim.wait(1000, function()
+    return vim.wo.foldmethod == "expr"
+      and vim.wo.foldexpr == "v:lua.vim.treesitter.foldexpr()"
+  end, 10), "Tree-sitter folding setup must finish after FileType handlers")
+  check(vim.wo.foldmethod == "expr", "Tree-sitter must enable syntax folds without a folding LSP")
+  check(
+    vim.wo.foldexpr == "v:lua.vim.treesitter.foldexpr()",
+    "Tree-sitter must be the folding fallback"
+  )
 
   local insert_leaves = 0
   local cmdline_leaves = 0

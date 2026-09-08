@@ -2,6 +2,16 @@
 -- require("lazydev").setup({})
 require("lspconfig")
 
+-- 两个平台共用同一套诊断展示；LSP 附着前也保持一致。
+vim.diagnostic.config({
+  virtual_text = true,
+  virtual_lines = false,
+  signs = true,
+  underline = true,
+  update_in_insert = false,
+  float = { source = true, border = "rounded" },
+})
+
 -- ==========================================
 -- 修改特定 Server 的配置
 -- ==========================================
@@ -127,10 +137,7 @@ vim.api.nvim_create_autocmd("LspAttach", {
 
     -- 代码折叠
     if client and client:supports_method("textDocument/foldingRange") then
-      local win = vim.api.nvim_get_current_win()
-      vim.wo[win].foldmethod = "expr"
-      vim.wo[win].foldexpr = "v:lua.vim.lsp.foldexpr()"
-      vim.wo[win].foldlevel = 99
+      require("config.folding").use_lsp(event.buf)
     end
 
     -- 光标下单词高亮
@@ -166,16 +173,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
       local hl = "DiagnosticSign" .. type
       vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })
     end
-
-    -- 诊断样式配置
-    vim.diagnostic.config({
-      virtual_text = vim.g.is_win == 1, -- Windows 显示行尾诊断，Arch Linux 保持精简
-      virtual_lines = false, -- 报错文本的虚拟行
-      signs = true,          -- 图标
-      underline = true,      -- 报错代码的波浪线提示
-      update_in_insert = false,
-      float = { source = true, border = "rounded" },
-    })
 
     -- 光标悬浮自动触发诊断悬浮窗
     vim.api.nvim_create_autocmd("CursorHold", {
