@@ -94,7 +94,7 @@ local function test()
   end
 
   for lhs, desc in pairs({
-    ["<leader>sb"] = "SQL：打开带中文注释的表浏览器",
+    ["<leader>st"] = "SQL：打开带中文注释的表浏览器",
     ["<leader>sk"] = "SQL：显示查询结果列注释",
   }) do
     local mapping = vim.fn.maparg(lhs, "n", false, true)

@@ -114,6 +114,7 @@ function M.column_comments(tables, columns, table_name)
           table.insert(result, {
             table_name = item.name,
             column_name = column.name,
+            type = column.type,
             comment = column.comment,
           })
         end

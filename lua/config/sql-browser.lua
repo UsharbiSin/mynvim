@@ -205,19 +205,33 @@ function M.show_result_comments()
     return
   end
 
+  local render_state = session._render
+  local columns = render_state
+      and (render_state.visible_columns or session.state.columns)
+      or session.state.columns
+  local cursor = vim.api.nvim_win_get_cursor(0)
+  local column = render_state
+      and view._resolve_col_at(render_state, columns, cursor[1], cursor[2])
+      or nil
+  if not column then
+    vim.notify("当前光标不在查询结果字段上", vim.log.levels.WARN)
+    return
+  end
+
   local comments = metadata.column_comments(
     tables,
-    session.state.columns,
+    { column },
     session.state.table_name
   )
-  local lines = { "# 查询结果列注释", "" }
+  local lines = { "# " .. column, "" }
   if #comments == 0 then
-    table.insert(lines, "当前结果列没有可用注释。")
+    table.insert(lines, "当前字段没有可用的数据库注释。")
   else
     for _, item in ipairs(comments) do
-      table.insert(lines, ("- `%s.%s`：%s"):format(
+      table.insert(lines, ("- `%s.%s` · `%s`：%s"):format(
         item.table_name,
         item.column_name,
+        item.type ~= "" and item.type or "未知类型",
         item.comment
       ))
     end

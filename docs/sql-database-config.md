@@ -75,7 +75,7 @@ $env:DB_NAME_TYTEST = '测试数据库名'
 | `空格 ssc` / `:SqlsShowConnections` | 显示连接列表 |
 | `空格 ssd` / `:SqlsShowDatabases` | 显示数据库列表 |
 | `空格 sst` / `:SqlsShowTables` | 显示数据表 |
-| `空格 sb` | 打开带表/列中文注释的侧栏 |
+| `空格 st` | 打开带表/列中文注释的侧栏 |
 
 ## 5. 测试和执行 SQL
 
@@ -116,7 +116,7 @@ Dadbod Grip 会打开独立的 `grip://` 工作区，用于：
 - 审核生成的 SQL；
 - 在事务中提交修改。
 
-按 `空格 sb` 可直接打开左侧“表与注释”栏。它从 MySQL `information_schema` 读取
+按 `空格 st` 可直接打开左侧“表与注释”栏。它从 MySQL `information_schema` 读取
 `TABLE_COMMENT` 和 `COLUMN_COMMENT`，并按连接缓存：
 
 - 表名后以 Comment 颜色显示表注释；
@@ -125,8 +125,9 @@ Dadbod Grip 会打开独立的 `grip://` 工作区，用于：
 - `K` 查看当前表的完整表/列注释，`r` 重新读取元数据；
 - `Enter` 用 Dadbod Grip 打开表，继续编辑和保存数据。
 
-执行 `空格 sr` 并进入 Grip 查询结果后，按 `空格 sk` 显示结果列的数据库注释。普通单表
-结果会限定当前表；JOIN 或自定义查询会列出所有同名字段及其来源表。Grip 原有 `K` 行详情
+执行 `空格 sr` 并进入 Grip 查询结果后，把光标放在目标列并按 `空格 sk`，即可显示该字段
+的类型和数据库注释。普通单表结果会限定当前表；JOIN 或自定义查询会列出该字段的所有同名
+来源。Grip 原有 `K` 行详情
 保持不变。
 
 如果只希望继续留在当前 `.sql` 文件中执行查询，应使用 `空格 sc` +

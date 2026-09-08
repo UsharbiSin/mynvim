@@ -293,7 +293,7 @@ return {
         desc = "SQL：打开数据库工作区",
       },
       {
-        "<leader>sb",
+        "<leader>st",
         function()
           require("config.sql-browser").toggle()
         end,

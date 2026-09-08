@@ -26,6 +26,7 @@ assert(#metadata.filter(tables, "sys_user") == 1, "technical table names must re
 local comments = metadata.column_comments(tables, { "id", "name" }, "sys_user")
 assert(#comments == 2)
 assert(comments[2].comment == "用户姓名")
+assert(comments[2].type == "varchar(50)")
 
 local ambiguous = metadata.column_comments(tables, { "order_no" })
 assert(#ambiguous == 1 and ambiguous[1].table_name == "order_view")
