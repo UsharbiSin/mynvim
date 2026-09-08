@@ -11,7 +11,7 @@ return {
     "vim-airline/vim-airline", -- 美化底部状态栏
     dependencies = {
       "vim-airline/vim-airline-themes",
-      "tpope/vim-fugitive",     -- Git 深度集成工具
+      "tpope/vim-fugitive", -- Git 深度集成工具
     },
     config = function()
       require('config.ui')
@@ -42,8 +42,8 @@ return {
   -- 侧边栏与文件树
   -- ==========================================
   {
-    "nvim-tree/nvim-tree.lua", -- 文件树
-    dependencies = { "nvim-tree/nvim-web-devicons" },     -- 图标支持
+    "nvim-tree/nvim-tree.lua",                        -- 文件树
+    dependencies = { "nvim-tree/nvim-web-devicons" }, -- 图标支持
     keys = {
       {
         "tt",
@@ -260,22 +260,22 @@ return {
       require('config.vim-table-mode')
     end
   },
-  { "fadein/vim-FIGlet",            cmd = "FIGlet" }, -- 生成 ASCII 艺术大字
+  { "fadein/vim-FIGlet",    cmd = "FIGlet" }, -- 生成 ASCII 艺术大字
   {
-    "kshenoy/vim-signature",                          -- 侧边栏书签标记显示
+    "kshenoy/vim-signature",                  -- 侧边栏书签标记显示
     event = "BufReadPost",
     config = function()
       require('config.tools')
     end
   },
   {
-    "h-hg/fcitx.nvim",                                    -- Linux 下在 normal 模式切换为英文
+    "h-hg/fcitx.nvim", -- Linux 下在 normal 模式切换为英文
     cond = function()
       return vim.g.is_win ~= 1
     end,
   },
   {
-    "keaising/im-select.nvim",                        -- normal模式自动切换为英文（windows）
+    "keaising/im-select.nvim", -- normal模式自动切换为英文（windows）
     cond = function()
       return vim.g.is_win == 1
     end,
@@ -289,7 +289,7 @@ return {
       })
     end,
   },
-  { "folke/which-key.nvim",         event = "VeryLazy" }, -- 快捷键提示
+  { "folke/which-key.nvim", event = "VeryLazy" }, -- 快捷键提示
   {
     "nat-418/boole.nvim",
     event = "VeryLazy",
@@ -365,11 +365,11 @@ return {
         desc = "SQL：执行选中内容",
       },
     },
-  config = function()
-    require("config.dadbod-grip")
-  end,
-},
-{
+    config = function()
+      require("config.dadbod-grip")
+    end,
+  },
+  {
     "mfussenegger/nvim-lint",
     event = { "BufReadPre", "BufNewFile" },
     config = function()
