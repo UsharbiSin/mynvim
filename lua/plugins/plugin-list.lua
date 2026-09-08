@@ -53,7 +53,16 @@ return {
   {
     "preservim/tagbar", -- 侧边栏函数大纲
     cmd = "TagbarOpenAutoClose",
-    keys = { { "T", "<cmd>TagbarOpenAutoClose<cr>", desc = "打开或关闭代码结构栏" } },
+    keys = {
+      {
+        "T",
+        function() require("config.tagbar").toggle() end,
+        desc = "打开或关闭代码结构栏",
+      },
+    },
+    init = function()
+      require("config.tagbar").setup()
+    end,
   },
 
   -- ==========================================

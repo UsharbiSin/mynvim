@@ -245,7 +245,9 @@ Snacks 行内图片还取决于 Windows Terminal/终端模拟器是否支持相�
 3. 检查 `:checkhealth`、`:checkhealth nvim-treesitter`、`:checkhealth snacks`；无界面模式会因
    `TERM=dumb` 报图像协议错误，未启用的 lazygit/picker 项也可忽略。
 4. 打开 Lua/Python/C++/Markdown/SQL 文件检查 filetype、LSP 和高亮。
-5. `tt`、`L`、`T` 可打开文件树、撤销树、Tagbar（Tagbar 还需 ctags）。
+5. `tt`、`L`、`T` 可打开文件树、撤销树、Tagbar。`L` 会复用 Git for Windows 自带的
+   `diff.exe`；`T` 需要先执行 `winget install UniversalCtags.Ctags`，并在重启 Neovim 后
+   确认 `:echo exepath('ctags')` 能找到程序。配置不会写死工具安装路径。
 6. F8/F9 能启动/停止 Markdown 预览。
 7. `<Space>pi` 能生成 AVIF 文件并插入链接。
 8. Python debugpy 路径存在；C/C++ 的 GDB DAP 能命中断点。

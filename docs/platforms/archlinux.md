@@ -31,11 +31,11 @@ sudo pacman -S --needed neovim git curl unzip base-devel tree-sitter-cli nodejs 
 - `nodejs` / `npm` 用于构建 markdown-preview.nvim，也可安装 Codex CLI。
 - `imagemagick` 用于 img-clip 的 AVIF 转换和 Snacks 图片转换。
 - Wayland 剪贴板安装 `wl-clipboard`；X11 安装 `xclip` 或 `xsel`。
-- Tagbar 安装 `universal-ctags`；ASCII 大字功能安装 `figlet`。
+- Undotree 使用 `diffutils`；Tagbar 使用 `universal-ctags`；ASCII 大字功能使用 `figlet`。
 - 字体选择任一 Nerd Font，并在终端设置里真正选中该字体。
 
 ```bash
-sudo pacman -S --needed universal-ctags figlet
+sudo pacman -S --needed diffutils universal-ctags figlet
 # Wayland 二选一示例
 sudo pacman -S --needed wl-clipboard
 ```

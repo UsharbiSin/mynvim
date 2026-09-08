@@ -4,7 +4,9 @@ local opts = { noremap = true, silent = true }
 -- ==========================================
 -- 函数列表 (Tagbar)
 -- ==========================================
-map('n', 'T', ':TagbarOpenAutoClose<CR>', opts)
+map('n', 'T', function()
+  require('config.tagbar').toggle()
+end, { noremap = true, silent = true, desc = '打开或关闭代码结构栏' })
 
 
 -- ==========================================
