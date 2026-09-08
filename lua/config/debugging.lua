@@ -56,14 +56,14 @@ dap.adapters.python = {
 -- ==========================================
 
 local function program()
-  return vim.fn.input("可执行文件路径: ", vim.fn.getcwd() .. "/", "file")
+  return vim.fn.input("可执行文件路径：", vim.fn.getcwd() .. "/", "file")
 end
 
 -- CUDA 程序的调试配置，仅列出当前环境可用的适配器。
 dap.configurations.cuda = {}
 if vim.fn.executable("cuda-gdb") == 1 then
   table.insert(dap.configurations.cuda, {
-    name = "Launch (cuda-gdb)", -- 启动选项的名称
+    name = "启动（cuda-gdb）", -- 启动选项的名称
     type = "cudagdb",           -- 使用的适配器
     request = "launch",         -- 请求类型：启动 (launch) 或附加 (attach)
     program = program,
@@ -73,7 +73,7 @@ if vim.fn.executable("cuda-gdb") == 1 then
 end
 if vim.fn.executable("OpenDebugAD7") == 1 and vim.fn.executable("gdb") == 1 then
   table.insert(dap.configurations.cuda, {
-    name = "Launch (gdb)",
+    name = "启动（gdb）",
     type = "cppdbg",
     MIMode = "gdb",
     request = "launch",
@@ -96,7 +96,7 @@ local function native_configurations()
 
   if vim.fn.executable("gdb") == 1 then
     table.insert(configurations, {
-      name = "Launch (gdb DAP)",
+      name = "启动（gdb DAP）",
       type = "gdb",
       request = "launch",
       program = program,
@@ -107,7 +107,7 @@ local function native_configurations()
 
   if vim.fn.executable("codelldb") == 1 then
     table.insert(configurations, {
-      name = "Launch (codelldb)",
+      name = "启动（codelldb）",
       type = "codelldb",
       request = "launch",
       program = program,
@@ -118,7 +118,7 @@ local function native_configurations()
 
   if vim.fn.executable("OpenDebugAD7") == 1 and vim.fn.executable("gdb") == 1 then
     table.insert(configurations, {
-      name = "Launch (cppdbg)",
+      name = "启动（cppdbg）",
       type = "cppdbg",
       MIMode = "gdb",
       request = "launch",
@@ -135,12 +135,12 @@ local function native_configurations()
       stopAtBeginningOfMainSubprogram = false,
     })
     table.insert(configurations, {
-      name = "Select and attach to process (选择并附加到进程)",
+      name = "选择并附加到进程",
       type = "cppdbg",
       request = "attach",
       program = program,
       pid = function()
-        local name = vim.fn.input("可执行文件名称 (用于过滤): ")
+        local name = vim.fn.input("可执行文件名称（用于过滤）：")
         return require("dap.utils").pick_process({ filter = name })
       end,
       cwd = "${workspaceFolder}",
@@ -160,7 +160,7 @@ vim.list_extend(dap.configurations.python, {
   {
     type = "python",
     request = "launch",
-    name = "file",
+    name = "运行当前文件",
     program = "${file}",
     console = "integratedTerminal",
     python = function()
@@ -177,10 +177,10 @@ vim.list_extend(dap.configurations.python, {
   {
     type = "python",
     request = "launch",
-    name = "file:args (cwd) - 带有参数的 Python 脚本",
+    name = "运行当前文件（带参数，使用当前目录）",
     program = "${file}",
     args = function()
-      local args_string = vim.fn.input("输入启动参数: ")
+      local args_string = vim.fn.input("输入启动参数：")
       local utils = require("dap.utils")
       if utils.splitstr and vim.fn.has("nvim-0.10") == 1 then
         return utils.splitstr(args_string)
@@ -288,38 +288,38 @@ vim.fn.sign_define('DapStopped', { text = '', texthl = 'DapStopped', linehl =
 vim.keymap.set('n', '<leader>du', function()
   dapui.toggle({ reset = true })
   custom_utils.reset_overseerlist_width()
-end, { desc = 'DAP: 切换 UI 面板' })
+end, { desc = 'DAP：切换调试面板' })
 vim.keymap.set('n', '<F1>', function()
   dapui.toggle({ reset = true })
   custom_utils.reset_overseerlist_width()
-end, { desc = 'DAP: 切换 UI 面板' })
+end, { desc = 'DAP：切换调试面板' })
 
 -- 核心执行与步进操作
-vim.keymap.set('n', '<leader>ds', dap.continue, { desc = 'DAP: 启动 / 继续执行' })
-vim.keymap.set('n', '<F2>', dap.continue, { desc = 'DAP: 启动 / 继续执行' })
-vim.keymap.set('n', '<leader>di', dap.step_into, { desc = 'DAP: 单步进入 (Step into)' })
-vim.keymap.set('n', '<F3>', dap.step_into, { desc = 'DAP: 单步进入 (Step into)' })
-vim.keymap.set('n', '<leader>do', dap.step_over, { desc = 'DAP: 单步跳过 (Step over)' })
-vim.keymap.set('n', '<F4>', dap.step_over, { desc = 'DAP: 单步跳过 (Step over)' })
-vim.keymap.set('n', '<leader>dO', dap.step_out, { desc = 'DAP: 单步跳出 (Step out)' })
-vim.keymap.set('n', '<F5>', dap.step_out, { desc = 'DAP: 单步跳出 (Step out)' })
+vim.keymap.set('n', '<leader>ds', dap.continue, { desc = 'DAP：启动或继续执行' })
+vim.keymap.set('n', '<F2>', dap.continue, { desc = 'DAP：启动或继续执行' })
+vim.keymap.set('n', '<leader>di', dap.step_into, { desc = 'DAP：单步进入' })
+vim.keymap.set('n', '<F3>', dap.step_into, { desc = 'DAP：单步进入' })
+vim.keymap.set('n', '<leader>do', dap.step_over, { desc = 'DAP：单步跳过' })
+vim.keymap.set('n', '<F4>', dap.step_over, { desc = 'DAP：单步跳过' })
+vim.keymap.set('n', '<leader>dO', dap.step_out, { desc = 'DAP：单步跳出' })
+vim.keymap.set('n', '<F5>', dap.step_out, { desc = 'DAP：单步跳出' })
 
 -- 调试会话控制
-vim.keymap.set('n', '<leader>dq', dap.close, { desc = 'DAP: 关闭当前会话' })
-vim.keymap.set('n', '<leader>dr', dap.restart_frame, { desc = 'DAP: 重启当前栈帧' })
-vim.keymap.set('n', '<F6>', dap.restart, { desc = 'DAP: 从头重新开始调试' })
-vim.keymap.set('n', '<leader>dQ', dap.terminate, { desc = 'DAP: 强制终止调试' })
-vim.keymap.set('n', '<F7>', dap.terminate, { desc = 'DAP: 强制终止调试' })
+vim.keymap.set('n', '<leader>dq', dap.close, { desc = 'DAP：关闭当前会话' })
+vim.keymap.set('n', '<leader>dr', dap.restart_frame, { desc = 'DAP：重启当前栈帧' })
+vim.keymap.set('n', '<F6>', dap.restart, { desc = 'DAP：从头重新开始调试' })
+vim.keymap.set('n', '<leader>dQ', dap.terminate, { desc = 'DAP：强制终止调试' })
+vim.keymap.set('n', '<F7>', dap.terminate, { desc = 'DAP：强制终止调试' })
 
 -- 杂项工具
-vim.keymap.set('n', '<leader>dc', dap.run_to_cursor, { desc = 'DAP: 运行到光标处' })
-vim.keymap.set('n', '<leader>dR', dap.repl.toggle, { desc = 'DAP: 切换交互终端 (REPL)' })
-vim.keymap.set('n', '<leader>dh', require('dap.ui.widgets').hover, { desc = 'DAP: 悬浮查看变量值' })
+vim.keymap.set('n', '<leader>dc', dap.run_to_cursor, { desc = 'DAP：运行到光标处' })
+vim.keymap.set('n', '<leader>dR', dap.repl.toggle, { desc = 'DAP：切换交互终端' })
+vim.keymap.set('n', '<leader>dh', require('dap.ui.widgets').hover, { desc = 'DAP：悬浮查看变量值' })
 
 -- 断点管理
-vim.keymap.set('n', '<leader>db', dap.toggle_breakpoint, { desc = 'DAP: 切换当前行断点' })
+vim.keymap.set('n', '<leader>db', dap.toggle_breakpoint, { desc = 'DAP：切换当前行断点' })
 vim.keymap.set('n', '<leader>dB', function()
   local input = vim.fn.input '输入条件断点的触发条件: '
   dap.set_breakpoint(input)
-end, { desc = 'DAP: 添加条件断点' })
-vim.keymap.set('n', '<leader>dD', dap.clear_breakpoints, { desc = 'DAP: 清除所有断点' })
+end, { desc = 'DAP：添加条件断点' })
+vim.keymap.set('n', '<leader>dD', dap.clear_breakpoints, { desc = 'DAP：清除所有断点' })

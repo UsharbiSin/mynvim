@@ -65,7 +65,7 @@ vim.api.nvim_create_augroup("CocGroup", {})
 vim.api.nvim_create_autocmd("CursorHold", {
   group = "CocGroup",
   command = "silent call CocActionAsync('highlight')",
-  desc = "Highlight symbol under cursor on CursorHold"
+  desc = "光标停留时高亮当前符号"
 })
 
 
@@ -84,10 +84,10 @@ vim.api.nvim_create_autocmd("FileType", {
   group = "CocGroup",
   pattern = "typescript,json",
   command = "setl formatexpr=CocAction('formatSelected')",
-  desc = "Setup formatexpr specified filetype(s)."
+  desc = "为指定文件类型设置格式化表达式"
 })
 
--- 将代码操作 (Code Action) 应用于选中的代码块
+-- 将代码操作应用于选中的代码块
 -- 示例：使用 `<leader>aap` 将操作应用于当前段落
 local action_opts = { silent = true, nowait = true }
 keyset("x", "<leader>a", "<Plug>(coc-codeaction-selected)", action_opts)

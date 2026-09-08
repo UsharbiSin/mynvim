@@ -58,7 +58,7 @@ function M.current_connection(bufnr)
   local url = vim.b[bufnr].sql_connection_url
   if url and url ~= "" then
     return {
-      name = vim.b[bufnr].sql_connection_name or "current",
+      name = vim.b[bufnr].sql_connection_name or "当前连接",
       url = url,
     }
   end

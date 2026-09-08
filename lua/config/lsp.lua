@@ -64,20 +64,20 @@ vim.api.nvim_create_autocmd("LspAttach", {
     end
 
     local function map(mode, keys, func, desc)
-      vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = "LSP: " .. desc })
+      vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = "LSP：" .. desc })
     end
 
     -- [Keymaps] 快捷键映射
-    map("n", "gd", vim.lsp.buf.definition, "Goto Definition (跳转定义)")
-    map("n", "gr", vim.lsp.buf.references, "Goto References (查看引用)")
-    map("n", "gi", vim.lsp.buf.implementation, "Goto Implementation (跳转实现)")
-    map("n", "gy", vim.lsp.buf.type_definition, "Goto Type Definition (跳转类型定义)")
-    map("n", "K", vim.lsp.buf.hover, "Hover Documentation (悬浮文档)")
-    map("n", "<leader>rn", vim.lsp.buf.rename, "Rename (重命名)")
-    map("n", "<leader>ca", vim.lsp.buf.code_action, "Code Action (代码操作)")
-    map("n", "[g", function() vim.diagnostic.jump({ count = -1 }) end, "Previous Diagnostic (上一个错误)")
-    map("n", "]g", function() vim.diagnostic.jump({ count = 1 }) end, "Next Diagnostic (下一个错误)")
-    map("n", "<leader>lf", vim.lsp.buf.format, "Format Document (格式化)")
+    map("n", "gd", vim.lsp.buf.definition, "跳转到定义")
+    map("n", "gr", vim.lsp.buf.references, "查看引用")
+    map("n", "gi", vim.lsp.buf.implementation, "跳转到实现")
+    map("n", "gy", vim.lsp.buf.type_definition, "跳转到类型定义")
+    map("n", "K", vim.lsp.buf.hover, "查看悬浮文档")
+    map("n", "<leader>rn", vim.lsp.buf.rename, "重命名符号")
+    map("n", "<leader>ca", vim.lsp.buf.code_action, "执行代码操作")
+    map("n", "[g", function() vim.diagnostic.jump({ count = -1 }) end, "跳转到上一个诊断")
+    map("n", "]g", function() vim.diagnostic.jump({ count = 1 }) end, "跳转到下一个诊断")
+    map("n", "<leader>lf", vim.lsp.buf.format, "格式化文档")
 
     -- [Advanced] 智能分屏跳转定义 (gD)
     map("n", "gD", function()
@@ -91,7 +91,7 @@ vim.api.nvim_create_autocmd("LspAttach", {
         vim.cmd("vsplit")
       end
       vim.lsp.buf.definition()
-    end, "Goto Definition (Split Smartly)")
+    end, "智能分屏并跳转到定义")
 
     -- 函数首尾跳转 ([f / ]f)
     local function jump_to_symbol(position_type)
@@ -125,14 +125,14 @@ vim.api.nvim_create_autocmd("LspAttach", {
       end
     end
 
-    map("n", "[f", function() jump_to_symbol("start") end, "Jump to function start")
-    map("n", "]f", function() jump_to_symbol("end") end, "Jump to function end")
+    map("n", "[f", function() jump_to_symbol("start") end, "跳转到函数开头")
+    map("n", "]f", function() jump_to_symbol("end") end, "跳转到函数结尾")
 
     -- Inlay Hints (内联提示开关)
     if client and client:supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
       map("n", "<leader>th", function()
         vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled({ bufnr = event.buf }))
-      end, "Toggle Inlay Hints")
+      end, "开关内嵌提示")
     end
 
     -- 代码折叠

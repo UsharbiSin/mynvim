@@ -45,7 +45,7 @@ return {
   {
     "mbbill/undotree", -- 可视化撤销历史树
     cmd = "UndotreeToggle",
-    keys = { { "L", "<cmd>UndotreeToggle<cr>", desc = "Toggle UndoTree" } },
+    keys = { { "L", "<cmd>UndotreeToggle<cr>", desc = "打开或关闭撤销历史树" } },
     config = function()
       require('config.undotree')
     end
@@ -53,7 +53,7 @@ return {
   {
     "preservim/tagbar", -- 侧边栏函数大纲
     cmd = "TagbarOpenAutoClose",
-    keys = { { "T", "<cmd>TagbarOpenAutoClose<cr>", desc = "Toggle Tagbar" } },
+    keys = { { "T", "<cmd>TagbarOpenAutoClose<cr>", desc = "打开或关闭代码结构栏" } },
   },
 
   -- ==========================================
