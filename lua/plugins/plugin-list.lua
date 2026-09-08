@@ -9,15 +9,21 @@ return {
   -- ==========================================
   {
     "vim-airline/vim-airline", -- 美化底部状态栏
-    dependencies = { "vim-airline/vim-airline-themes" },
+    dependencies = {
+      "vim-airline/vim-airline-themes",
+      "tpope/vim-fugitive",     -- Git 深度集成工具
+    },
     config = function()
       require('config.ui')
-    end
+    end,
   },
   {
     "folke/tokyonight.nvim", -- 色彩主题
     lazy = false,            -- 主题插件必须在启动时马上加载
     priority = 1000,         -- 给予最高优先级
+    config = function()
+      require("config.theme")
+    end,
   },
   {
     "lukas-reineke/indent-blankline.nvim", -- 缩进线与当前 Tree-sitter 语法作用域
@@ -213,7 +219,6 @@ return {
   -- ==========================================
   -- Git 与协同
   -- ==========================================
-  { "tpope/vim-fugitive" },    -- Git 深度集成工具
   {
     "lewis6991/gitsigns.nvim", -- lewis6991/gitsigns.nvim
     config = function()
