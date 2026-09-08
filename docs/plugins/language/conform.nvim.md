@@ -1,8 +1,8 @@
 [返回项目使用说明](../../../README.md) · [返回插件分类索引](../../README.md)
 
-# conform.nvim：保存时与手动格式化
+# conform.nvim：手动调用外部格式化器
 
-**仓库：** `stevearc/conform.nvim`。在 `BufWritePre`（保存前）或 `:ConformInfo` 时加载；配置在 [conform.lua](../../../lua/config/conform.lua)。
+**仓库：** `stevearc/conform.nvim`。按 `空格 fm` 或执行 `:ConformInfo` 时加载；配置在 [conform.lua](../../../lua/config/conform.lua)。
 
 ## 本项目格式化规则
 
@@ -15,7 +15,7 @@
 
 `mysql`、`vimwiki`、`jsonc`、C/C++ 未在本表登记。扩展名为 .md 但实际 filetype 是 vimwiki 时，不会因为扩展名自动走 Markdown formatter。用 `:set filetype?` 检查。
 
-保存时等待最多 3000ms，`lsp_fallback=false`；因此外部格式化器缺失时不会自动改走 LSP。手动 `空格 fm` 支持普通/可视模式，设置 `lsp_fallback=true`、同步执行、超时 300ms。这两个超时差别很大，冷启动慢的 Python/Node 工具可能保存时成功、手动时超时。
+`:w` 只写入文件，不触发 Conform 或 LSP 格式化。手动 `空格 fm` 支持普通/可视模式，设置 `lsp_fallback=true`、同步执行、超时 3000ms；当前文件没有已配置的外部格式化器时才尝试 LSP。
 
 ## 安装与首次使用
 
@@ -24,9 +24,9 @@
 :ConformInfo
 ```
 
-Conform 只调用工具，不负责安装。Mason 完成后确认 `:ConformInfo` 中当前文件的 formatter 可用。保存一次测试格式；可视选择若干行再按空格 fm 尝试范围格式化，具体支持由 formatter 决定。
+Conform 只调用工具，不负责安装。Mason 完成后确认 `:ConformInfo` 中当前文件的 formatter 可用。按空格 fm 测试整个文件；也可视选择若干行后尝试范围格式化，具体支持由 formatter 决定。
 
-`空格 fm` 在插件加载后才创建，插件声明没有给这个键单独设置 lazy 触发。因此新会话如果还没保存过，先执行 `:ConformInfo`，再使用该键。LSP 的 `空格 lf` 属于另一条格式化路径。
+`空格 fm` 本身会加载插件。LSP 的 `空格 lf` 属于另一条格式化路径，只使用当前文件已附着且声明支持相应格式化方式的语言服务器；普通模式格式化全文，可视模式只请求格式化选中范围。
 
 ## 项目配置文件
 
@@ -41,4 +41,4 @@ dialect = mysql
 
 ## 排错与平台
 
-用 `:ConformInfo` 查看程序和日志，用 `:lua print(vim.fn.exepath("prettier"))` 查 Neovim 的 PATH。保存结果意外变化时检查同时运行的 LSP formatter 与项目工具配置。Windows 实机可解析 black、isort 与 sqlfluff；prettier、stylua 仍需安装。[Conform 上游说明](https://github.com/stevearc/conform.nvim)
+用 `:ConformInfo` 查看程序和日志，用 `:lua print(vim.fn.exepath("prettier"))` 查 Neovim 的 PATH。手动格式化结果不同时，先用 `:verbose nmap <leader>lf` 与 `:verbose nmap <leader>fm` 确认调用的是 LSP 还是 Conform，再检查对应服务器或项目工具配置。Windows 实机可解析 black、isort 与 sqlfluff；prettier、stylua 仍需安装。[Conform 上游说明](https://github.com/stevearc/conform.nvim)

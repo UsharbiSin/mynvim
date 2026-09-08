@@ -6,7 +6,7 @@
 本项目没有配置选项。
 
 CSS 同时在 Tree-sitter parser 列表中，因此最终高亮可能主要来自 Tree-sitter；传统 syntax
-仍可在 parser 缺失或停止时生效。它不提供 CSS LSP、补全或格式化，保存格式化由 Prettier
-与 Conform 完成。用 `:Inspect` 查看光标处实际高亮来源。
+仍可在 parser 缺失或停止时生效。它不提供 CSS LSP、补全或格式化；Prettier 与 Conform
+可通过 `空格 fm` 手动格式化。用 `:Inspect` 查看光标处实际高亮来源。
 
 上游：[vim-css3-syntax](https://github.com/hail2u/vim-css3-syntax)。

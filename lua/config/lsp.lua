@@ -43,6 +43,34 @@ vim.lsp.enable("lua_ls")
 vim.lsp.enable("pylsp")
 vim.lsp.enable("sqls")
 
+local function format_with_lsp(bufnr, range)
+  local method = range
+      and vim.lsp.protocol.Methods.textDocument_rangeFormatting
+      or vim.lsp.protocol.Methods.textDocument_formatting
+  local supported = false
+
+  for _, client in ipairs(vim.lsp.get_clients({ bufnr = bufnr })) do
+    if client:supports_method(method, { bufnr = bufnr }) then
+      supported = true
+      break
+    end
+  end
+
+  if not supported then
+    local target = range and "选中范围" or "当前文件"
+    vim.notify(target .. "没有支持格式化的 LSP", vim.log.levels.WARN, { title = "LSP" })
+    return
+  end
+
+  vim.lsp.buf.format({
+    bufnr = bufnr,
+    async = false,
+    filter = function(client)
+      return client:supports_method(method, { bufnr = bufnr })
+    end,
+  })
+end
+
 
 -- ==========================================
 -- LspAttach 回调：统一设置快捷键与 UI 逻辑
@@ -51,12 +79,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
   group = vim.api.nvim_create_augroup("SetupLSP", {}),
   callback = function(event)
     local client = assert(vim.lsp.get_client_by_id(event.data.client_id))
-
-    -- 保留 sqls.nvim 的 on_attach 命令，同时由统一回调关闭 SQLS 格式化。
-    if client.name == "sqls" then
-      client.server_capabilities.documentFormattingProvider = false
-      client.server_capabilities.documentRangeFormattingProvider = false
-    end
 
     -- 开启 LSP 语义高亮 (Semantic Tokens)
     if client.server_capabilities.semanticTokensProvider and vim.lsp.semantic_tokens.enable then
@@ -77,7 +99,12 @@ vim.api.nvim_create_autocmd("LspAttach", {
     map("n", "<leader>ca", vim.lsp.buf.code_action, "执行代码操作")
     map("n", "[g", function() vim.diagnostic.jump({ count = -1 }) end, "跳转到上一个诊断")
     map("n", "]g", function() vim.diagnostic.jump({ count = 1 }) end, "跳转到下一个诊断")
-    map("n", "<leader>lf", vim.lsp.buf.format, "格式化文档")
+    map("n", "<leader>lf", function()
+      format_with_lsp(event.buf)
+    end, "使用当前文件的 LSP 格式化文档")
+    map("x", "<leader>lf", function()
+      format_with_lsp(event.buf, true)
+    end, "使用当前文件的 LSP 格式化选中范围")
 
     -- [Advanced] 智能分屏跳转定义 (gD)
     map("n", "gD", function()

@@ -173,7 +173,7 @@ LSP 按键只在语言服务器成功附着后存在。
 | `<Space>rn` / `<Space>ca` | 重命名 / 代码操作 |
 | `[g` / `]g` | 上一处 / 下一处诊断 |
 | `[f` / `]f` | 当前文档符号的起点 / 终点 |
-| `<Space>lf` | LSP 格式化 |
+| `<Space>lf` | 普通模式用 LSP 格式化全文；可视模式用 LSP 格式化选中范围 |
 | `<Space>fm` | Conform 格式化当前文件或选择区 |
 | `<Space>db` / `<Space>dB` | 普通断点 / 条件断点 |
 | `F2` / `F3` / `F4` / `F5` | 继续、步入、步过、步出 |
@@ -233,7 +233,7 @@ LSP 按键只在语言服务器成功附着后存在。
 | 工具安装 | Mason + mason-lspconfig | 下载 LSP 与可选外部程序 |
 | 语言服务 | Neovim LSP + nvim-lspconfig | 跳转、悬浮、诊断、重命名 |
 | 补全 | nvim-cmp + cmp-buffer/path/nvim-lsp | 显示和选择候选 |
-| 格式化 | conform.nvim | 保存时调用 black/isort/prettier/stylua/sqlfluff |
+| 格式化 | Neovim LSP / conform.nvim | `<Space>lf` 调用 LSP；`<Space>fm` 手动调用外部格式化器 |
 | 独立检查 | nvim-lint | SQL 保存、进入 buffer、退出插入时运行 sqlfluff |
 | 语法树 | nvim-treesitter | 结构化高亮，并服务 Markdown 与调试显示 |
 
@@ -275,7 +275,7 @@ nvim query.sql
 不要把密码写进本仓库。SQL 缓冲区使用 `<Space>swc` / `<Space>swd` 切换连接和数据库，
 `<Space>ssc` / `<Space>ssd` / `<Space>sst` 查看连接、数据库和表，`<Space>se` 执行全部或可视
 选中的 SQL 行，`<Space>sv` 纵向显示结果。这些快捷键依赖 sqls.nvim 注册缓冲区命令；
-Windows 专项测试会同时检查命令存在、快捷键范围和 SQLS 格式化已关闭。排错见
+Windows 专项测试会同时检查命令存在、快捷键范围和 SQLS 格式化可用。排错见
 [sqls.nvim](docs/plugins/language/sqls.nvim.md)。
 
 需要像数据库管理软件一样浏览并编辑表数据时，按 `<Space>sg` 打开 Dadbod Grip。单元格修改会
@@ -320,7 +320,7 @@ Mason 的 LSP、formatter 和调试器有独立生命周期，
 4. Tree-sitter 无高亮：执行 `:checkhealth nvim-treesitter` 和 `:TSUpdate`；配置用 `pcall`
    静默跳过缺失 parser，所以未弹错不代表成功。
 5. 图片粘贴失败：检查系统剪贴板工具和 `magick`，并确认 ImageMagick 支持 AVIF。
-6. 保存时报 formatter 不存在：执行 `:ConformInfo`，再用 Mason 安装对应工具。
+6. 手动 Conform 格式化时报 formatter 不存在：执行 `:ConformInfo`，再用 Mason 安装对应工具。
 7. 某快捷键行为不同：用 `:verbose nmap 按键` 或 `:verbose imap 按键` 查最后覆盖来源。
 
 ## 本机验证结果

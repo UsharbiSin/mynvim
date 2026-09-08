@@ -15,7 +15,7 @@
 | jsonls | [jsonls.lua](../../../lsp/jsonls.lua) | JSON/JSONC，启用服务器格式化能力 |
 | lua_ls | [lua_ls.lua](../../../lsp/lua_ls.lua) | Lua code lens、inlay hint 设置，搭配 lazydev |
 | pylsp | [pylsp.lua](../../../lsp/pylsp.lua) | Jedi，声明 isort、flake8、mypy；禁用 pycodestyle |
-| sqls | [sqls.lua](../../../lsp/sqls.lua) | 四组 MySQL 环境变量连接，关闭自身诊断与格式化 |
+| sqls | [sqls.lua](../../../lsp/sqls.lua) | 四组 MySQL 环境变量连接，关闭自身诊断并保留格式化 |
 
 服务器能力仍取决于外部程序、项目依赖及配置。启用 `flake8`、`mypy` 的布尔值不会自动安装对应 pylsp 扩展；应在 **运行 pylsp 的 Python 环境** 中确认插件可用。尤其本项目写的是 `plugins.mypy`，常见的 pylsp-mypy 扩展使用 `plugins.pylsp_mypy`，不能假定当前已经有类型检查。[pylsp-mypy 配置](https://github.com/python-lsp/pylsp-mypy)
 
@@ -30,7 +30,8 @@
 | `K` | 悬浮文档 |
 | `空格 rn` / `空格 ca` | 重命名 / 代码操作 |
 | `[g` / `]g` | 上一处 / 下一处诊断 |
-| `空格 lf` | 调用 LSP 格式化；与 Conform 的 `空格 fm` 不同 |
+| 普通模式 `空格 lf` | 使用当前缓冲区所有支持文档格式化的 LSP 格式化全文 |
+| 可视模式 `空格 lf` | 使用支持范围格式化的 LSP 只格式化选中范围；不支持时提示且不改全文 |
 | `[f` / `]f` | 跳到当前包含光标的最内层文档符号首行 / 尾行 |
 | `空格 th` | 服务器支持时才提供：切换内联提示 |
 

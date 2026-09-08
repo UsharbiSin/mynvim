@@ -100,8 +100,21 @@ return {
   },
   {
     "stevearc/conform.nvim", -- 格式化代码工具
-    event = { "BufWritePre" },
     cmd = { "ConformInfo" },
+    keys = {
+      {
+        "<leader>fm",
+        function()
+          require("conform").format({
+            lsp_fallback = true,
+            async = false,
+            timeout_ms = 3000,
+          })
+        end,
+        mode = { "n", "v" },
+        desc = "Conform：格式化当前文件或选中代码块",
+      },
+    },
     config = function()
       require('config.conform')
     end

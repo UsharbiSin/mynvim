@@ -1,4 +1,3 @@
--- 对应原 coc.preferences.formatOnSave
 local conform = require("conform")
 
 conform.setup({
@@ -18,17 +17,4 @@ conform.setup({
     -- Neovim 自身的 Lua 配置文件格式化
     lua = { "stylua" },
   },
-  format_on_save = {
-    timeout_ms = 3000,
-    lsp_fallback = false,
-  },
 })
-
--- 在不保存文件的情况下触发局部格式化
-vim.keymap.set({ "n", "v" }, "<leader>fm", function()
-  conform.format({
-    lsp_fallback = true,
-    async = false,
-    timeout_ms = 300,
-  })
-end, { desc = "手动格式化当前文件或选中代码块" })

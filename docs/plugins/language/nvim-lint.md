@@ -35,6 +35,6 @@ SQL 内容经标准输入传递，方言固定为 MySQL。进入缓冲区、保�
 
 ## 方言、格式化与排错
 
-它只诊断，不修复；[Conform](conform.nvim.md) 负责保存时 SQLFluff 格式化。两个插件的参数是分别配置的，lint 的 MySQL 方言不会传给 formatter。PostgreSQL、SQLite 项目需调整这里的参数以及项目 `.sqlfluff`。
+它只诊断，不修复；[Conform](conform.nvim.md) 可由 `空格 fm` 手动执行 SQLFluff 格式化。两个插件的参数是分别配置的，lint 的 MySQL 方言不会传给 formatter。PostgreSQL、SQLite 项目需调整这里的参数以及项目 `.sqlfluff`。
 
 若没有诊断，确认 sqlfluff 的 PATH 和 filetype，检查 `:messages`。如果产生重复消息，检查用户额外启用的 SQL LSP 检查器；本项目已经关闭 sqls 自身诊断。Windows 实机已确认配置可加载且能解析到 sqlfluff。[上游使用说明](https://github.com/mfussenegger/nvim-lint)
