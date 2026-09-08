@@ -95,3 +95,9 @@ vim.api.nvim_create_autocmd('FileType', {
 
 -- 打开保存的密码
 map('n', '<LEADER>pw', ':e ~/Documents/pswd.md<CR>')
+
+
+-- windows 下，打开 wezterm终端的配置
+if vim.g.is_win == 1 then
+  map('n', '<LEADER>wezt', ':e $USERPROFILE/.config/wezterm/wezterm.lua<CR>')
+end
