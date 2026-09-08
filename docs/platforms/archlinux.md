@@ -133,4 +133,6 @@ Neovim 内：
 - SQLS 快捷键、SQL Runner 与 Dadbod Grip 配置已从 windows 分支同步，但尚未在 Linux 实机
   验证。后续需安装 `mysql` 客户端，运行 `:checkhealth dadbod-grip`，并使用测试库确认连接、
   查询结果网格和事务提交。
+- diagram.nvim 与 image.nvim 配置已从 windows 分支同步，但尚未在 Linux 实机验证。后续需
+  在支持图像协议的终端中检查 ImageMagick，并按需验证 Mermaid、PlantUML、D2 或 Gnuplot。
 - `autochdir` 会改变终端和构建命令工作目录。
