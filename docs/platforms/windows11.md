@@ -1,4 +1,4 @@
-# Windows 11（windows 分支）安装与配置
+# Windows 11（main 分支）安装与配置
 
 [返回项目使用说明](../../README.md) · [插件索引](../README.md) · [分支差异](../branch-differences.md)
 
@@ -85,10 +85,10 @@ if (Test-Path $env:LOCALAPPDATA\nvim-data) {
 
 不要直接删除备份。确认新配置稳定后再自行清理。
 
-## 3. 克隆 windows 分支
+## 3. 克隆 main 分支
 
 ```powershell
-git clone --branch windows https://github.com/UsharbiSin/mynvim.git $env:LOCALAPPDATA\nvim
+git clone --branch main https://github.com/UsharbiSin/mynvim.git $env:LOCALAPPDATA\nvim
 nvim
 ```
 
@@ -171,7 +171,7 @@ Get-Command im-select.exe
 
 ### Vimwiki 和个人文件
 
-- Vimwiki 默认 `~/vimwiki/`；在 Neovim 中用 `:echo expand('~/vimwiki')` 查看解析结果。
+- Vimwiki 使用 Linux 分区中的 `E:/@home/usharbisin/vimwiki/`；可用 `:lua =vim.g.vimwiki_list[1].path` 查看实际配置。
 - `<Space>pw` 打开 `$USERPROFILE/Documents/pswd.md`。不用此个人映射就删除。
 - SQL 数据库信息读取 `DB_USER_*` 等环境变量；只有同一连接的五项变量完整时才把该连接传给
   SQLS，未配置数据库不会阻止 SQLS 启动。可在启动 Neovim 前临时设置：
@@ -252,7 +252,7 @@ Snacks 行内图片还取决于 Windows Terminal/终端模拟器是否支持相�
 9. 输入中文后按 Esc 返回 Normal，确认输入法切回英文。
 10. `:checkhealth codex` 无错误，`<Space>ac` 能打开当前项目的 Codex 终端。
 
-windows 分支已经包含 Codex 集成与 boole.nvim。普通模式下可用 `Ctrl-a` 向前切换、
+main 分支已经包含 Codex 集成与 boole.nvim。普通模式下可用 `Ctrl-a` 向前切换、
 `Ctrl-x` 向后切换 `true` / `false`、`enable` / `disable` 等值。具体差异见
 [分支差异](../branch-differences.md)。
 

@@ -6,12 +6,10 @@ require("tokyonight").setup({
   transparent = false, -- 如果你想要磨砂透明终端效果，可以设为 true
   terminal_colors = true,
   styles = {
-    -- 修改一些细节，让代码看起来更舒服
     comments = { italic = true }, -- 注释斜体
     keywords = { italic = true }, -- 关键字斜体
     functions = {},
     variables = {},
-    -- 重点：让背景稍微暗一点，衬托出 Treesitter 的鲜艳颜色
     sidebars = "dark",
     floats = "dark",
   },

@@ -1,9 +1,21 @@
 local map = vim.keymap.set
+local table_mode = require('config.vim-table-mode')
 -- 只在 Markdown 中生效
 local opts = { buffer = true, silent = true }
 
 -- 插入模式下的标记补全
-map('i', ',f', '<Esc>/<++><CR>:nohlsearch<CR>c4l', opts)
+map('i', ',f', function()
+  local position = vim.fn.searchpos([[\V<++>]], '')
+  if position[1] == 0 then
+    return
+  end
+
+  local row = position[1] - 1
+  local column = position[2] - 1
+  vim.api.nvim_buf_set_text(0, row, column, row, column + 4, { '' })
+  vim.api.nvim_win_set_cursor(0, { position[1], column })
+  vim.cmd('nohlsearch')
+end, vim.tbl_extend('force', opts, { desc = "替换下一个 Markdown 占位符" }))
 map('i', ',n', '---<Enter><Enter>', opts)
 map('i', ',b', '**** <++><Esc>F*hi', opts)
 map('i', ',s', '~~~~ <++><Esc>F~hi', opts)
@@ -18,7 +30,8 @@ map('i', ',2', '## <Enter><++><Esc>kA', opts)
 map('i', ',3', '### <Enter><++><Esc>kA', opts)
 map('i', ',4', '#### <Enter><++><Esc>kA', opts)
 map('i', ',l', '--------<Enter>', opts)
-map('i', ',k', '<a style="color: ;"><++></a> <++><Esc>F;i', opts)
+map('i', ',r', '<a style="color: red;"></a> <++><Esc>F/hi', opts)
+map('i', ',t', '<a style="color: blue;"></a> <++><Esc>F/hi', opts)
 
 
 -- 拦截回车键：在表格行尾回车时，自动填充 <++> 占位符
@@ -32,45 +45,21 @@ vim.api.nvim_create_autocmd("User", {
     -- 备份当前 buffer 原有的 <CR> 映射（比如 bullets.vim 的）
     saved_cr_maps[bufnr] = vim.fn.maparg('<CR>', 'i', false, true)
 
-    -- 注入表格专用的 <CR> 拦截器 (去掉了 expr=true，采用原生 feedkeys)
+    -- <Cmd> 在插入模式内执行同步，不会触发 im-select 的 InsertLeave。
+    vim.keymap.set('i', '|', "|<Cmd>lua require('config.vim-table-mode').sync_current()<CR>", {
+      buffer = bufnr,
+      silent = true,
+      desc = "插入表格分隔符并同步列数",
+    })
+
+    -- 注入表格专用的 <CR> 拦截器。
     vim.keymap.set('i', '<CR>', function()
-      local line = vim.api.nvim_get_current_line()
       local lnum = vim.fn.line('.')
       local saved_map = saved_cr_maps[bufnr]
 
       -- 如果在表格内回车
-      if line:match("^%s*|.*|%s*$") then
-        local pipe_count = 0
-        for _ in string.gmatch(line, "|") do pipe_count = pipe_count + 1 end
-
-        if pipe_count >= 2 then
-          local cols = pipe_count - 1
-          local prev_line = lnum > 1 and vim.fn.getline(lnum - 1) or ""
-          local result_keys = ""
-
-          if not prev_line:match("^%s*|.*|%s*$") then
-            local sep_row = ""
-            local data_row = ""
-            for i = 1, cols do
-              sep_row = sep_row .. "|---"
-              data_row = data_row .. "| <++> "
-            end
-            sep_row = sep_row .. "|"
-            data_row = data_row .. "|"
-            result_keys = "<Esc>A<CR>" .. sep_row .. "<CR>" .. data_row
-          else
-            local data_row = ""
-            for i = 1, cols do
-              data_row = data_row .. "| <++> "
-            end
-            data_row = data_row .. "|"
-            result_keys = "<Esc>A<CR>" .. data_row
-          end
-
-          -- 发送按键生成表格，并阻断其他插件
-          vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(result_keys, true, false, true), 'n', false)
-          return
-        end
+      if table_mode.insert_row(bufnr, lnum) then
+        return
       end
 
       -- 如果光标不在表格内，完全放行给被备份的插件逻辑

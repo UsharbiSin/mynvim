@@ -1,7 +1,9 @@
 -- 配置 vimwiki 路径及语法解析格式
+local vimwiki_path = vim.g.is_win == 1 and 'E:/@home/usharbisin/vimwiki/' or '~/vimwiki/'
+
 vim.g.vimwiki_list = {
   {
-    path = '~/vimwiki/',
+    path = vimwiki_path,
     syntax = 'markdown',
     ext = '.md'
   }

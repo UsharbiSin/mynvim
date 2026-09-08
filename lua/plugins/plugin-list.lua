@@ -33,7 +33,7 @@ return {
   -- ==========================================
   {
     "nvim-tree/nvim-tree.lua", -- 文件树
-    dependencies = { "nvim-tree/nvim-web-devicons" },
+    dependencies = { "nvim-tree/nvim-web-devicons" },     -- 图标支持
     keys = {
       { "tt", "<cmd>NvimTreeToggle<CR>", desc = "打开/关闭文件树" },
       { "<leader>f", "<cmd>NvimTreeFindFile<CR>", desc = "在文件树中定位当前文件" }
@@ -228,7 +228,27 @@ return {
       require('config.tools')
     end
   },
-  { "h-hg/fcitx.nvim" },                                  -- normal模式自动切换为英文
+  {
+    "h-hg/fcitx.nvim",                                    -- Linux 下在 normal 模式切换为英文
+    cond = function()
+      return vim.g.is_win ~= 1
+    end,
+  },
+  {
+    "keaising/im-select.nvim",                        -- normal模式自动切换为英文（windows）
+    cond = function()
+      return vim.g.is_win == 1
+    end,
+    config = function()
+      require("im_select").setup({
+        -- 英文输入法代码，运行 im-select获得
+        default_im_select = "1033",
+        default_command = "im-select.exe",
+        -- bullets.vim 的回车会通过表达式寄存器触发 CmdlineLeave，但此时仍在插入模式。
+        set_default_events = { "InsertLeave" },
+      })
+    end,
+  },
   { "folke/which-key.nvim",         event = "VeryLazy" }, -- 快捷键提示
   {
     "nat-418/boole.nvim",
@@ -236,7 +256,7 @@ return {
     config = function()
       require('config.nvim-boole')
     end,
-  },  -- 快捷键切换布尔值
+  }, -- 快捷键切换布尔值
 
   -- ==========================================
   -- 语言特定优化 (杂项)
@@ -298,11 +318,11 @@ return {
         desc = "SQL：执行选中内容",
       },
     },
-    config = function()
-      require("config.dadbod-grip")
-    end,
-  },
-  {
+  config = function()
+    require("config.dadbod-grip")
+  end,
+},
+{
     "mfussenegger/nvim-lint",
     event = { "BufReadPre", "BufNewFile" },
     config = function()

@@ -51,8 +51,8 @@ git clone --branch main https://github.com/UsharbiSin/mynvim.git ~/.config/nvim
 nvim
 ```
 
-首次启动的 `init.lua` 会克隆 stable lazy.nvim，随后 Lazy 根据 `plugin-list.lua` 和
-`lazy-lock.json` 安装插件。网络中断时重新启动并执行：
+首次启动的 `init.lua` 会克隆 stable lazy.nvim，随后 Lazy 根据 `plugin-list.lua` 安装插件，
+并在本地生成已被 Git 忽略的 `lazy-lock.json`。网络中断时重新启动并执行：
 
 ```vim
 :Lazy sync
@@ -130,9 +130,9 @@ Neovim 内：
 - Markdown 的 F10 调用未安装的 `InstantMarkdownPreview`；使用 F8/F9。
 - TeX、Dart 分支引用了未声明的 Vimtex/Coc 命令。
 - Python DAP 使用作者绝对路径；nvim-dap-python 虽安装但没有调用其 setup。
-- SQLS 快捷键、SQL Runner 与 Dadbod Grip 配置已从 windows 分支同步，但尚未在 Linux 实机
+- SQLS 快捷键、SQL Runner 与 Dadbod Grip 已纳入跨平台配置，但尚未在 Linux 实机
   验证。后续需安装 `mysql` 客户端，运行 `:checkhealth dadbod-grip`，并使用测试库确认连接、
   查询结果网格和事务提交。
-- diagram.nvim 与 image.nvim 配置已从 windows 分支同步，但尚未在 Linux 实机验证。后续需
+- diagram.nvim 与 image.nvim 已纳入跨平台配置，但尚未在 Linux 实机验证。后续需
   在支持图像协议的终端中检查 ImageMagick，并按需验证 Mermaid、PlantUML、D2 或 Gnuplot。
 - `autochdir` 会改变终端和构建命令工作目录。

@@ -1,8 +1,8 @@
 # mynvim 中文使用说明
 
-这是一套以 Lua 编写、由 `lazy.nvim` 管理的个人 Neovim 配置。`main` 分支用于
-Arch Linux，`windows` 分支用于 Windows 11 原生 Neovim。本文以当前分支的实际代码
-为准，既说明已经可用的功能，也标出仍需按机器修改的个人路径和未完成迁移项。
+这是一套以 Lua 编写、由 `lazy.nvim` 管理的个人 Neovim 配置。`main` 分支同时支持
+Arch Linux 和 Windows 11 原生 Neovim，运行时通过 `vim.g.is_win` 选择系统相关设置。
+本文既说明已经可用的功能，也标出仍需按机器安装的外部工具和个人路径。
 
 > 当前文档审计日期：2026-09-07。`main` 已在 Arch Linux / Neovim 0.12.5 上完成
 > 无界面启动检查；`windows` 已在 Windows 11 / Neovim 0.12.4 上完成原生实机检查。
@@ -13,19 +13,18 @@ Arch Linux，`windows` 分支用于 Windows 11 原生 Neovim。本文以当前�
 | --- | --- |
 | Arch Linux 从零安装、升级、验证 | [Arch Linux 配置](docs/platforms/archlinux.md) |
 | Windows 11 从零安装、路径适配、验证 | [Windows 11 配置](docs/platforms/windows11.md) |
-| 两分支的真实差异和合并注意事项 | [分支差异](docs/branch-differences.md) |
+| Arch Linux 与 Windows 的设置差异 | [系统设置差异](docs/branch-differences.md) |
 | 全部插件按功能分类，每个插件单独说明 | [插件文档索引](docs/README.md) |
-| main 与 windows 分支内置 Codex 终端 | [Codex 使用说明](docs/codex.md) |
+| 内置 Codex 终端 | [Codex 使用说明](docs/codex.md) |
 
-## 先选对分支
+## 安装 main 分支
 
-| 分支 | 运行环境 | 配置目录 |
+| 系统 | 分支 | 配置目录 |
 | --- | --- | --- |
-| `main` | Arch Linux | `~/.config/nvim` |
-| `windows` | Windows 11 原生 Neovim | `$env:LOCALAPPDATA\nvim` |
+| Arch Linux | `main` | `~/.config/nvim` |
+| Windows 11 | `main` | `$env:LOCALAPPDATA\nvim` |
 
-不要在同一目录里频繁切换分支后直接启动。两个分支有不同的输入法插件、浏览器路径、
-Python 调试器路径和终端命令。若确实需要比较，请用 Git worktree。
+同一份配置会按系统选择输入法插件、Shell、调试器路径、Vimwiki 路径和运行命令。
 
 ### Arch Linux 快速安装
 
@@ -61,11 +60,11 @@ nvim
 if (Test-Path $env:LOCALAPPDATA\nvim) {
   Rename-Item $env:LOCALAPPDATA\nvim ("nvim.bak-" + (Get-Date -Format yyyyMMdd-HHmmss))
 }
-git clone --branch windows https://github.com/UsharbiSin/mynvim.git $env:LOCALAPPDATA\nvim
+git clone --branch main https://github.com/UsharbiSin/mynvim.git $env:LOCALAPPDATA\nvim
 nvim
 ```
 
-Windows 分支需要先安装 Neovim、Git、Node.js、Python、C/C++ 编译器、Tree-sitter CLI、
+Windows 需要先安装 Neovim、Git、Node.js、Python、C/C++ 编译器、Tree-sitter CLI、
 ImageMagick 和 Nerd Font，并把命令加入 PATH。插件下载完成后执行 `:Lazy sync`、`:Mason`
 和 `:checkhealth`。语言编译器、数据库凭据和可选图表渲染器仍按实际用途安装。
 
@@ -74,7 +73,7 @@ ImageMagick 和 Nerd Font，并把命令加入 PATH。插件下载完成后执�
 ```text
 .
 ├── init.lua                  # 入口、lazy.nvim 引导、F10 一键运行
-├── lazy-lock.json            # 插件提交锁；不锁定 Mason 下载的外部工具
+├── lazy-lock.json            # Lazy 本地生成的插件锁文件，已被 Git 忽略
 ├── markdown.css              # 浏览器 Markdown 预览样式
 ├── ftplugin/
 │   └── markdown.lua          # Markdown 专用缩写、表格回车逻辑
@@ -285,7 +284,7 @@ Windows 专项测试会同时检查命令存在、快捷键范围和 SQLS 格式
 
 ## Markdown 与 Vimwiki
 
-Vimwiki 默认目录是 `~/vimwiki/`，语法为 Markdown，扩展名为 `.md`。浏览器预览、编辑器内
+Vimwiki 在 Linux 使用 `~/vimwiki/`，在 Windows 使用 `E:/@home/usharbisin/vimwiki/`，语法为 Markdown，扩展名为 `.md`。浏览器预览、编辑器内
 渲染、图片粘贴和表格编辑是四套独立能力：
 
 - `render-markdown.nvim` 美化当前 Neovim buffer；
@@ -294,21 +293,20 @@ Vimwiki 默认目录是 `~/vimwiki/`，语法为 Markdown，扩展名为 `.md`�
 - `diagram.nvim` 调用 Mermaid、PlantUML、D2 或 Gnuplot 渲染代码块；
 - `vim-table-mode` 用 `<Space>tm` 开关表格排版。
 
-main 的 Markdown CSS 与图片路径含作者的绝对路径；更换用户名或配置目录后应修改
-`lua/config/markdown.lua`。Windows 分支使用 `stdpath('config')` 定位 CSS，并交给系统默认
-浏览器打开预览。详细说明见[Markdown 插件分类](docs/README.md#markdown-与知识库)。
+两个系统都使用 `stdpath('config')` 定位 Markdown CSS，并交给系统默认浏览器打开预览。
+Vimwiki 根目录按系统选择，详细说明见[Markdown 插件分类](docs/README.md#markdown-与知识库)。
 
 ## 更新、回滚与诊断
 
-日常更新前先提交自己的配置改动。`lazy-lock.json` 应一起保留，它锁定插件提交：
+日常更新前先提交自己的配置改动。`lazy-lock.json` 是各系统本地维护的文件，不参与 Git 提交：
 
 ```bash
 git status
 git pull --ff-only
 ```
 
-在 Neovim 内运行 `:Lazy sync`。如果只想恢复锁文件指定版本，在 Lazy 界面查看帮助后执行
-restore；不要无理由删除 `lazy-lock.json`。Mason 的 LSP、formatter 和调试器有独立生命周期，
+在 Neovim 内运行 `:Lazy sync`。需要回退本机插件时，可用本地锁文件和 Lazy 界面的 restore；
+Mason 的 LSP、formatter 和调试器有独立生命周期，
 需在 `:Mason` 中检查。
 
 常见问题：

@@ -48,10 +48,10 @@ vim.api.nvim_create_autocmd("LspAttach", {
       client.server_capabilities.documentRangeFormattingProvider = false
     end
 
-    -- 开启 LSP 语义高亮 (Semantic Tokens)  新版已默认开启
-    -- if client.server_capabilities.semanticTokensProvider then
-    --   vim.lsp.semantic_tokens.start(event.buf, client.id)
-    -- end
+    -- 开启 LSP 语义高亮 (Semantic Tokens)
+    if client.server_capabilities.semanticTokensProvider and vim.lsp.semantic_tokens.enable then
+      vim.lsp.semantic_tokens.enable(true, { bufnr = event.buf, client_id = client.id })
+    end
 
     local function map(mode, keys, func, desc)
       vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = "LSP: " .. desc })
@@ -127,10 +127,10 @@ vim.api.nvim_create_autocmd("LspAttach", {
 
     -- 代码折叠
     if client and client:supports_method("textDocument/foldingRange") then
-        local win = vim.api.nvim_get_current_win()
-        vim.wo[win].foldmethod = "expr"
-        vim.wo[win].foldexpr = "v:lua.vim.lsp.foldexpr()"
-        vim.wo[win].foldlevel = 99
+      local win = vim.api.nvim_get_current_win()
+      vim.wo[win].foldmethod = "expr"
+      vim.wo[win].foldexpr = "v:lua.vim.lsp.foldexpr()"
+      vim.wo[win].foldlevel = 99
     end
 
     -- 光标下单词高亮
@@ -155,12 +155,12 @@ vim.api.nvim_create_autocmd("LspAttach", {
       })
     end
 
-    -- 自定义 LSP 诊断侧边栏图标 (添加这部分代码)
+    -- 侧边栏图标
     local signs = {
-      Error = "󰅚 ", -- 错误图标
-      Warn  = "󰀪 ", -- 警告图标
-      Info  = "󰋽 ", -- 信息图标
-      Hint  = " "  -- 提示图标 (小灯泡)
+      Error = "󰅚 ",
+      Warn  = "󰀪 ",
+      Info  = "󰋽 ",
+      Hint  = " ",
     }
     for type, icon in pairs(signs) do
       local hl = "DiagnosticSign" .. type
@@ -169,7 +169,7 @@ vim.api.nvim_create_autocmd("LspAttach", {
 
     -- 诊断样式配置
     vim.diagnostic.config({
-      virtual_text = false,  -- 行尾报错文本
+      virtual_text = vim.g.is_win == 1, -- Windows 显示行尾诊断，Arch Linux 保持精简
       virtual_lines = false, -- 报错文本的虚拟行
       signs = true,          -- 图标
       underline = true,      -- 报错代码的波浪线提示

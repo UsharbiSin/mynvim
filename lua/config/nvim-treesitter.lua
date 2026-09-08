@@ -1,5 +1,8 @@
 local parsers = { "python", "lua", "c", "cpp", "vim", "vimdoc", "query", "markdown", "markdown_inline", "latex", "css",
   "html", "javascript", "sql" }
+if vim.g.is_win == 1 then
+  require('nvim-treesitter.install').compilers = { "gcc" }
+end
 require('nvim-treesitter').install(parsers)
 
 -- 启用代码高亮 (替代老版本的 highlight = { enable = true })
@@ -13,7 +16,7 @@ vim.api.nvim_create_autocmd('FileType', {
   end,
 })
 
--- 代码折叠 (替代老版本的额外模块)
+-- 启用代码折叠 (替代老版本的额外模块)
 -- vim.api.nvim_create_autocmd('FileType', {
 --   pattern = '*',
 --   callback = function()

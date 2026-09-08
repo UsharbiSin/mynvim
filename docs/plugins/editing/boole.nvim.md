@@ -2,12 +2,12 @@
 
 # boole.nvim：值的递增与递减
 
-仓库：`nat-418/boole.nvim`。main 与 windows 分支均声明，VeryLazy 加载；配置在
+仓库：`nat-418/boole.nvim`。main 的跨平台配置以 VeryLazy 加载；配置在
 `lua/config/nvim-boole.lua`。普通模式 `Ctrl-a` 向前切换，`Ctrl-x`
 向后切换，除布尔值外还增加 `enable` / `disable` 对。
 
 把光标放在 `true`、`false`、`enable` 或 `disable` 上使用；其他上游内置循环以帮助为准。
 它覆盖/扩展 Vim 原生 Ctrl-a/Ctrl-x 数字增减语义，并可能与多光标的 Ctrl-x 相邻冲突。
-两个分支使用相同的插件配置。
+两个系统使用相同的插件配置。
 
 上游：[boole.nvim](https://github.com/nat-418/boole.nvim)。

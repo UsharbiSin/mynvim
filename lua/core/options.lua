@@ -1,7 +1,7 @@
 local opt = vim.opt
 opt.number = true          -- 显示行号
 opt.relativenumber = false -- 不显示相对行号
-opt.cursorline = true      -- 当前行突出显示
+opt.cursorline = true      -- 当前行不加下划线
 opt.wrap = true            -- 自动换行
 opt.showcmd = true         -- 显示执行的命令
 opt.wildmenu = true        -- 命令补全菜单
@@ -18,12 +18,12 @@ opt.shiftwidth = 2         -- 设置代码位移和自动缩进时的长度
 opt.softtabstop = 2        -- 设置缩进长度
 opt.list = true            -- 显示行尾的空格
 opt.listchars = { tab = '▸ ', trail = '·', extends = '❯', precedes = '❮', nbsp = '×' }
-opt.textwidth = 0          -- 每行最大字符宽度，0 为关闭
+opt.textwidth = 0          -- 关闭自动换行
 opt.indentexpr = ''        -- 关闭智能缩进表达式
 opt.backspace = { 'indent', 'eol', 'start' }
-opt.foldmethod = 'manual'  -- 代码折叠
+opt.foldmethod = vim.g.is_win == 1 and 'indent' or 'manual' -- 按平台保留原有折叠习惯
 opt.foldlevel = 99         -- 默认显示折叠层数
-opt.foldlevelstart = 99    -- 每次打开新缓冲区时，默认的折叠层级
+opt.foldlevelstart = 99    -- 新缓冲区默认全部展开
 opt.laststatus = 2         -- 始终在窗口底部显示文件信息
 opt.autochdir = true       -- 自动将工作目录切换到当前文件所在的目录
 opt.updatetime = 300       -- 设置刷新时间为300毫秒
@@ -36,7 +36,7 @@ opt.conceallevel = 3       -- neovim 隐藏级别
 vim.api.nvim_create_autocmd("FileType", {
   pattern = "python",
   callback = function()
-    -- 注意这里使用的是 opt_local，这意味着它只对当前 Python 缓冲区生效，不会污染全局的 2 空格设置
+    -- 只对当前 Python 缓冲区生效，不会污染全局的 2 空格设置
     vim.opt_local.tabstop = 4
     vim.opt_local.shiftwidth = 4
     vim.opt_local.softtabstop = 4

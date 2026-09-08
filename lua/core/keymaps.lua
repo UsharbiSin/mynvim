@@ -50,7 +50,7 @@ map('v', '<C-k>', ":m '<-2<CR>gv=gv")
 map('n', '<LEADER>nh', ':nohl<CR>')
 
 -- 快速打开 init.lua
-map('n', '<LEADER>rc', ':e ~/.config/nvim/init.lua<CR>')
+map('n', '<LEADER>rc', ':e ' .. vim.fn.stdpath('config') .. '/init.lua<CR>')
 
 -- 开关拼写检查
 map('n', '<LEADER>sc', ':set spell!')
@@ -93,8 +93,9 @@ vim.api.nvim_create_autocmd('FileType', {
   end,
 })
 
--- 打开保存的密码
-map('n', '<LEADER>pw', ':e ~/Documents/pswd.md<CR>')
+-- 密码文档沿用各平台的用户目录。
+local password_file = vim.fs.joinpath(vim.fn.expand('~'), 'Documents', 'pswd.md')
+map('n', '<LEADER>pw', '<cmd>edit ' .. vim.fn.fnameescape(password_file) .. '<CR>')
 
 
 -- windows 下，打开 wezterm终端的配置
