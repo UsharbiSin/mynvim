@@ -10,28 +10,33 @@ local connection_defs = {
 local function get_connection(item)
   local suffix = item.suffix
 
-  local conn = {
-    name = item.name,
-    user = os.getenv("DB_USER_" .. suffix),
-    password = os.getenv("DB_PASSWORD_" .. suffix),
-    host = os.getenv("DB_HOST_" .. suffix),
-    port = os.getenv("DB_PORT_" .. suffix),
-    database = os.getenv("DB_NAME_" .. suffix),
-  }
-
   for _, field in ipairs({
-    "user",
-    "password",
-    "host",
-    "port",
-    "database",
+    "USER",
+    "PASSWORD",
+    "HOST",
+    "PORT",
+    "NAME",
   }) do
-    if not conn[field] or conn[field] == "" then
+    local value = os.getenv("DB_" .. field .. "_" .. suffix)
+
+    if not value or value == "" then
       return nil
     end
   end
 
-  return conn
+  return {
+    name = item.name,
+
+    -- 保留环境变量占位符，由 Dadbod Grip 在真正连接时展开。
+    url = string.format(
+      "mysql://${DB_USER_%s}:${DB_PASSWORD_%s}@${DB_HOST_%s}:${DB_PORT_%s}/${DB_NAME_%s}",
+      suffix,
+      suffix,
+      suffix,
+      suffix,
+      suffix
+    ),
+  }
 end
 
 local function connections()
@@ -39,6 +44,7 @@ local function connections()
 
   for _, item in ipairs(connection_defs) do
     local conn = get_connection(item)
+
     if conn then
       table.insert(result, conn)
     end
@@ -60,22 +66,17 @@ function M.select_connection()
 
   vim.ui.select(items, {
     prompt = "选择当前 SQL 文件使用的数据库：",
+
     format_item = function(item)
-      return string.format(
-        "%s  (%s:%s/%s)",
-        item.name,
-        item.host,
-        item.port,
-        item.database
-      )
+      return item.name
     end,
   }, function(choice)
     if not choice then
       return
     end
 
-    -- 只保存连接名称，不把密码写进 buffer 变量。
     vim.b.sql_connection_name = choice.name
+    vim.b.sql_connection_url = choice.url
 
     vim.notify(
       "当前 SQL 连接：" .. choice.name,
@@ -84,71 +85,10 @@ function M.select_connection()
   end)
 end
 
-local function current_connection()
-  local name = vim.b.sql_connection_name
-
-  if not name then
-    return nil
-  end
-
-  for _, item in ipairs(connection_defs) do
-    if item.name == name then
-      return get_connection(item)
-    end
-  end
-
-  return nil
-end
-
-local function show_result(text, connection_name)
-  local current_win = vim.api.nvim_get_current_win()
-
-  vim.cmd("botright new")
-
-  local buf = vim.api.nvim_get_current_buf()
-
-  vim.bo[buf].buftype = "nofile"
-  vim.bo[buf].bufhidden = "wipe"
-  vim.bo[buf].swapfile = false
-  vim.bo[buf].filetype = "sql"
-
-  vim.api.nvim_buf_set_name(
-    buf,
-    "mysql://" .. connection_name .. "/result"
-  )
-
-  local lines = vim.split(text or "", "\n", {
-    plain = true,
-  })
-
-  if #lines > 0 and lines[#lines] == "" then
-    table.remove(lines)
-  end
-
-  if #lines == 0 then
-    lines = { "(no output)" }
-  end
-
-  vim.api.nvim_buf_set_lines(
-    buf,
-    0,
-    -1,
-    false,
-    lines
-  )
-
-  vim.bo[buf].modifiable = false
-
-  -- 执行后回到原 SQL 文件。
-  if vim.api.nvim_win_is_valid(current_win) then
-    vim.api.nvim_set_current_win(current_win)
-  end
-end
-
 function M.run(sql)
-  local conn = current_connection()
+  local url = vim.b.sql_connection_url
 
-  if not conn then
+  if not url then
     vim.notify(
       "当前 SQL 文件还没有选择数据库，请先按 <leader>sc",
       vim.log.levels.WARN
@@ -157,48 +97,14 @@ function M.run(sql)
   end
 
   if not sql or sql:match("^%s*$") then
-    vim.notify("没有可执行的 SQL", vim.log.levels.WARN)
-    return
-  end
-
-  if vim.fn.executable("mysql.exe") ~= 1 then
     vim.notify(
-      "找不到 mysql.exe，请检查 PATH",
-      vim.log.levels.ERROR
+      "没有可执行的 SQL",
+      vim.log.levels.WARN
     )
     return
   end
 
-  vim.system({
-    "mysql.exe",
-    "--host=" .. conn.host,
-    "--port=" .. conn.port,
-    "--user=" .. conn.user,
-    "--database=" .. conn.database,
-    "--default-character-set=utf8mb4",
-    "--table",
-    "--raw",
-  }, {
-    stdin = sql,
-    text = true,
-
-    -- 不把密码放进命令行参数。
-    env = vim.tbl_extend("force", vim.fn.environ(), {
-      MYSQL_PWD = conn.password,
-    }),
-  }, function(obj)
-    vim.schedule(function()
-      if obj.code ~= 0 then
-        show_result(
-          obj.stderr ~= "" and obj.stderr or obj.stdout,
-          conn.name
-        )
-        return
-      end
-
-      show_result(obj.stdout, conn.name)
-    end)
-  end)
+  require("dadbod-grip").open(sql, url)
 end
 
 function M.run_buffer()
