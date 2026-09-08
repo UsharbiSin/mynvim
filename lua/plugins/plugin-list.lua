@@ -228,9 +228,17 @@ return {
       require('config.tools')
     end
   },
-  -- { "h-hg/fcitx.nvim" },                                  -- normal模式自动切换为英文
+  {
+    "h-hg/fcitx.nvim",                                    -- Linux 下在 normal 模式切换为英文
+    cond = function()
+      return vim.g.is_win ~= 1
+    end,
+  },
   {
     "keaising/im-select.nvim",                        -- normal模式自动切换为英文（windows）
+    cond = function()
+      return vim.g.is_win == 1
+    end,
     config = function()
       require("im_select").setup({
         -- 英文输入法代码，运行 im-select获得

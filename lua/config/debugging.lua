@@ -33,7 +33,11 @@ dap.adapters.cudagdb = {
   command = adapter_command("cuda-gdb"),
 }
 
-local is_win = vim.fn.has("win32") == 1
+local is_win = vim.g.is_win == 1
+local function environment_python(prefix)
+  return vim.fs.joinpath(prefix, is_win and "python.exe" or "bin/python")
+end
+
 local mason_path = vim.fn.stdpath("data")
   .. "/mason/packages/debugpy/venv/"
   .. (is_win and "Scripts/python.exe" or "bin/python")
@@ -163,7 +167,7 @@ vim.list_extend(dap.configurations.python, {
       -- cicromamba 激活後，会自动注入 CONDA_PREFIX 环境变量
       local conda_prefix = os.getenv("CONDA_PREFIX")
       if conda_prefix then
-        return conda_prefix .. "/python.exe"
+        return environment_python(conda_prefix)
       end
       -- 如果没激活 micromamba，就降级使用终端默认的 python
       return vim.fn.exepath("python")
@@ -187,7 +191,7 @@ vim.list_extend(dap.configurations.python, {
       -- cicromamba 激活後，会自动注入 CONDA_PREFIX 环境变量
       local conda_prefix = os.getenv("CONDA_PREFIX")
       if conda_prefix then
-        return conda_prefix .. "/python.exe"
+        return environment_python(conda_prefix)
       end
       -- 如果没激活 micromamba，就降级使用终端默认的 python
       return vim.fn.exepath("python")

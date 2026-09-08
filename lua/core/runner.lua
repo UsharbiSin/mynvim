@@ -1,6 +1,6 @@
 local M = {}
 
-local is_win = vim.fn.has("win32") == 1
+local is_win = vim.g.is_win == 1
 
 local function notify(message, level)
   vim.notify(message, level or vim.log.levels.INFO, { title = "一键运行" })

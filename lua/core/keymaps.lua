@@ -93,8 +93,9 @@ vim.api.nvim_create_autocmd('FileType', {
   end,
 })
 
--- 密码查看
-map('n', '<LEADER>pw', ':e $USERPROFILE/Documents/pswd.md<CR>')
+-- 密码文档沿用各平台的用户目录。
+local password_file = vim.fs.joinpath(vim.fn.expand('~'), 'Documents', 'pswd.md')
+map('n', '<LEADER>pw', '<cmd>edit ' .. vim.fn.fnameescape(password_file) .. '<CR>')
 
 
 -- windows 下，打开 wezterm终端的配置
