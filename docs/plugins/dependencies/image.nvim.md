@@ -2,8 +2,8 @@
 
 # image.nvim：终端图像后端
 
-仓库：`3rd/image.nvim`，仅 windows 分支作为 diagram.nvim 的依赖安装并使用默认配置。它负责
-把图表渲染结果显示在 Neovim 中，本项目没有为它单独设置快捷键。
+仓库：`3rd/image.nvim`，作为 diagram.nvim 的依赖安装并使用默认配置。它负责把图表渲染结果
+显示在 Neovim 中，本项目没有为它单独设置快捷键。
 
 显示能力取决于终端图像协议和转换工具。Windows 实机的 `:checkhealth snacks` 已识别 WezTerm
 与 ImageMagick；无界面检查的 `TERM=dumb` 不具备图像协议，因此该环境里的协议警告不能代表

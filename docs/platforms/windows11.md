@@ -122,6 +122,23 @@ winget install --id GoLang.Go -e
 go version
 ```
 
+可编辑数据库表格还需要 MySQL 命令行客户端。到
+[MySQL Community Downloads](https://dev.mysql.com/downloads/) 下载 Windows MySQL Community
+Server 8.4 MSI。运行安装向导；仅连接远程数据库时可选择 `Custom` 并安装包含 MySQL
+Command-Line Client 的客户端程序，不必配置本地数据库服务。
+
+MSI 的默认客户端位置是
+`C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe`。将其所在的 `bin` 目录加入
+Windows 的用户或系统 `Path`，关闭旧终端和 Neovim，重新打开 PowerShell 后确认：
+
+```powershell
+Get-Command mysql.exe
+mysql.exe --version
+```
+
+在 Neovim 中按 `<Space>sg` 打开 Dadbod Grip；具体编辑与事务提交步骤见
+[dadbod-grip.nvim](../plugins/language/dadbod-grip.nvim.md)。
+
 每打开一种语言都用以下命令确认真实状态：
 
 ```vim
@@ -235,7 +252,8 @@ Snacks 行内图片还取决于 Windows Terminal/终端模拟器是否支持相�
 9. 输入中文后按 Esc 返回 Normal，确认输入法切回英文。
 10. `:checkhealth codex` 无错误，`<Space>ac` 能打开当前项目的 Codex 终端。
 
-windows 分支已经包含 Codex 集成，但仍未安装 main 的 boole.nvim。具体差异见
+windows 分支已经包含 Codex 集成与 boole.nvim。普通模式下可用 `Ctrl-a` 向前切换、
+`Ctrl-x` 向后切换 `true` / `false`、`enable` / `disable` 等值。具体差异见
 [分支差异](../branch-differences.md)。
 
 仓库提供可重复的 Windows 专项检查。PowerShell 中先解析真实应用路径，再执行：
@@ -245,6 +263,6 @@ $nvimExe = (Get-Command nvim.exe).Source
 & $nvimExe --headless -u init.lua -l tests/windows.lua
 ```
 
-当前结果为 16 项通过，覆盖平台识别、带空格路径的一键运行、SQLS 空连接启动与命令注册、
-GDB 配置、默认浏览器与 Vimwiki 图表集成。若机器缺少 gcc、gdb 或六个 Mason LSP，测试会
-明确失败。
+当前结果为 19 项通过，覆盖平台识别、带空格路径的一键运行、SQLS 空连接启动与命令注册、
+GDB 配置、默认浏览器、Vimwiki 图表集成及 Markdown 表格回车的输入模式保持。若机器缺少
+gcc、gdb 或六个 Mason LSP，测试会明确失败。

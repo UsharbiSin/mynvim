@@ -2,8 +2,8 @@
 
 # diagram.nvim：文档代码块图表渲染
 
-仓库：`3rd/diagram.nvim`，仅 windows 分支安装。Markdown、Vimwiki 或 Neorg 文件加载，
-Windows 配置位于 `lua/config/diagram.lua`，图像显示依赖 [image.nvim](../dependencies/image.nvim.md)。
+仓库：`3rd/diagram.nvim`。Markdown、Vimwiki 或 Neorg 文件加载；windows 分支的配置文件是
+`lua/config/diagram.lua`，图像显示依赖 [image.nvim](../dependencies/image.nvim.md)。
 
 本项目启用 Mermaid、PlantUML、D2 和 Gnuplot 渲染器。Windows 实机已确认 Mermaid CLI
 `mmdc` 可用，Snacks health 能识别 Mermaid；PlantUML、D2 与 Gnuplot 需按用途另行安装。

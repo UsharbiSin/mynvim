@@ -8,10 +8,9 @@
 | 方面 | main（Arch Linux） | windows（Windows 11） |
 | --- | --- | --- |
 | 输入法 | `h-hg/fcitx.nvim` | `keaising/im-select.nvim`，默认 IME 代码 `1033` |
-| 布尔值切换 | `boole.nvim`，`Ctrl-a`/`Ctrl-x` | 未安装 |
+| 布尔值切换 | `boole.nvim`，`Ctrl-a`/`Ctrl-x` | `boole.nvim`，`Ctrl-a`/`Ctrl-x` |
 | Codex | Snacks terminal、命令、health、测试和文档均存在 | 已完整接入，并兼容原生程序与 npm 启动脚本 |
 | Snacks | 启动即加载，图片、公式、通知、终端 | 启动即加载，图片、公式、通知、终端 |
-| 文档图表 | 未安装 diagram.nvim/image.nvim | diagram.nvim + image.nvim，支持 Markdown/Vimwiki |
 | Markdown 浏览器 | `/usr/lib/firefox/firefox` | 系统默认浏览器 |
 | Markdown CSS | 作者 Linux 绝对路径 | `stdpath('config')/markdown.css` |
 | Vimwiki 图片 | 作者 Linux 绝对路径 | `~/vimwiki/.markdown_images` |
@@ -40,7 +39,7 @@ TeX 仍依赖当前未声明的 Vimtex，Dart 仍依赖当前未启用的 Coc。
 
 ## 插件锁差异
 
-两分支绝大多数锁定插件提交相同。平台输入法插件和 boole 造成条目不同，lazy.nvim 自身
+两分支绝大多数锁定插件提交相同。平台输入法插件造成条目不同，lazy.nvim 自身
 锁定提交也不同。不要把一个分支的 `lazy-lock.json` 单独复制到另一个分支，否则会让代码
 与锁文件失配。
 

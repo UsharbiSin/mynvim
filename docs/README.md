@@ -32,6 +32,7 @@
 - [conform.nvim](plugins/language/conform.nvim.md) / [nvim-lint](plugins/language/nvim-lint.md)
 - [nvim-treesitter](plugins/language/nvim-treesitter.md)
 - [sqls.nvim](plugins/language/sqls.nvim.md)
+- [dadbod-grip.nvim](plugins/language/dadbod-grip.nvim.md)
 - [lazydev.nvim](plugins/language/lazydev.nvim.md) / [luvit-meta](plugins/dependencies/luvit-meta.md)
 - [vim-json](plugins/language/vim-json.md)、[vim-css3-syntax](plugins/language/vim-css3-syntax.md)、[PIV](plugins/language/PIV.md)、[vim-coloresque](plugins/language/vim-coloresque.md)、[vim-javascript](plugins/language/vim-javascript.md)、[emmet-vim](plugins/language/emmet-vim.md)、[indentpython.vim](plugins/language/indentpython.vim.md)
 
@@ -50,12 +51,12 @@
 - [vimwiki](plugins/markdown/vimwiki.md)：个人知识库
 - [mathjax-support-for-mkdp](plugins/markdown/mathjax-support-for-mkdp.md)：旧预览方案的数学扩展
 - [img-clip.nvim](plugins/markdown/img-clip.nvim.md)：剪贴板图片保存
-- [diagram.nvim](plugins/markdown/diagram.nvim.md)：代码块图表渲染（仅 windows）
+- [diagram.nvim](plugins/markdown/diagram.nvim.md)：代码块图表渲染
 - [bullets.vim](plugins/markdown/bullets.vim.md)：列表续写
 - [vim-table-mode](plugins/markdown/vim-table-mode.md)：表格输入和排版
 - [snacks.nvim](plugins/markdown/snacks.nvim.md)：行内图片、公式与 Codex 终端
 - [mini.nvim](plugins/dependencies/mini.nvim.md)：render-markdown 图标依赖
-- [image.nvim](plugins/dependencies/image.nvim.md)：diagram.nvim 图像后端（仅 windows）
+- [image.nvim](plugins/dependencies/image.nvim.md)：diagram.nvim 图像后端
 
 ## Git
 
@@ -74,7 +75,7 @@
 - [vim-multiple-cursors](plugins/editing/vim-multiple-cursors.md)
 - [vim-FIGlet](plugins/editing/vim-FIGlet.md)
 - [vim-signature](plugins/editing/vim-signature.md)
-- [boole.nvim](plugins/editing/boole.nvim.md)（仅 main）
+- [boole.nvim](plugins/editing/boole.nvim.md)
 
 ## 输入法
 
@@ -89,7 +90,7 @@
 - [nvim-nio](plugins/dependencies/nvim-nio.md)
 - [mini.nvim](plugins/dependencies/mini.nvim.md)
 - [luvit-meta](plugins/dependencies/luvit-meta.md)
-- [image.nvim](plugins/dependencies/image.nvim.md)（仅 windows）
+- [image.nvim](plugins/dependencies/image.nvim.md)
 
 ## 两个容易误判的文件
 

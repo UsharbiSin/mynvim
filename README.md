@@ -279,6 +279,10 @@ nvim query.sql
 Windows 专项测试会同时检查命令存在、快捷键范围和 SQLS 格式化已关闭。排错见
 [sqls.nvim](docs/plugins/language/sqls.nvim.md)。
 
+需要像数据库管理软件一样浏览并编辑表数据时，按 `<Space>sg` 打开 Dadbod Grip。单元格修改会
+先暂存，可审核生成的 SQL 后再用一个事务提交。MySQL 模式要求系统能够找到 `mysql.exe`，
+安装和操作步骤见 [dadbod-grip.nvim](docs/plugins/language/dadbod-grip.nvim.md)。
+
 ## Markdown 与 Vimwiki
 
 Vimwiki 默认目录是 `~/vimwiki/`，语法为 Markdown，扩展名为 `.md`。浏览器预览、编辑器内
@@ -287,7 +291,7 @@ Vimwiki 默认目录是 `~/vimwiki/`，语法为 Markdown，扩展名为 `.md`�
 - `render-markdown.nvim` 美化当前 Neovim buffer；
 - `markdown-preview.nvim` 用 F8/F9 控制浏览器预览；
 - `img-clip.nvim` 把剪贴板图像转为 AVIF，放进当前目录的 `.markdown_images/`；
-- windows 的 `diagram.nvim` 调用 Mermaid、PlantUML、D2 或 Gnuplot 渲染代码块；
+- `diagram.nvim` 调用 Mermaid、PlantUML、D2 或 Gnuplot 渲染代码块；
 - `vim-table-mode` 用 `<Space>tm` 开关表格排版。
 
 main 的 Markdown CSS 与图片路径含作者的绝对路径；更换用户名或配置目录后应修改
