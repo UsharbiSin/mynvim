@@ -204,4 +204,3 @@ vim.g.coc_global_extensions = {
 -- ==========================================
 -- CoC插件 - coc-explorer
 -- ==========================================
-keyset('n', 'tt', ':CocCommand explorer<CR>', list_opts)

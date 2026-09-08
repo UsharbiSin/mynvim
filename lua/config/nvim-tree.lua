@@ -4,6 +4,24 @@ vim.g.loaded_netrwPlugin = 1
 vim.opt.termguicolors = true
 
 local api = require("nvim-tree.api")
+local M = {}
+
+function M.toggle_current_dir()
+  if api.tree.is_visible() then
+    api.tree.close()
+    return
+  end
+
+  local buf = vim.api.nvim_get_current_buf()
+  local path = vim.api.nvim_buf_get_name(buf)
+  local root
+  if path ~= "" and vim.bo[buf].buftype == "" then
+    local directory = vim.fn.isdirectory(path) == 1 and path or vim.fs.dirname(path)
+    -- 仓库内统一使用 Git 根目录，避免在同一项目的子目录间切换时反复改变树根。
+    root = vim.fs.root(directory, ".git") or directory
+  end
+  api.tree.open({ path = root or vim.fn.getcwd(), find_file = true })
+end
 
 -- ==========================================
 -- 自定义快捷键绑定函数 (对应 coc-explorer.keyMappings)
@@ -105,3 +123,5 @@ require("nvim-tree").setup({
 -- 全局快捷键：随时随地呼出/关闭文件树
 -- vim.keymap.set('n', 'tt', ':NvimTreeToggle<CR>', { noremap = true, silent = true, desc = "切换文件树" })
 -- vim.keymap.set('n', '<leader>f', ':NvimTreeFindFile<CR>', { noremap = true, silent = true, desc = "在文件树中定位当前文件" })
+
+return M
