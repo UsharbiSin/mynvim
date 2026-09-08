@@ -3,15 +3,15 @@
 -- ==========================================
 require("tokyonight").setup({
   style = "night",     -- 还有 'storm', 'moon', 'day' 可选，night 最纯粹
-  transparent = false, -- 如果你想要磨砂透明终端效果，可以设为 true
+  transparent = true, -- 如果你想要磨砂透明终端效果，可以设为 true
   terminal_colors = true,
   styles = {
     comments = { italic = true }, -- 注释斜体
     keywords = { italic = true }, -- 关键字斜体
     functions = {},
     variables = {},
-    sidebars = "dark",
-    floats = "dark",
+    sidebars = "transparent",
+    floats = "transparent",
   },
   on_colors = function(colors) end,
   -- 强制修正一些高亮组
