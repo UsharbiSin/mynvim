@@ -44,7 +44,8 @@ local function test()
   check(codex.root() == vim.fs.normalize(tmp .. "/project two"), "must recognize a worktree .git file")
   vim.fn.writefile({ "standalone" }, tmp .. "/loose.lua")
   edit(tmp .. "/loose.lua")
-  check(codex.root() == vim.fs.normalize(tmp), "non-repository file must use its directory")
+  local loose_root = vim.fs.root(tmp, ".git") or tmp
+  check(codex.root() == vim.fs.normalize(loose_root), "loose file must use its directory or containing repository")
 
   -- 每个模拟仅替换操作系统查询；其余使用真实 Neovim API。
   local original = { has = vim.fn.has, exepath = vim.fn.exepath, filereadable = vim.fn.filereadable }
@@ -94,6 +95,9 @@ local function test()
   for _, terminal in ipairs(Snacks.terminal.list()) do first = terminal end
   assert(first, "Codex command must open a terminal")
   terminals[#terminals + 1] = first
+  check(vim.wait(1000, function()
+    return vim.api.nvim_get_current_buf() == first.buf and vim.api.nvim_get_mode().mode == "nt"
+  end, 20), "Codex terminal must open in Normal mode")
   check(vim.wait(5000, function() return vim.fn.filereadable(log) == 1 end, 20), "CLI must start")
   local child = vim.json.decode(table.concat(vim.fn.readfile(log)))
   check(vim.fs.normalize(child.cwd) == root1, "CLI process cwd must be project root")
@@ -104,6 +108,9 @@ local function test()
   check(vim.fn.jobwait({ vim.b[first.buf].terminal_job_id }, 0)[1] == -1, "hiding must keep the job alive")
   edit(file2)
   check(codex.toggle() == first, "other subdirectory must reuse the same terminal")
+  check(vim.wait(1000, function()
+    return vim.api.nvim_get_current_buf() == first.buf and vim.api.nvim_get_mode().mode == "nt"
+  end, 20), "reopened Codex terminal must stay in Normal mode")
   check(codex.resume() == first, "resume must not duplicate a running project session")
 
   first:hide()

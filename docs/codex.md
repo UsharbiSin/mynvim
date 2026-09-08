@@ -75,11 +75,15 @@ vim.g.codex_cmd = { "C:/Tools/Codex/codex.exe" }
 | `<Space>ar` / `:CodexResume` | 没有活动进程时运行 `codex resume`，选择历史会话 |
 | Codex 内 `<C-t>` | 沿用已有快捷键，从终端输入模式返回 Neovim 普通模式 |
 | Codex 普通模式下 `q` | 隐藏面板；再次 `<Space>ac` 打开 |
-| Codex 普通模式下 `i` | 回到终端输入模式 |
+| Codex 普通模式下 `i` / `a` | 进入终端输入模式 |
 | `:checkhealth codex` | 检查可执行文件解析和 Snacks 模块；不会触发登录或模型请求 |
 
 如果当前项目已有活动进程，恢复入口会聚焦该进程；需要切换历史会话时，在 Codex 内
 使用 `/resume`。退出并重新打开 Neovim 后，使用恢复入口继续之前的工作。
+
+首次打开 Codex，以及从其他窗口切回 Codex 时，窗口会停留在 Neovim 普通模式，方便
+滚动、复制或直接切换窗口。需要向 CLI 输入内容时按 `i` 或 `a`；输入完成后可按
+`<C-t>` 回到普通模式。
 
 1. 先保存准备让 Codex 读取的文件；CLI 读取的是磁盘文件，不是未保存的 Neovim buffer。
 2. `<Space>ac` 打开 Codex，在输入框中描述任务，必要时提供文件相对路径和行号。
@@ -116,7 +120,7 @@ nvim --headless -u NONE -l tests/codex.lua
 
 测试默认读取 `stdpath('data')/lazy/snacks.nvim`，也可通过 `SNACKS_RTP` 环境变量指定
 锁定版本的插件目录。测试使用本机 Neovim 子进程模拟持续运行的 CLI，不调用模型。
-Windows 11 实机已通过 28 项 Codex 集成检查，health 能解析 npm 安装的 JS 入口；登录状态
+Windows 11 实机已通过 30 项 Codex 集成检查，health 能解析 npm 安装的 JS 入口；登录状态
 仍应在系统终端用 `codex login status` 单独确认。
 
 ## 参考

@@ -72,10 +72,33 @@ local function running(terminal)
   return job ~= nil and job > 0 and vim.fn.jobwait({ job }, 0)[1] == -1
 end
 
+-- Codex 窗口默认用于查看输出和执行 Neovim 操作；需要输入时再手动按 i/a。
+local function keep_normal_mode(buf)
+  local group = vim.api.nvim_create_augroup("CodexTerminalNormal", { clear = false })
+  vim.api.nvim_clear_autocmds({ group = group, buffer = buf })
+  vim.api.nvim_create_autocmd({ "BufEnter", "WinEnter" }, {
+    group = group,
+    buffer = buf,
+    callback = function(event)
+      vim.schedule(function()
+        if vim.api.nvim_buf_is_valid(event.buf) and vim.api.nvim_get_current_buf() == event.buf then
+          vim.cmd("stopinsert")
+        end
+      end)
+    end,
+  })
+  vim.schedule(function()
+    if vim.api.nvim_buf_is_valid(buf) and vim.api.nvim_get_current_buf() == buf then
+      vim.cmd("stopinsert")
+    end
+  end)
+end
+
 local function open(resume)
   local root = M.root()
   local terminal = sessions[root]
   if running(terminal) then
+    keep_normal_mode(terminal.buf)
     if resume then
       terminal:show()
       terminal:focus()
@@ -104,8 +127,8 @@ local function open(resume)
     return require("snacks").terminal.open(cmd, {
       cwd = root,
       count = 1,
-      start_insert = true,
-      auto_insert = true,
+      start_insert = false,
+      auto_insert = false,
       auto_close = true,
       win = {
         position = "right",
@@ -115,6 +138,7 @@ local function open(resume)
         keys = { term_normal = false },
         on_buf = function(self)
           vim.b[self.buf].codex_root = root
+          keep_normal_mode(self.buf)
         end,
       },
     })
