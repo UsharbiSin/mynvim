@@ -283,7 +283,7 @@ Windows 专项测试会同时检查命令存在、快捷键范围和 SQLS 格式
 安装和操作步骤见 [dadbod-grip.nvim](docs/plugins/language/dadbod-grip.nvim.md)。
 
 按 `<Space>st` 打开带中文表注释和列注释的数据库侧栏，`/` 可同时按技术名称和注释筛选；
-在 Grip 查询结果中按 `<Space>sk` 查看光标所在字段的类型和注释。
+在 Grip 查询结果中按 `K` 查看光标所在字段的类型和注释。普通代码缓冲区的 LSP `K` 不受影响。
 
 ## Markdown 与 Vimwiki
 

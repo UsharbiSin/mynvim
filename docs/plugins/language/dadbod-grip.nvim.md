@@ -136,7 +136,7 @@ mysql.exe --help | findstr /C:"Default options" /C:"my.ini" /C:"my.cnf"
 | --- | --- |
 | `<Space>sg` | 打开 Dadbod Grip 数据库工作区，用于浏览结构和编辑表格 |
 | `<Space>st` | 打开带表注释和列注释的数据库侧栏 |
-| `<Space>sk` | 显示 Grip 光标所在字段的类型和注释 |
+| `K` | 在 Grip 查询结果中显示光标所在字段的类型和注释 |
 | `<Space>sc` | 为当前 `.sql` 缓冲区选择数据库连接，不离开当前文件 |
 | `<Space>sr` | 普通模式执行整个 `.sql` 缓冲区 |
 | `<Space>sr` | 可视模式执行选中的 SQL |
@@ -164,8 +164,8 @@ mysql.exe --help | findstr /C:"Default options" /C:"my.ini" /C:"my.cnf"
 | `r` | 忽略缓存并重新读取注释 |
 | `q` / `Esc` | 关闭侧栏 |
 
-查询结果中把光标放在目标列并按 `<Space>sk`，显示该字段的类型和注释。Grip 自带的 `K`
-仍用于查看当前行，避免
-改变已有操作习惯。此注释功能目前针对 MySQL 元数据设计。
+查询结果中把光标放在目标列并按 `K`，显示该字段的类型和注释。此缓冲区映射替换 Grip
+原有的 `K` 行详情；普通代码缓冲区的 LSP `K` 不受影响。此注释功能目前针对 MySQL
+元数据设计。
 
 上游：[dadbod-grip.nvim](https://github.com/joryeugene/dadbod-grip.nvim)。

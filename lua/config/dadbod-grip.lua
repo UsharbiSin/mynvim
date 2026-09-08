@@ -39,3 +39,5 @@ require("dadbod-grip").setup({
   completion = false,
   discovery = false,
 })
+
+require("config.sql-browser").setup()

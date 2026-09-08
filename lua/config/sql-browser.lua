@@ -239,4 +239,24 @@ function M.show_result_comments()
   vim.lsp.util.open_floating_preview(lines, "markdown", { border = "rounded" })
 end
 
+function M.setup()
+  local group = vim.api.nvim_create_augroup("SqlResultComments", { clear = true })
+  vim.api.nvim_create_autocmd("BufEnter", {
+    group = group,
+    callback = function(event)
+      -- Grip 会在打开网格的后半段创建默认 K 映射，延迟到本轮事件结束后再覆盖。
+      vim.schedule(function()
+        if not vim.api.nvim_buf_is_valid(event.buf) then return end
+        local ok, view = pcall(require, "dadbod-grip.view")
+        if not ok or not view._sessions[event.buf] then return end
+        vim.keymap.set("n", "K", M.show_result_comments, {
+          buffer = event.buf,
+          silent = true,
+          desc = "SQL：显示光标所在字段的类型和注释",
+        })
+      end)
+    end,
+  })
+end
+
 return M
