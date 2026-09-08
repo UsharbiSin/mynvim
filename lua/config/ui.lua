@@ -34,22 +34,6 @@ vim.keymap.set('n', '<LEADER>gy', ':Goyo<CR>', { noremap = true, silent = true }
 
 
 -- ==========================================
--- 可视化缩进线 (vim-indent-guides)
--- ==========================================
--- 缩进线基础设置
-vim.g.indent_guides_guide_size = 1
-vim.g.indent_guides_start_level = 2
-vim.g.indent_guides_enable_on_vim_startup = 1
-vim.g.indent_guides_color_change_percent = 1
-
--- 卸载默认的快捷键映射
-vim.cmd([[
-  silent! unmap <LEADER>ig
-  autocmd WinEnter * silent! unmap <LEADER>ig
-]])
-
-
--- ==========================================
 -- 底部状态栏 (vim-airline)
 -- ==========================================
 vim.g["airline#extensions#hunks#enable"] = 1

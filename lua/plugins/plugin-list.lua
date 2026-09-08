@@ -20,8 +20,12 @@ return {
     priority = 1000,         -- 给予最高优先级
   },
   {
-    "preservim/vim-indent-guides", -- 可视化显示缩进级别
-    event = "BufReadPre",          -- 在读取文件时按需加载
+    "lukas-reineke/indent-blankline.nvim", -- 缩进线与当前 Tree-sitter 语法作用域
+    main = "ibl",
+    event = { "BufReadPost", "BufNewFile" },
+    config = function()
+      require("config.indent-guides")
+    end,
   },
   {
     "junegunn/goyo.vim", -- 沉浸式专注写作模式

@@ -10,7 +10,7 @@
 - [vim-airline](plugins/ui/vim-airline.md)：底部状态栏
 - [vim-airline-themes](plugins/ui/vim-airline-themes.md)：Airline 主题集合
 - [tokyonight.nvim](plugins/ui/tokyonight.nvim.md)：主配色
-- [vim-indent-guides](plugins/ui/vim-indent-guides.md)：缩进引导线
+- [indent-blankline.nvim](plugins/ui/indent-blankline.nvim.md)：缩进引导线与当前语法作用域
 - [goyo.vim](plugins/ui/goyo.vim.md)：专注写作
 - [noice.nvim](plugins/ui/noice.nvim.md)：消息、命令行 UI
 - [nui.nvim](plugins/ui/nui.nvim.md)：Noice 的 UI 依赖
