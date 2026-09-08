@@ -3,7 +3,9 @@
 # markdown-preview.nvim：浏览器实时预览
 
 仓库：`iamcco/markdown-preview.nvim`。Markdown/Vimwiki 或预览命令触发加载；安装时在 `app`
-目录运行 `npm install`，因此首次安装需要 Node.js/npm。配置见
+目录调用上游提供的 `mkdp#util#install()`，因此首次安装需要 Node.js/npm。该安装入口会按
+平台构建预览程序，避免直接执行 `npm install` 时重写上游 `app/yarn.lock` 或生成
+`package-lock.json`，从而导致后续 `:Lazy sync` 被本地修改阻止。配置见
 [markdown.lua](../../../lua/config/markdown.lua)。
 
 F8 启动 `MarkdownPreview`，F9 停止；也可用 `:MarkdownPreviewToggle`。本项目实时刷新、切换

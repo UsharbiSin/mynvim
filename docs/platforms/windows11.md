@@ -92,7 +92,9 @@ git clone --branch main https://github.com/UsharbiSin/mynvim.git $env:LOCALAPPDA
 nvim
 ```
 
-首次启动会下载 lazy.nvim 和插件，markdown-preview.nvim 的构建步骤会执行 npm install。
+首次启动会下载 lazy.nvim 和插件，markdown-preview.nvim 会调用上游安装函数构建预览程序。
+如果旧配置曾留下 `app/yarn.lock` 修改或 `app/package-lock.json`，可在 Lazy 界面对该插件按
+`x` 删除后按 `I` 重装，或在插件目录恢复这两个文件后重新执行 `:Lazy sync`。
 等待完成后运行：
 
 ```vim
