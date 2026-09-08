@@ -2,7 +2,7 @@
 require("snacks").setup({
   terminal = { enabled = true },
   toggle = { enable = true },
-  notifier = { enable = true },
+  notifier = { enabled = false },
   image = {
     enabled = true,
     doc = {

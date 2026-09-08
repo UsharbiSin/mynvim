@@ -214,7 +214,10 @@ return {
         end
       }
     },
-    event = "VeryLazy",
+    lazy = false,
+    config = function()
+      require('config.noice')
+    end,
   },
   { "itchyny/vim-cursorword",       event = "VeryLazy" }, -- 自动高亮当前光标下的单词
   { "tpope/vim-surround",           event = "VeryLazy" }, -- 快速增删改括号/引号等成对符号

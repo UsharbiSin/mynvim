@@ -3,13 +3,12 @@
 # noice.nvim：消息和命令行界面
 
 仓库：`folke/noice.nvim`，依赖 [nui.nvim](nui.nvim.md) 与
-[nvim-notify](nvim-notify.md)，在 VeryLazy 事件下载/加载。
+[nvim-notify](nvim-notify.md)。插件在 Neovim 启动时全局加载并初始化。
 
-插件声明没有直接 `opts` 或 `config`。当前真正的 `noice.setup()` 位于
-[debugging.lua](../../../lua/config/debugging.lua)：首次打开 Python、C、C++ 或 CUDA 文件并
-加载 DAP 时才调用。因此在只编辑普通文本的会话里，Noice 可能已加载代码但尚未初始化；
-这与“始终美化命令行”的注释不完全一致。
+全局配置位于 [noice.lua](../../../lua/config/noice.lua)，统一接管消息、命令行和补全菜单，
+不依赖文件类型，也不需要先启动 Python 或 DAP。nvim-notify 负责通知窗口；Snacks 的
+notifier 已关闭，避免多个插件按加载顺序反复覆盖 `vim.notify`。
 
 用 `:lua print(require('noice.config').is_running())`、`:Noice history` 与 `:messages` 检查；
-当前插件没有专用 health provider。若希望所有会话启用，应把 setup 放到插件自身 config。上游：
+正常启动后 `is_running()` 应返回 `true`。当前插件没有专用 health provider。上游：
 [noice.nvim](https://github.com/folke/noice.nvim)。

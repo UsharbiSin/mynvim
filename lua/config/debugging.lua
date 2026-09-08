@@ -211,13 +211,6 @@ dap.configurations.qmt = dap.configurations.python
 -- 启用内联虚拟文本显示调试变量值
 require("nvim-dap-virtual-text").setup()
 
--- 如果安装了 noice.nvim，则进行初始化
-local ok, noice = pcall(require, "noice")
-if ok then
-  noice.setup()
-end
-
-
 -- ==========================================
 -- DAP UI 界面自动响应与布局配置
 -- ==========================================

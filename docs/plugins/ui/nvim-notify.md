@@ -3,11 +3,10 @@
 # nvim-notify：通知窗口
 
 仓库：`rcarriga/nvim-notify`。作为 Noice 依赖安装，加载时执行
-[nvim-notify.lua](../../../lua/config/nvim-notify.lua)，本项目只把背景色设为黑色。
+[nvim-notify.lua](../../../lua/config/nvim-notify.lua)，本项目把背景色设为黑色，并全局接管
+`vim.notify`。
 
-Snacks 同时启用了自己的 notifier；最终 `vim.notify` 由谁接管取决于加载顺序和 Noice 是否
-初始化。遇到重复通知或样式不一致，用 `:verbose lua vim.notify('test')` 不足以定位时，可在
-`:lua print(vim.inspect(vim.notify))` 前后观察加载，或临时禁用其中一个 notifier。此插件
-可用 `:Notifications` 查看历史（以锁定版本帮助为准）。
+Noice 在启动时全局初始化，Snacks notifier 已关闭，因此普通文件、Markdown、SQL 和调试
+会话使用同一套消息及通知样式。此插件可用 `:Notifications` 查看历史（以锁定版本帮助为准）。
 
 上游：[nvim-notify](https://github.com/rcarriga/nvim-notify)。
