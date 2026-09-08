@@ -4,7 +4,11 @@
 
 仓库：`joryeugene/dadbod-grip.nvim`。按 `<Space>sg` 或执行 `:GripConnect` 打开数据库连接
 选择器和工作区。插件随 Neovim 启动加载，因此可以直接运行健康检查，不必先打开工作区。
-插件要求 Neovim 0.10 以上；MySQL 连接还要求 `mysql.exe` 位于 `PATH`。
+插件要求 Neovim 0.10 以上；MySQL 连接还要求相应客户端位于 `PATH`，Windows 命令名为
+`mysql.exe`，Linux 命令名为 `mysql`。
+
+main 分支使用同一套配置，但目前只在 Windows 实机验证。Linux 后续需要安装提供 `mysql`
+命令的客户端包，再验证连接、查询结果网格与事务提交。
 
 ## 连接
 

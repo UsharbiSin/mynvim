@@ -10,10 +10,41 @@
 --- ```
 --- Sqls can be installed via `go install github.com/sqls-server/sqls@latest`. Instructions for compiling Sqls from the source can be found at [sqls-server/sqls](https://github.com/sqls-server/sqls).
 
-local function get_dsn(user, pass, host, port, name)
-  return string.format("%s:%s@tcp(%s:%s)/%s",
-    os.getenv(user), os.getenv(pass), os.getenv(host), os.getenv(port), os.getenv(name)
-  )
+local function connection(alias, suffix)
+  local values = {}
+  for _, field in ipairs({ "USER", "PASSWORD", "HOST", "PORT", "NAME" }) do
+    local value = os.getenv("DB_" .. field .. "_" .. suffix)
+    if not value or value == "" then
+      return nil
+    end
+    values[field] = value
+  end
+
+  return {
+    alias = alias,
+    driver = "mysql",
+    dataSourceName = string.format(
+      "%s:%s@tcp(%s:%s)/%s",
+      values.USER,
+      values.PASSWORD,
+      values.HOST,
+      values.PORT,
+      values.NAME
+    ),
+  }
+end
+
+local connections = {}
+for _, item in ipairs({
+  { "tongyan", "TY" },
+  { "tongyan_test", "TYTEST" },
+  { "platform_st", "ST" },
+  { "platform_st_test", "STTEST" },
+}) do
+  local value = connection(item[1], item[2])
+  if value then
+    table.insert(connections, value)
+  end
 end
 
 ---@type vim.lsp.Config
@@ -24,34 +55,9 @@ return {
   handlers = {
     ["textDocument/publishDiagnostics"] = function() end,
   },
-  on_attach = function(client, bufnr)
-    client.server_capabilities.documentFormattingProvider = false
-    client.server_capabilities.documentRangeFormattingProvider = false
-  end,
   settings = {
     sqls = {
-      connections = {
-        {
-          alias = "tongyan",
-          driver = "mysql",
-          dataSourceName = get_dsn("DB_USER_TY", "DB_PASSWORD_TY", "DB_HOST_TY", "DB_PORT_TY", "DB_NAME_TY"),
-        },
-        {
-          alias = "tongyan_test",
-          driver = "mysql",
-          dataSourceName = get_dsn("DB_USER_TYTEST", "DB_PASSWORD_TYTEST", "DB_HOST_TYTEST", "DB_PORT_TYTEST", "DB_NAME_TYTEST"),
-        },
-        {
-          alias = "platform_st",
-          driver = "mysql",
-          dataSourceName = get_dsn("DB_USER_ST", "DB_PASSWORD_ST", "DB_HOST_ST", "DB_PORT_ST", "DB_NAME_ST"),
-        },
-        {
-          alias = "platform_st_test",
-          driver = "mysql",
-          dataSourceName = get_dsn("DB_USER_STTEST", "DB_PASSWORD_STTEST", "DB_HOST_STTEST", "DB_PORT_STTEST", "DB_NAME_STTEST"),
-        },
-      }
-    }
+      connections = connections,
+    },
   },
 }

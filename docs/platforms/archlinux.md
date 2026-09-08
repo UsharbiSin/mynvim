@@ -130,5 +130,7 @@ Neovim 内：
 - Markdown 的 F10 调用未安装的 `InstantMarkdownPreview`；使用 F8/F9。
 - TeX、Dart 分支引用了未声明的 Vimtex/Coc 命令。
 - Python DAP 使用作者绝对路径；nvim-dap-python 虽安装但没有调用其 setup。
-- SQLS 命令可能因自定义 on_attach 覆盖而未注册。
+- SQLS 快捷键、SQL Runner 与 Dadbod Grip 配置已从 windows 分支同步，但尚未在 Linux 实机
+  验证。后续需安装 `mysql` 客户端，运行 `:checkhealth dadbod-grip`，并使用测试库确认连接、
+  查询结果网格和事务提交。
 - `autochdir` 会改变终端和构建命令工作目录。
