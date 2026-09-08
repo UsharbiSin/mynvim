@@ -75,6 +75,7 @@ $env:DB_NAME_TYTEST = '测试数据库名'
 | `空格 ssc` / `:SqlsShowConnections` | 显示连接列表 |
 | `空格 ssd` / `:SqlsShowDatabases` | 显示数据库列表 |
 | `空格 sst` / `:SqlsShowTables` | 显示数据表 |
+| `空格 sb` | 打开带表/列中文注释的侧栏 |
 
 ## 5. 测试和执行 SQL
 
@@ -115,6 +116,19 @@ Dadbod Grip 会打开独立的 `grip://` 工作区，用于：
 - 审核生成的 SQL；
 - 在事务中提交修改。
 
+按 `空格 sb` 可直接打开左侧“表与注释”栏。它从 MySQL `information_schema` 读取
+`TABLE_COMMENT` 和 `COLUMN_COMMENT`，并按连接缓存：
+
+- 表名后以 Comment 颜色显示表注释；
+- `l` / `h` 展开或收起字段，字段后显示类型和列注释；
+- `/` 输入技术表名、中文表名或字段注释进行筛选，`F` 清除筛选；
+- `K` 查看当前表的完整表/列注释，`r` 重新读取元数据；
+- `Enter` 用 Dadbod Grip 打开表，继续编辑和保存数据。
+
+执行 `空格 sr` 并进入 Grip 查询结果后，按 `空格 sk` 显示结果列的数据库注释。普通单表
+结果会限定当前表；JOIN 或自定义查询会列出所有同名字段及其来源表。Grip 原有 `K` 行详情
+保持不变。
+
 如果只希望继续留在当前 `.sql` 文件中执行查询，应使用 `空格 sc` +
 `空格 sr`，而不是 `空格 sg`。
 
@@ -127,6 +141,7 @@ Windows 配置关闭了 Docker 自动发现，以避免连接选择器因同步 
 - 找不到 `Sqls*` 命令：确认当前文件扩展名为 `.sql`，并检查 SQLS 是否已经附着。
 - 无法连接：分别检查主机、端口、账号、密码、数据库名称、网络和 MySQL 账号权限。
 - 没有补全或表结构：先确认连接成功；SQLS 启动成功不代表数据库已经连通。
+- 表或列没有中文注释：确认建表语句已设置 `COMMENT`，且账号可以读取 `information_schema`。
 - 使用 PostgreSQL 或 SQLite：当前 `driver` 固定为 `mysql`，需要修改 `lsp/sqls.lua` 的驱动和 DSN。
 
 不要把真实密码直接写入仓库、Lua 配置或提交记录。

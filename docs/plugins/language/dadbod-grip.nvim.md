@@ -135,6 +135,8 @@ mysql.exe --help | findstr /C:"Default options" /C:"my.ini" /C:"my.cnf"
 | 按键 | 功能 |
 | --- | --- |
 | `<Space>sg` | 打开 Dadbod Grip 数据库工作区，用于浏览结构和编辑表格 |
+| `<Space>sb` | 打开带表注释和列注释的数据库侧栏 |
+| `<Space>sk` | 在 Grip 查询结果中显示列注释 |
 | `<Space>sc` | 为当前 `.sql` 缓冲区选择数据库连接，不离开当前文件 |
 | `<Space>sr` | 普通模式执行整个 `.sql` 缓冲区 |
 | `<Space>sr` | 可视模式执行选中的 SQL |
@@ -146,5 +148,23 @@ mysql.exe --help | findstr /C:"Default options" /C:"my.ini" /C:"my.cnf"
 ```vim
 :GripConnect
 ```
+
+### 中文注释侧栏
+
+`<Space>sb` 使用当前 SQL 缓冲区选择的连接；尚未选择时会先显示连接列表。侧栏通过 MySQL
+`information_schema.TABLES` 和 `information_schema.COLUMNS` 一次读取表与字段注释。
+注释用 `Comment` 高亮显示，终端 Neovim 无法只缩小其中一段文字的字体。
+
+| 侧栏按键 | 功能 |
+| --- | --- |
+| `Enter` | 用 Grip 打开当前表 |
+| `l` / `h` | 展开/收起字段 |
+| `/` / `F` | 按表名、表注释、字段名或字段注释筛选/清除 |
+| `K` | 显示当前表的完整注释 |
+| `r` | 忽略缓存并重新读取注释 |
+| `q` / `Esc` | 关闭侧栏 |
+
+查询结果中按 `<Space>sk` 显示当前列集合的注释。Grip 自带的 `K` 仍用于查看当前行，避免
+改变已有操作习惯。此注释功能目前针对 MySQL 元数据设计。
 
 上游：[dadbod-grip.nvim](https://github.com/joryeugene/dadbod-grip.nvim)。

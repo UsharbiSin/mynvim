@@ -282,6 +282,9 @@ Windows 专项测试会同时检查命令存在、快捷键范围和 SQLS 格式
 先暂存，可审核生成的 SQL 后再用一个事务提交。MySQL 模式要求系统能够找到 `mysql.exe`，
 安装和操作步骤见 [dadbod-grip.nvim](docs/plugins/language/dadbod-grip.nvim.md)。
 
+按 `<Space>sb` 打开带中文表注释和列注释的数据库侧栏，`/` 可同时按技术名称和注释筛选；
+在 Grip 查询结果中按 `<Space>sk` 查看结果列注释。
+
 ## Markdown 与 Vimwiki
 
 Vimwiki 在 Linux 使用 `~/vimwiki/`，在 Windows 使用 `E:/@home/usharbisin/vimwiki/`，语法为 Markdown，扩展名为 `.md`。浏览器预览、编辑器内
