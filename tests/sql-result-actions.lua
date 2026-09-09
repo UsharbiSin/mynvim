@@ -99,4 +99,22 @@ browser.sort_result_column("DESC")
 assert(sorted.sorts[1].column == "name" and sorted.sorts[1].dir == "DESC")
 assert(vim.deep_equal(session.state.columns, { "name", "id", "created_at" }))
 
+assert(vim.deep_equal(browser._next_sorts({}, "name", "ASC"), {
+  { column = "name", dir = "ASC" },
+}))
+assert(vim.deep_equal(browser._next_sorts({
+  { column = "name", dir = "ASC" },
+}, "name", "ASC"), {}), "same direction must cancel the column sort")
+assert(vim.deep_equal(browser._next_sorts({
+  { column = "name", dir = "ASC" },
+}, "name", "DESC"), {
+  { column = "name", dir = "DESC" },
+}), "opposite direction must replace the column sort")
+assert(vim.deep_equal(browser._next_sorts({
+  { column = "name", dir = "ASC" },
+}, "id", "DESC"), {
+  { column = "name", dir = "ASC" },
+  { column = "id", dir = "DESC" },
+}), "a second column must preserve multi-column sort priority")
+
 print("PASS: SQL result column actions")

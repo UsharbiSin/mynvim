@@ -396,12 +396,47 @@ function M.sort_result_column(direction)
   end
 
   local spec = vim.deepcopy(session.query_spec)
-  spec.sorts = { { column = column, dir = direction } }
+  local sorts = spec.sorts or {}
+  local next_sorts = {}
+  local found = false
+  for _, sort in ipairs(sorts) do
+    if sort.column == column then
+      found = true
+      -- 同一列再次使用相同方向时取消该排序；相反方向则更新方向。
+      if sort.dir ~= direction then
+        next_sorts[#next_sorts + 1] = { column = column, dir = direction }
+      end
+    else
+      next_sorts[#next_sorts + 1] = vim.deepcopy(sort)
+    end
+  end
+  if not found then
+    -- 新列追加到 ORDER BY 末尾，保留之前列的优先级，实现联动排序。
+    next_sorts[#next_sorts + 1] = { column = column, dir = direction }
+  end
+  spec.sorts = next_sorts
   spec.page = 1
   if session.on_requery then
     session.on_requery(bufnr, spec)
     restore_result_column_order(bufnr, view)
   end
+end
+
+M._next_sorts = function(sorts, column, direction)
+  local next_sorts = {}
+  local found = false
+  for _, sort in ipairs(sorts or {}) do
+    if sort.column == column then
+      found = true
+      if sort.dir ~= direction then
+        next_sorts[#next_sorts + 1] = { column = column, dir = direction }
+      end
+    else
+      next_sorts[#next_sorts + 1] = vim.deepcopy(sort)
+    end
+  end
+  if not found then next_sorts[#next_sorts + 1] = { column = column, dir = direction } end
+  return next_sorts
 end
 
 M._merge_column_order = merge_column_order
@@ -459,6 +494,20 @@ function M.setup()
           buffer = event.buf,
           silent = true,
           desc = "SQL：按当前列降序排列",
+        })
+        vim.keymap.set("n", "<leader>ss", function()
+          M.sort_result_column("ASC")
+        end, {
+          buffer = event.buf,
+          silent = true,
+          desc = "SQL：按当前列升序或取消升序",
+        })
+        vim.keymap.set("n", "<leader>sd", function()
+          M.sort_result_column("DESC")
+        end, {
+          buffer = event.buf,
+          silent = true,
+          desc = "SQL：按当前列降序或取消降序",
         })
       end)
     end,

@@ -72,6 +72,20 @@ map('t', '<C-t>', '<C-\\><C-n>', { noremap = true, silent = true })
 map('n', '<LEADER>tm', ':TableModeToggle<CR>')
 
 -- SQLS 命令是 buffer-local，只在 SQL 文件中创建对应快捷键。
+map('n', '<LEADER>sql', function()
+  local path
+  if vim.g.is_win == 1 then
+    path = 'D:/softlink/C/user/c_junjie/Documents/Navicat/MySQL/servers/st_test/monitor_platform_st/Script.sql'
+  else
+    path = '/windowsdata/softlink/C/user/c_junjie/Documents/Navicat/MySQL/servers/st_test/monitor_platform_st/Script.sql'
+  end
+  if vim.fn.filereadable(path) ~= 1 then
+    vim.notify('SQL 文件不存在：' .. path, vim.log.levels.ERROR)
+    return
+  end
+  vim.api.nvim_cmd({ cmd = 'edit', args = { path } }, {})
+end, { desc = 'SQL：打开 Navicat Script.sql' })
+
 local sql_keymaps = vim.api.nvim_create_augroup('SqlKeymaps', { clear = true })
 vim.api.nvim_create_autocmd('FileType', {
   group = sql_keymaps,
