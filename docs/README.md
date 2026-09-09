@@ -47,6 +47,7 @@
 ## Markdown 与知识库
 
 - [render-markdown.nvim](plugins/markdown/render-markdown.nvim.md)：编辑器内渲染
+- [otter.nvim](plugins/markdown/otter.nvim.md)：围栏代码的 LSP 功能
 - [markdown-preview.nvim](plugins/markdown/markdown-preview.nvim.md)：浏览器预览
 - [vimwiki](plugins/markdown/vimwiki.md)：个人知识库
 - [mathjax-support-for-mkdp](plugins/markdown/mathjax-support-for-mkdp.md)：旧预览方案的数学扩展

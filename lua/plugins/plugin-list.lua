@@ -159,6 +159,14 @@ return {
     end
   },
   {
+    'jmbuhr/otter.nvim', -- 为 Markdown 围栏代码提供 LSP 功能
+    dependencies = { 'nvim-treesitter/nvim-treesitter' },
+    ft = { 'markdown', 'vimwiki' },
+    config = function()
+      require('config.markdown-lsp').setup()
+    end,
+  },
+  {
     "3rd/diagram.nvim", -- 在文档中渲染 Mermaid、PlantUML、D2 和 Gnuplot 图表
     dependencies = {
       { "3rd/image.nvim", config = function()

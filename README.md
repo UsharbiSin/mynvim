@@ -294,6 +294,7 @@ Vimwiki 在 Linux 使用 `~/vimwiki/`，在 Windows 使用 `E:/@home/usharbisin/
 
 - `render-markdown.nvim` 美化当前 Neovim buffer；
 - 内联 `<a>` / `<span style="color: ...">` 在编辑器内实时显示文字颜色；
+- `otter.nvim` 为围栏代码接入对应 LSP 的补全、诊断、跳转和悬浮；
 - `markdown-preview.nvim` 用 F8/F9 控制浏览器预览；
 - `img-clip.nvim` 把剪贴板图像放进当前目录的 `.markdown_images/`：Windows 保存 PNG，
   Linux 通过 ImageMagick 转为 AVIF；
@@ -333,7 +334,7 @@ Mason 的 LSP、formatter 和调试器有独立生命周期，
 
 - Arch Linux 与 Windows 11 均使用 Neovim 0.12.5；Windows 能完整读取配置并通过专项检查，
   Arch Linux 保留此前的无界面启动检查结果；
-- Windows 的 Lazy 注册 66 个插件条目，锁文件中的插件均有安装目录；
+- Windows 的 Lazy 插件条目均可注册，已安装插件均有对应目录；
 - `:Codex` / `:CodexResume` 命令已注册；
 - Windows 配置列出的 14 个 Tree-sitter parser 均可加载，6 个 Mason LSP 均能附着；
 - 带空格路径的 C 文件可由 F10 编译运行，GDB DAP 可命中 C 断点并正常退出。
