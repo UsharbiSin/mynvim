@@ -30,8 +30,11 @@ map('i', ',2', '## <Enter><++><Esc>kA', opts)
 map('i', ',3', '### <Enter><++><Esc>kA', opts)
 map('i', ',4', '#### <Enter><++><Esc>kA', opts)
 map('i', ',l', '--------<Enter>', opts)
-map('i', ',r', '<a style="color: red;"></a> <++><Esc>F/hi', opts)
-map('i', ',t', '<a style="color: blue;"></a> <++><Esc>F/hi', opts)
+map('i', '.rd', '<a style="color: red;"></a> <++><Esc>F/hi', opts)
+map('i', '.bl', '<a style="color: blue;"></a> <++><Esc>F/hi', opts)
+map('i', '.yl', '<a style="color: yellow;"></a> <++><Esc>F/hi', opts)
+map('i', '.br', '<a style="color: brown;"></a> <++><Esc>F/hi', opts)
+map('i', '.gr', '<a style="color: green;"></a> <++><Esc>F/hi', opts)
 
 
 -- 拦截回车键：在表格行尾回车时，自动填充 <++> 占位符
