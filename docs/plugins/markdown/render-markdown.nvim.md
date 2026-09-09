@@ -8,7 +8,8 @@
 
 本项目渲染标题边框、代码块、圆角表格、Wiki/图片/站点链接图标、GitHub/Obsidian 风格
 callout，并扩展 `[?]`、`[>]`、`[-]`、`[!]`、`[~]` checkbox。sign 关闭；标题在插入模式
-仍渲染，Normal 模式的 anti-conceal 被关闭，因此源码标记可能隐藏。
+仍渲染。Normal 模式的当前行会隐藏 `**`、反引号等源码标记，进入 Insert 模式后显示这些
+标记以便编辑。
 
 用 `:RenderMarkdown toggle` 切换；该插件没有专用 health provider，可用
 `:checkhealth nvim-treesitter` 和 `:messages` 排错。它要求 Markdown 与 markdown_inline

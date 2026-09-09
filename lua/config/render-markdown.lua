@@ -140,9 +140,8 @@ require("render-markdown").setup({
       head_background = true,
     },
   },
-  -- https://github.com/MeanderingProgrammer/render-markdown.nvim/issues/509
-  -- win_options = { concealcursor = { rendered = "nvc" } },
-  win_options = { concealcursor = { rendered = "vc" } },
+  -- Normal 模式隐藏当前行标记；Insert 模式显示标记以便编辑。
+  win_options = { concealcursor = { rendered = "nvc" } },
   completions = {
     blink = { enabled = true },
     lsp = { enabled = true },
