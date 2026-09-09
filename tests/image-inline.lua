@@ -55,12 +55,16 @@ while #scheduled > 0 do table.remove(scheduled, 1)() end
 assert(clears == 0 and renders == 2, 'stable padding must not clear the image')
 
 local conversions = 0
+local aborted = 0
 Snacks = {
   image = {
     convert = {
       convert = function()
         conversions = conversions + 1
-        return { run = function() end }
+        return {
+          run = function() end,
+          abort = function() aborted = aborted + 1 end,
+        }
       end,
     },
   },
@@ -73,7 +77,9 @@ m.refresh()
 while #scheduled > 0 do table.remove(scheduled, 1)() end
 assert(conversions == 1, 'a pending formula must start only one conversion')
 
-package.loaded['snacks.image.doc'].find = function(_, callback)
+local find_opts
+package.loaded['snacks.image.doc'].find = function(_, callback, opts)
+  find_opts = opts
   local items = {}
   for id = 1, 10 do
     items[id] = { id = id, type = 'math', src = id .. '.math.tex', pos = { id, 0 } }
@@ -84,6 +90,8 @@ conversions = 0
 m.refresh()
 while #scheduled > 0 do table.remove(scheduled, 1)() end
 assert(conversions < 10, 'formulas outside the viewport must not be converted')
+assert(find_opts and find_opts.from and find_opts.to, 'formula parsing must be limited to the viewport')
+assert(aborted == 1, 'a pending formula outside the viewport must be aborted')
 vim.schedule = original_schedule
 vim.defer_fn = original_defer_fn
 print('PASS: padding refresh and formula conversion deduplication')

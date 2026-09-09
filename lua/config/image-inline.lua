@@ -137,7 +137,7 @@ function M.setup()
     group = vim.api.nvim_create_augroup('ImageInlineInitialRender', { clear = true }),
     callback = function() M.refresh() end,
   })
-  vim.api.nvim_create_autocmd({ 'WinScrolled', 'CursorMoved' }, {
+  vim.api.nvim_create_autocmd('WinScrolled', {
     group = 'ImageInlineInitialRender',
     callback = function()
       if math_scroll_timer then
@@ -206,6 +206,15 @@ watch_padding = function(item)
   end
 end
 
+local function clear_math_entry(key, entry)
+  math_images[key] = nil
+  if entry.pending then
+    if entry.conversion then entry.conversion:abort() end
+  else
+    entry:clear()
+  end
+end
+
 local function render_math(buf, win)
   if not inline_enabled or not vim.api.nvim_buf_is_valid(buf) then return end
   local info = vim.fn.getwininfo(win)[1]
@@ -254,6 +263,7 @@ local function render_math(buf, win)
               end)
             end,
           })
+          pending.conversion = conversion
           conversion:run()
         end
       end
@@ -262,13 +272,10 @@ local function render_math(buf, win)
     local prefix = '^' .. buf .. ':' .. win .. ':'
     for key, entry in pairs(math_images) do
       if key:match(prefix) and not visible[key] then
-        if not entry.pending then
-          entry:clear()
-        end
-        math_images[key] = nil
+        clear_math_entry(key, entry)
       end
     end
-  end)
+  end, { from = viewport_top, to = viewport_bottom })
 end
 
 function M.refresh_math_view()
@@ -282,10 +289,7 @@ end
 function M.invalidate_math(buf)
   for key, entry in pairs(math_images) do
     if key:match('^' .. buf .. ':') then
-      math_images[key] = nil
-      if not entry.pending then
-        entry:clear()
-      end
+      clear_math_entry(key, entry)
     end
   end
 end
@@ -301,10 +305,7 @@ function M.toggle()
     else
       image.disable()
       for key, entry in pairs(math_images) do
-        if not entry.pending then
-          entry:clear()
-        end
-        math_images[key] = nil
+        clear_math_entry(key, entry)
       end
     end
   else
