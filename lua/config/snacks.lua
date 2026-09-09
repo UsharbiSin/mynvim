@@ -6,20 +6,37 @@ require("snacks").setup({
   image = {
     enabled = true,
     doc = {
+      enabled = not require('config.image-inline').enabled(),
       -- 开启行内渲染
       inline = true,
       -- 悬浮窗
-      float = true,
+      float = false,
       max_width = 80,
     },
   }
 })
 
 require("config.codex").setup()
+require('config.image-inline').setup_toggle()
+
+-- Linux 使用 Snacks 原生 inline；运行时开关关闭后阻止已有实例重新创建 placement。
+if not require('config.image-inline').is_windows() then
+  local inline = require('snacks.image.inline')
+  local original_update = inline.update
+  inline.update = function(self)
+    if not require('config.image-inline').active() then
+      for _, image in pairs(self.imgs) do image:close() end
+      self.imgs, self.idx = {}, {}
+      return
+    end
+    return original_update(self)
+  end
+end
 
 -- 悬浮窗响应速度
 vim.opt.updatetime = 200
 local function show_hover()
+  if require('config.image-inline').enabled() then return end
   if Snacks and Snacks.image then
     Snacks.image.hover()
   end
@@ -42,6 +59,7 @@ vim.api.nvim_create_autocmd({ "BufEnter", "FileType" }, {
   -- 当进入 vimwiki 或 markdown 文件时，强制触发 Snacks 的文档图片渲染解析
   pattern = { "vimwiki", "markdown" },
   callback = function(args)
+    if require('config.image-inline').enabled() then return end
     -- 安全地强制把当前 buffer 喂给 snacks 渲染引擎
     if Snacks and Snacks.image and Snacks.image.doc then
       pcall(Snacks.image.doc.attach, args.buf)

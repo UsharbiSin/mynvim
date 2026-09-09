@@ -161,7 +161,13 @@ return {
   {
     "3rd/diagram.nvim", -- 在文档中渲染 Mermaid、PlantUML、D2 和 Gnuplot 图表
     dependencies = {
-      { "3rd/image.nvim", opts = {} },
+      { "3rd/image.nvim", config = function()
+        if require('config.image-inline').enabled() then
+          require('config.image-inline').setup()
+        else
+          require('image').setup({})
+        end
+      end },
     },
     ft = { "markdown", "vimwiki", "norg" },
     config = function()
