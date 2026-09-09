@@ -40,12 +40,33 @@ end
 function M.setup()
   local terminal_size
   local deferred_document_renders = {}
+  local deferred_scroll_renders = {}
+  local scroll_render_timer
   local render_scheduler = require('image/utils/render_scheduler')
   local original_schedule = render_scheduler.schedule
 
   render_scheduler.schedule = function(key, callback)
     if vim.fn.mode():match('^[iR]') then
       deferred_document_renders[key] = callback
+      return
+    end
+    if key:match('^core:window:') or key:match('^document:markdown:window:') then
+      deferred_scroll_renders[key] = callback
+      if scroll_render_timer then
+        scroll_render_timer:stop()
+        scroll_render_timer:close()
+      end
+      scroll_render_timer = vim.defer_fn(function()
+        scroll_render_timer = nil
+        for scroll_key, scroll_callback in pairs(deferred_scroll_renders) do
+          deferred_scroll_renders[scroll_key] = nil
+          if vim.fn.mode():match('^[iR]') then
+            deferred_document_renders[scroll_key] = scroll_callback
+          else
+            original_schedule(scroll_key, scroll_callback)
+          end
+        end
+      end, 120)
       return
     end
     original_schedule(key, function()
@@ -194,6 +215,9 @@ watch_padding = function(item)
   local original_render = item.render
   item.render = function(self, ...)
     if vim.fn.mode():match('^[iR]') then return end
+    if self._wezterm_math and self.is_rendered then
+      self.global_state.backend.clear(self.id, true)
+    end
     local had_padding = self:get_extmark_id() ~= nil
     local result = original_render(self, ...)
     if not had_padding and self:get_extmark_id() ~= nil then
@@ -257,6 +281,7 @@ local function render_math(buf, win)
                   if math_images[key] == pending and inline_enabled
                       and not result:error() and vim.fn.filereadable(result.file) == 1 then
                     local image = require('image').from_file(result.file, {
+                      id = 'wezterm-math:' .. key,
                       buffer = buf,
                       window = win,
                       with_virtual_padding = true,
@@ -268,6 +293,7 @@ local function render_math(buf, win)
                       max_height_window_percentage = 25,
                     })
                     if image then
+                      image._wezterm_math = true
                       math_images[key] = image
                       watch_padding(image)
                       image:render()

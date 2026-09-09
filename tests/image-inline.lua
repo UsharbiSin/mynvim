@@ -35,6 +35,7 @@ local item = {
   render = function(self)
     renders = renders + 1
     self.padding = true
+    self.is_rendered = true
   end,
 }
 package.loaded.image = {
@@ -53,6 +54,10 @@ assert(clears == 0 and renders == 1, 'padding refresh must not retransmit the im
 item:render()
 while #scheduled > 0 do table.remove(scheduled, 1)() end
 assert(clears == 0 and renders == 2, 'stable padding must not clear the image')
+item._wezterm_math = true
+item:render()
+while #scheduled > 0 do table.remove(scheduled, 1)() end
+assert(clears == 1 and renders == 3, 'a rendered transparent formula must be cleared before repositioning')
 
 local conversions = 0
 local aborted = 0

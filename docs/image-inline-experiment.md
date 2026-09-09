@@ -10,6 +10,8 @@ Windows 的终端尺寸来自 `wezterm cli list --format json` 中当前 pane �
 
 LaTeX 公式由 Snacks 负责解析和转换，生成的透明图片直接交给 image.nvim 定位，不再额外启动 ImageMagick 进行二次缩放和重新编码。系统需要安装 `tectonic` 或 `pdflatex`；当前 Windows 环境使用 `pdflatex`。Windows 的 Tree-sitter 查询只覆盖当前视口附近，并在自身兼容层中串行编译公式，避免 Snacks 的并发进程队列随滚动累积。公式离开视口、文档修改或关闭显示时，尚未启动的任务会直接丢弃，正在运行的任务会中止。打开文档时显示全部可见图片和公式；进入 Insert 模式后保留现有图片并暂停向终端发送新的渲染。返回 Normal 模式时检查文档是否发生变化，未修改则保持原图，修改后才作废旧公式并重新扫描图片路径。Linux 仍使用 Snacks 完整 inline，不受此兼容层影响。
 
+image.nvim 自带的滚动重绘在 Windows 下会延迟到停止滚动 120 毫秒后合并执行。公式使用稳定图片 ID，位置变化需要重绘时会先删除旧 Kitty placement，再发送新位置，避免透明公式反复叠加后变粗，并减少连续滚动产生的终端流量。
+
 图片首次创建虚拟留白时只刷新文本布局，不清除或重新发送已经完整显示的图片。WezTerm 对同一图片的快速清除和重传可能保留一块重复残图，因此定位流程不再使用二次图像传输。
 
 diagram.nvim 负责生成 Mermaid、PlantUML、D2 和 Gnuplot 图片。Windows 使用同一套 image.nvim 行内定位；Mermaid 和 D2 使用 3 倍缩放，Mermaid 宽度为 2400 像素，Gnuplot 输出为 2400×1500。图表显示宽度根据当前窗口正文区域动态计算，目标为可用宽度的 90%，分屏后也会重新计算。配置还会把渲染尺寸版本写入图表缓存键，避免 diagram.nvim 继续复用调整尺寸前生成的小图。Linux 保持插件的原生图像后端。不同图表仍需安装相应的渲染命令。
