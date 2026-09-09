@@ -208,12 +208,17 @@ local function flush_alignment()
   end
   alignment_pending = {}
 
-  vim.cmd('redraw!')
   for _, group in pairs(groups) do
-    -- 每组只从最上方图片开始一次级联重绘，避免逐图重发形成平方级 Kitty 请求。
     for _, item in ipairs(group.items) do item.global_state.backend.clear(item.id, true) end
-    group.first:render()
   end
+  -- 先让 virtual padding 改变后的文本布局真正落到终端，再按新布局发送图片。
+  vim.cmd('redraw!')
+  vim.defer_fn(function()
+    if vim.fn.mode():match('^[iR]') then return end
+    for _, group in pairs(groups) do
+      if visible_in_viewport(group.first) then group.first:render() end
+    end
+  end, 30)
 end
 
 local function schedule_alignment(item)
