@@ -2,7 +2,7 @@
 
 # boole.nvim：值的递增与递减
 
-仓库：`nat-418/boole.nvim`。main 的跨平台配置以 VeryLazy 加载；配置在
+仓库：`nat-418/boole.nvim`。跨平台配置以 VeryLazy 加载；配置在
 `lua/config/nvim-boole.lua`。普通模式 `Ctrl-a` 向前切换，`Ctrl-x`
 向后切换，除布尔值外还增加 `enable` / `disable` 对。
 

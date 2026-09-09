@@ -20,7 +20,7 @@ Mason 下载语言服务器、格式化器、检查器、调试适配器；插�
 :MasonInstall black isort prettier stylua sqlfluff
 ```
 
-最后一条补齐本项目 [Conform](conform.nvim.md) 和 [nvim-lint](nvim-lint.md) 所需程序；调试 Python 时另执行 `:MasonInstall debugpy`。main 的调试配置仍指向单独的个人虚拟环境，所以安装 Mason debugpy 后也必须调整适配器路径，见 [DAP](../debugging/nvim-dap.md)。
+最后一条补齐本项目 [Conform](conform.nvim.md) 和 [nvim-lint](nvim-lint.md) 所需程序；调试 Python 时另执行 `:MasonInstall debugpy`。调试配置从 Mason debugpy 目录按系统解析适配器路径，见 [DAP](../debugging/nvim-dap.md)。
 
 Mason 的可执行文件目录默认加入 **Neovim 进程** 的 PATH。终端里找不到 `black`，并不等于 Neovim 内找不到；安装目录由 `stdpath("data")` 决定：
 

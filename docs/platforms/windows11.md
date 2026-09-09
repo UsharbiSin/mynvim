@@ -1,11 +1,11 @@
-# Windows 11（main 分支）安装与配置
+# Windows 11 安装与配置
 
-[返回项目使用说明](../../README.md) · [插件索引](../README.md) · [分支差异](../branch-differences.md)
+[返回项目使用说明](../../README.md) · [插件索引](../README.md) · [平台差异](../platform-differences.md)
 
 本文面向 Windows 11 原生 Neovim，不是 WSL。2026-09-09 已在 Windows 11、Neovim 0.12.5、
 PowerShell 5.1 和 WezTerm 环境完成实机验证。数据库网络、未安装的可选语言运行时和所有终端
 图像协议仍需在使用机器验证。若项目实际在 WSL 内开发，通常应在 WSL 内安装 Neovim 并使用
-`main` 分支，避免混用 Windows 路径与 Linux 工具链。
+Linux 工具链，避免混用 Windows 路径与 Linux 工具链。
 
 ## 1. 安装基础软件
 
@@ -85,10 +85,10 @@ if (Test-Path $env:LOCALAPPDATA\nvim-data) {
 
 不要直接删除备份。确认新配置稳定后再自行清理。
 
-## 3. 克隆 main 分支
+## 3. 克隆配置
 
 ```powershell
-git clone --branch main https://github.com/UsharbiSin/mynvim.git $env:LOCALAPPDATA\nvim
+git clone https://github.com/UsharbiSin/mynvim.git $env:LOCALAPPDATA\nvim
 nvim
 ```
 
@@ -217,7 +217,7 @@ CUDA 启动项同样只在 `cuda-gdb` 或 cppdbg 依赖齐全时显示。
 
 ## 7. F10 一键运行
 
-main 中的 Windows 路径由 `lua/core/runner.lua` 生成参数数组，不通过 PowerShell 拼接文件名。
+Windows 路径由 `lua/core/runner.lua` 生成参数数组，不通过 PowerShell 拼接文件名。
 当前实机已在含空格临时目录完成 C 编译和执行测试。Python 自动优先选择 Windows 的 `python`，HTML
 使用系统关联，Markdown/Vimwiki 使用 `MarkdownPreview`，JavaScript 运行当前文件。
 
@@ -258,9 +258,9 @@ Snacks 行内图片还取决于 Windows Terminal/终端模拟器是否支持相�
 9. 输入中文后按 Esc 返回 Normal，确认输入法切回英文。
 10. `:checkhealth codex` 无错误，`<Space>ac` 能打开当前项目的 Codex 终端。
 
-main 分支已经包含 Codex 集成与 boole.nvim。普通模式下可用 `Ctrl-a` 向前切换、
+配置已经包含 Codex 集成与 boole.nvim。普通模式下可用 `Ctrl-a` 向前切换、
 `Ctrl-x` 向后切换 `true` / `false`、`enable` / `disable` 等值。具体差异见
-[分支差异](../branch-differences.md)。
+[平台差异](../platform-differences.md)。
 
 仓库提供可重复的 Windows 专项检查。PowerShell 中先解析真实应用路径，再执行：
 

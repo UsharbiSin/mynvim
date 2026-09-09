@@ -2,7 +2,7 @@
 
 # conflict-marker.vim：合并冲突辅助
 
-仓库：`rhysd/conflict-marker.vim`。main 在两个系统直接加载，没有本项目自定义映射。它识别
+仓库：`rhysd/conflict-marker.vim`。两个系统均直接加载，没有本项目自定义映射。它识别
 `<<<<<<<`、`=======`、`>>>>>>>` 等冲突区，提供高亮、文本对象和选择 ours/theirs/both/none
 的操作。
 

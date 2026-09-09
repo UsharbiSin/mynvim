@@ -1,10 +1,10 @@
 # mynvim 中文使用说明
 
-这是一套以 Lua 编写、由 `lazy.nvim` 管理的个人 Neovim 配置。`main` 分支同时支持
+这是一套以 Lua 编写、由 `lazy.nvim` 管理的个人 Neovim 配置，同时支持
 Arch Linux 和 Windows 11 原生 Neovim，运行时通过 `vim.g.is_win` 选择系统相关设置。
 本文既说明已经可用的功能，也标出仍需按机器安装的外部工具和个人路径。
 
-> 当前文档审计日期：2026-09-09。`main` 在 Arch Linux 和 Windows 11 均使用 Neovim
+> 当前文档审计日期：2026-09-09。Arch Linux 和 Windows 11 均使用 Neovim
 > 0.12.5；Windows 已完成原生无界面启动与专项检查，Arch Linux 保留此前的无界面检查结果。
 
 ## 文档入口
@@ -13,16 +13,16 @@ Arch Linux 和 Windows 11 原生 Neovim，运行时通过 `vim.g.is_win` 选择�
 | --- | --- |
 | Arch Linux 从零安装、升级、验证 | [Arch Linux 配置](docs/platforms/archlinux.md) |
 | Windows 11 从零安装、路径适配、验证 | [Windows 11 配置](docs/platforms/windows11.md) |
-| Arch Linux 与 Windows 的设置差异 | [系统设置差异](docs/branch-differences.md) |
+| Arch Linux 与 Windows 的设置差异 | [系统设置差异](docs/platform-differences.md) |
 | 全部插件按功能分类，每个插件单独说明 | [插件文档索引](docs/README.md) |
 | 内置 Codex 终端 | [Codex 使用说明](docs/codex.md) |
 
-## 安装 main 分支
+## 安装
 
-| 系统 | 分支 | 配置目录 |
-| --- | --- | --- |
-| Arch Linux | `main` | `~/.config/nvim` |
-| Windows 11 | `main` | `$env:LOCALAPPDATA\nvim` |
+| 系统 | 配置目录 |
+| --- | --- |
+| Arch Linux | `~/.config/nvim` |
+| Windows 11 | `$env:LOCALAPPDATA\nvim` |
 
 同一份配置会按系统选择输入法插件、Shell、调试器路径、Vimwiki 路径和运行命令。
 
@@ -33,7 +33,7 @@ Arch Linux 和 Windows 11 原生 Neovim，运行时通过 `vim.g.is_win` 选择�
 ```bash
 sudo pacman -S --needed neovim git curl unzip base-devel tree-sitter-cli nodejs npm imagemagick
 mv ~/.config/nvim ~/.config/nvim.bak-$(date +%Y%m%d-%H%M%S)
-git clone --branch main https://github.com/UsharbiSin/mynvim.git ~/.config/nvim
+git clone https://github.com/UsharbiSin/mynvim.git ~/.config/nvim
 nvim
 ```
 
@@ -54,13 +54,13 @@ nvim
 ### Windows 11 快速安装
 
 先阅读[完整的 Windows 11 步骤](docs/platforms/windows11.md)。在 PowerShell 中备份旧配置并
-克隆统一的 `main` 分支：
+克隆配置：
 
 ```powershell
 if (Test-Path $env:LOCALAPPDATA\nvim) {
   Rename-Item $env:LOCALAPPDATA\nvim ("nvim.bak-" + (Get-Date -Format yyyyMMdd-HHmmss))
 }
-git clone --branch main https://github.com/UsharbiSin/mynvim.git $env:LOCALAPPDATA\nvim
+git clone https://github.com/UsharbiSin/mynvim.git $env:LOCALAPPDATA\nvim
 nvim
 ```
 

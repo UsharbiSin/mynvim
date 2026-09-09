@@ -2,7 +2,7 @@
 
 # vim-addon-mw-utils：Vimscript 工具库
 
-仓库：`MarcWeber/vim-addon-mw-utils`。main 在两个系统把它作为底层条目直接声明；它提供缓存、对象、
+仓库：`MarcWeber/vim-addon-mw-utils`。两个系统都把它作为底层条目直接声明；它提供缓存、对象、
 列表等 Vimscript 辅助函数，常由旧式插件间接使用。
 
 本项目没有直接调用、命令或快捷键。正常使用无需配置；删除前应检查 PIV 等传统插件的运行

@@ -26,4 +26,4 @@ vim.lsp.config("*", {
 
 启用更完整能力后，服务器可能返回 snippet。应同时完善 cmp 的 snippet 展开设置并验证所用 Neovim 支持相应 API；不要只复制 capabilities 后就认定片段展开完整。上游也提示，这组能力可能改变内置 omnifunc 的兼容性。
 
-main 在两个系统使用相同配置；Windows 实机已确认六个 LSP 能附着。没有 LSP 候选优先检查程序 PATH、当前 filetype、root 与附着状态。
+两个系统使用相同配置；Windows 实机已确认六个 LSP 能附着。没有 LSP 候选优先检查程序 PATH、当前 filetype、root 与附着状态。

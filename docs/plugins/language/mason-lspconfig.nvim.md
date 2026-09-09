@@ -33,7 +33,7 @@
 
 ## 平台与排错
 
-main 在两个系统使用同一服务列表。Windows 差异主要在 Mason 外部运行时及可执行文件扩展名；
+两个系统使用同一服务列表。Windows 差异主要在 Mason 外部运行时及可执行文件扩展名；
 用 `:lua print(vim.fn.exepath("pylsp"))` 检查 Neovim 实际解析到的程序。Windows 实机的六个
 服务均已安装并能附着。两个系统当前均使用 Neovim 0.12.5；若报 `vim.lsp.enable` 不存在，
 应检查实际启动的 `nvim` 是否仍指向旧程序。

@@ -26,4 +26,4 @@ library = {
 
 若报 `Undefined global vim` 或 API 不完整，检查当前项目 `.luarc.json` / `.luarc.jsonc`、LuaLS 日志以及 lazydev 是否运行。更改库配置后重启对应语言服务或 Neovim。不要单独安装 luvit 运行时来解决类型库问题，它们用途不同。
 
-main 在两个系统配置一致，无插件专属快捷键；Windows 实机已确认 Lua LSP 能附着。[上游使用与库配置](https://github.com/folke/lazydev.nvim)
+两个系统配置一致，无插件专属快捷键；Windows 实机已确认 Lua LSP 能附着。[上游使用与库配置](https://github.com/folke/lazydev.nvim)

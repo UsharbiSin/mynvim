@@ -2,11 +2,11 @@
 
 [返回项目使用说明](../README.md) · [插件索引](README.md)
 
-`main` 使用同一套配置支持 Arch Linux 和 Windows 11。`init.lua` 在启动时设置
+本配置同时支持 Arch Linux 和 Windows 11。`init.lua` 在启动时设置
 `vim.g.is_win`，只有确实依赖操作系统的部分才进行条件选择。
 
 两个系统当前均使用 Neovim 0.12.5，共用 Neovim 0.11+ 原生 LSP、Tree-sitter 新接口和
-同一套插件声明。下表描述的是操作系统及外部工具差异，不再代表两个 Git 分支的差异。
+同一套插件声明。下表描述操作系统、路径和外部工具的差异。
 
 | 方面 | Arch Linux | Windows 11 |
 | --- | --- | --- |

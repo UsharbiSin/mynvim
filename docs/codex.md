@@ -2,8 +2,8 @@
 
 [返回项目使用说明](../README.md) · [插件索引](README.md)
 
-本配置采用 **官方 Codex CLI + 已有的 Snacks terminal**。统一的 `main` 分支在 Arch Linux
-和 Windows 11 原生 Neovim 中使用同一份 Codex 模块，并按操作系统选择启动命令和路径。
+本配置采用 **官方 Codex CLI + 已有的 Snacks terminal**。Arch Linux 和 Windows 11 原生
+Neovim 使用同一份 Codex 模块，并按操作系统选择启动命令和路径。
 
 ## 方案选择
 

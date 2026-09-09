@@ -3,7 +3,7 @@
 [返回项目使用说明](../README.md)
 
 本索引按实际用途分类。每个插件有独立 Markdown，内容区分“上游能力”和“本项目确实启用
-的能力”。仓库使用统一的 `main` 分支，平台独有项通过运行时条件加载并已标注。
+的能力”。平台独有项通过运行时条件加载并已标注。
 
 ## UI 与显示
 
@@ -79,8 +79,8 @@
 
 ## 输入法
 
-- [fcitx.nvim](plugins/input/fcitx.nvim.md)（main 中仅 Linux 加载）
-- [im-select.nvim](plugins/input/im-select.nvim.md)（main 中仅 Windows 加载）
+- [fcitx.nvim](plugins/input/fcitx.nvim.md)（仅 Linux 加载）
+- [im-select.nvim](plugins/input/im-select.nvim.md)（仅 Windows 加载）
 
 ## 底层依赖和插件管理器
 

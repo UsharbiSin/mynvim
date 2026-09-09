@@ -1,9 +1,9 @@
-# Arch Linux（main 分支）安装与配置
+# Arch Linux 安装与配置
 
 [返回项目使用说明](../../README.md) · [插件索引](../README.md)
 
-本文适用于原生 Arch Linux。main 在 Arch Linux 与 Windows 11 均以 Neovim 0.12.5 为当前
-运行版本；Arch Linux 已做过无界面启动检查。锁定的
+本文适用于原生 Arch Linux。Arch Linux 与 Windows 11 均以 Neovim 0.12.5 为当前运行版本；
+Arch Linux 已做过无界面启动检查。锁定的
 `nvim-treesitter` 要求 Neovim 至少 0.11、Tree-sitter CLI 至少 0.26.1。
 
 ## 1. 备份旧配置
@@ -45,10 +45,10 @@ sudo pacman -S --needed wl-clipboard
 安装编译器。Snacks 行内图片还取决于终端图像协议；Kitty、WezTerm、Ghostty 等需按上游
 说明设置，普通终端可能只能显示悬浮或无法显示。
 
-## 3. 克隆 main 分支
+## 3. 克隆配置
 
 ```bash
-git clone --branch main https://github.com/UsharbiSin/mynvim.git ~/.config/nvim
+git clone https://github.com/UsharbiSin/mynvim.git ~/.config/nvim
 nvim
 ```
 
