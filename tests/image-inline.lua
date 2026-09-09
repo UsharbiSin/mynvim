@@ -49,10 +49,10 @@ while #scheduled > 0 do table.remove(scheduled, 1)() end
 assert(scans == 1, 'refresh must trigger one targeted document scan')
 item:render()
 while #scheduled > 0 do table.remove(scheduled, 1)() end
-assert(clears == 1 and renders == 2, 'first padding render must be aligned once')
+assert(clears == 0 and renders == 1, 'padding refresh must not retransmit the image')
 item:render()
 while #scheduled > 0 do table.remove(scheduled, 1)() end
-assert(clears == 1 and renders == 3, 'stable padding must not trigger another alignment')
+assert(clears == 0 and renders == 2, 'stable padding must not clear the image')
 
 local conversions = 0
 Snacks = {
@@ -86,4 +86,4 @@ while #scheduled > 0 do table.remove(scheduled, 1)() end
 assert(conversions < 10, 'formulas outside the viewport must not be converted')
 vim.schedule = original_schedule
 vim.defer_fn = original_defer_fn
-print('PASS: initial alignment and formula conversion deduplication')
+print('PASS: padding refresh and formula conversion deduplication')

@@ -3,9 +3,7 @@ local M = {}
 local inline_enabled = true
 local math_images = {}
 local watch_padding
-local alignment_timer
 local math_scroll_timer
-local alignment_pending = {}
 local insert_ticks = {}
 
 function M.is_windows()
@@ -189,47 +187,6 @@ local function visible_in_viewport(item)
   return row <= info.botline and row + height >= info.topline - 1
 end
 
-local function flush_alignment()
-  alignment_timer = nil
-  if vim.fn.mode():match('^[iR]') then return end
-
-  local image = require('image')
-  local groups = {}
-  for _, item in ipairs(image.get_images()) do
-    local key = item.buffer and item.window and (item.buffer .. ':' .. item.window) or nil
-    if key and alignment_pending[key] and visible_in_viewport(item) and item:get_extmark_id() ~= nil then
-      local group = groups[key] or { first = item, items = {} }
-      group.items[#group.items + 1] = item
-      local item_row = (item.geometry and item.geometry.y) or 0
-      local first_row = (group.first.geometry and group.first.geometry.y) or 0
-      if item_row < first_row then group.first = item end
-      groups[key] = group
-    end
-  end
-  alignment_pending = {}
-
-  for _, group in pairs(groups) do
-    for _, item in ipairs(group.items) do item.global_state.backend.clear(item.id, true) end
-  end
-  -- 先让 virtual padding 改变后的文本布局真正落到终端，再按新布局发送图片。
-  vim.cmd('redraw!')
-  vim.defer_fn(function()
-    if vim.fn.mode():match('^[iR]') then return end
-    for _, group in pairs(groups) do
-      if visible_in_viewport(group.first) then group.first:render() end
-    end
-  end, 30)
-end
-
-local function schedule_alignment(item)
-  if item.buffer and item.window then alignment_pending[item.buffer .. ':' .. item.window] = true end
-  if alignment_timer then
-    alignment_timer:stop()
-    alignment_timer:close()
-  end
-  alignment_timer = vim.defer_fn(flush_alignment, 80)
-end
-
 watch_padding = function(item)
   if item._wezterm_inline_wrapped then return end
   item._wezterm_inline_wrapped = true
@@ -238,10 +195,15 @@ watch_padding = function(item)
     if vim.fn.mode():match('^[iR]') then return end
     local had_padding = self:get_extmark_id() ~= nil
     local result = original_render(self, ...)
-    if not had_padding and self:get_extmark_id() ~= nil then schedule_alignment(self) end
+    if not had_padding and self:get_extmark_id() ~= nil then
+      -- 只刷新 virtual padding 影响的文本布局；重发图片会在 WezTerm 中留下残图。
+      vim.schedule(function()
+        if vim.fn.mode():match('^[iR]') then return end
+        vim.cmd('redraw!')
+      end)
+    end
     return result
   end
-  if item:get_extmark_id() ~= nil then schedule_alignment(item) end
 end
 
 local function render_math(buf, win)
