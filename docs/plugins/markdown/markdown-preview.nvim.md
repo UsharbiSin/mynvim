@@ -11,8 +11,8 @@
 F8 启动 `MarkdownPreview`，F9 停止；也可用 `:MarkdownPreviewToggle`。本项目实时刷新、切换
 buffer 自动关闭、深色主题、KaTeX、Mermaid/PlantUML 等预览选项，默认只监听本机。
 
-main 的浏览器、CSS 和图片路径含作者绝对路径；windows 的 CSS 使用 stdpath，浏览器配置
-留空并使用系统默认浏览器。F10 与 F8 都调用已安装的 `MarkdownPreview`。构建失败看
+两个系统都通过 `stdpath('config')` 定位 CSS，浏览器配置留空并使用系统默认浏览器。F10 与
+F8 都调用已安装的 `MarkdownPreview`。构建失败看
 `:Lazy log`；实机已确认预览服务能生成本地 URL。
 
 上游：[markdown-preview.nvim](https://github.com/iamcco/markdown-preview.nvim)。

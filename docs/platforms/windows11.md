@@ -2,7 +2,7 @@
 
 [返回项目使用说明](../../README.md) · [插件索引](../README.md) · [分支差异](../branch-differences.md)
 
-本文面向 Windows 11 原生 Neovim，不是 WSL。2026-09-07 已在 Windows 11、Neovim 0.12.4、
+本文面向 Windows 11 原生 Neovim，不是 WSL。2026-09-09 已在 Windows 11、Neovim 0.12.5、
 PowerShell 5.1 和 WezTerm 环境完成实机验证。数据库网络、未安装的可选语言运行时和所有终端
 图像协议仍需在使用机器验证。若项目实际在 WSL 内开发，通常应在 WSL 内安装 Neovim 并使用
 `main` 分支，避免混用 Windows 路径与 Linux 工具链。
@@ -217,8 +217,8 @@ CUDA 启动项同样只在 `cuda-gdb` 或 cppdbg 依赖齐全时显示。
 
 ## 7. F10 一键运行
 
-Windows 分支由 `lua/core/runner.lua` 生成参数数组，不通过 PowerShell 拼接文件名。当前实机
-已在含空格临时目录完成 C 编译和执行测试。Python 自动优先选择 Windows 的 `python`，HTML
+main 中的 Windows 路径由 `lua/core/runner.lua` 生成参数数组，不通过 PowerShell 拼接文件名。
+当前实机已在含空格临时目录完成 C 编译和执行测试。Python 自动优先选择 Windows 的 `python`，HTML
 使用系统关联，Markdown/Vimwiki 使用 `MarkdownPreview`，JavaScript 运行当前文件。
 
 每种语言仍需安装对应编译器或运行时。TeX 分支需要当前未声明的 Vimtex，Dart 分支需要当前
@@ -237,7 +237,7 @@ AVIF；Linux 配置仍使用 ImageMagick 保存 AVIF。
 ```
 
 img-clip.nvim 当前没有专用 health provider。用 `<Space>pi` 后检查 `.markdown_images/` 是否
-生成 AVIF 文件；也可用 `:messages` 查看转换错误。实机 ImageMagick 已确认支持 AVIF 读写。
+生成 PNG 文件；也可用 `:messages` 查看保存错误。Windows 原生剪贴板保存不经过 AVIF 转换。
 
 Snacks 行内图片还取决于 Windows Terminal/终端模拟器是否支持相应图像协议。图片粘贴成功
 但行内不显示时，先看文件是否真正生成，再分别排查 ImageMagick 与终端显示能力。
@@ -253,7 +253,7 @@ Snacks 行内图片还取决于 Windows Terminal/终端模拟器是否支持相�
    `diff.exe`；`T` 需要先执行 `winget install UniversalCtags.Ctags`，并在重启 Neovim 后
    确认 `:echo exepath('ctags')` 能找到程序。配置不会写死工具安装路径。
 6. F8/F9 能启动/停止 Markdown 预览。
-7. `<Space>pi` 能生成 AVIF 文件并插入链接。
+7. `<Space>pi` 能生成 PNG 文件并插入链接。
 8. Python debugpy 路径存在；C/C++ 的 GDB DAP 能命中断点。
 9. 输入中文后按 Esc 返回 Normal，确认输入法切回英文。
 10. `:checkhealth codex` 无错误，`<Space>ac` 能打开当前项目的 Codex 终端。

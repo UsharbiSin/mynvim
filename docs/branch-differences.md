@@ -5,9 +5,13 @@
 `main` 使用同一套配置支持 Arch Linux 和 Windows 11。`init.lua` 在启动时设置
 `vim.g.is_win`，只有确实依赖操作系统的部分才进行条件选择。
 
+两个系统当前均使用 Neovim 0.12.5，共用 Neovim 0.11+ 原生 LSP、Tree-sitter 新接口和
+同一套插件声明。下表描述的是操作系统及外部工具差异，不再代表两个 Git 分支的差异。
+
 | 方面 | Arch Linux | Windows 11 |
 | --- | --- | --- |
 | 配置目录 | `~/.config/nvim` | `$env:LOCALAPPDATA\nvim` |
+| Neovim | 0.12.5 | 0.12.5 |
 | 输入法 | `h-hg/fcitx.nvim` | `keaising/im-select.nvim`，英文 IME 代码 `1033` |
 | Shell | 继承系统 Shell | 优先 `pwsh`，否则使用 Windows PowerShell |
 | Lazy rocks | 使用 Lazy 默认设置 | 禁用 luarocks/hererocks，避免 Windows 安装失败 |

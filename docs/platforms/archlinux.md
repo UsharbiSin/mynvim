@@ -2,7 +2,8 @@
 
 [返回项目使用说明](../../README.md) · [插件索引](../README.md)
 
-本文适用于原生 Arch Linux。当前仓库已在 Neovim 0.12.5 上做过无界面启动检查；锁定的
+本文适用于原生 Arch Linux。main 在 Arch Linux 与 Windows 11 均以 Neovim 0.12.5 为当前
+运行版本；Arch Linux 已做过无界面启动检查。锁定的
 `nvim-treesitter` 要求 Neovim 至少 0.11、Tree-sitter CLI 至少 0.26.1。
 
 ## 1. 备份旧配置

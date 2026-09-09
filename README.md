@@ -4,8 +4,8 @@
 Arch Linux 和 Windows 11 原生 Neovim，运行时通过 `vim.g.is_win` 选择系统相关设置。
 本文既说明已经可用的功能，也标出仍需按机器安装的外部工具和个人路径。
 
-> 当前文档审计日期：2026-09-07。`main` 已在 Arch Linux / Neovim 0.12.5 上完成
-> 无界面启动检查；`windows` 已在 Windows 11 / Neovim 0.12.4 上完成原生实机检查。
+> 当前文档审计日期：2026-09-09。`main` 在 Arch Linux 和 Windows 11 均使用 Neovim
+> 0.12.5；Windows 已完成原生无界面启动与专项检查，Arch Linux 保留此前的无界面检查结果。
 
 ## 文档入口
 
@@ -54,7 +54,7 @@ nvim
 ### Windows 11 快速安装
 
 先阅读[完整的 Windows 11 步骤](docs/platforms/windows11.md)。在 PowerShell 中备份旧配置并
-克隆 `windows` 分支：
+克隆统一的 `main` 分支：
 
 ```powershell
 if (Test-Path $env:LOCALAPPDATA\nvim) {
@@ -294,7 +294,8 @@ Vimwiki 在 Linux 使用 `~/vimwiki/`，在 Windows 使用 `E:/@home/usharbisin/
 
 - `render-markdown.nvim` 美化当前 Neovim buffer；
 - `markdown-preview.nvim` 用 F8/F9 控制浏览器预览；
-- `img-clip.nvim` 把剪贴板图像转为 AVIF，放进当前目录的 `.markdown_images/`；
+- `img-clip.nvim` 把剪贴板图像放进当前目录的 `.markdown_images/`：Windows 保存 PNG，
+  Linux 通过 ImageMagick 转为 AVIF；
 - `diagram.nvim` 调用 Mermaid、PlantUML、D2 或 Gnuplot 渲染代码块；
 - `vim-table-mode` 用 `<Space>tm` 开关表格排版。
 
@@ -329,7 +330,8 @@ Mason 的 LSP、formatter 和调试器有独立生命周期，
 
 当前文档记录了以下验证：
 
-- Arch Linux / Neovim 0.12.5 与 Windows 11 / Neovim 0.12.4 均能完整读取配置并退出；
+- Arch Linux 与 Windows 11 均使用 Neovim 0.12.5；Windows 能完整读取配置并通过专项检查，
+  Arch Linux 保留此前的无界面启动检查结果；
 - Windows 的 Lazy 注册 66 个插件条目，锁文件中的插件均有安装目录；
 - `:Codex` / `:CodexResume` 命令已注册；
 - Windows 配置列出的 14 个 Tree-sitter parser 均可加载，6 个 Mason LSP 均能附着；

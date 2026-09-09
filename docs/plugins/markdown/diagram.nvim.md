@@ -13,7 +13,7 @@ Markdown 集成也接受 `vimwiki` filetype，因此 Vimwiki 接管 `.md` 文件
 `plantuml -version`、`d2 version` 或 `gnuplot --version`。终端本身还需支持 image.nvim 使用的
 图像协议。
 
-两个系统使用相同插件和配置。Windows 已实测，Linux 后续需确认终端图像协议、ImageMagick
+main 在两个系统使用相同插件声明，并按平台选择图像后端。Windows 已实测，Linux 后续需确认终端图像协议、ImageMagick
 和所用图表渲染器均可用。
 
 上游：[diagram.nvim](https://github.com/3rd/diagram.nvim)。

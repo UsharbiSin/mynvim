@@ -14,11 +14,11 @@ codelldb 或 cppdbg；adapter 可执行文件必须另外安装。
 | `cppdbg` | `OpenDebugAD7` | 可选 C/C++/CUDA launch 与 attach；需同时有 gdb |
 | `gdb` | `gdb --interpreter=dap ...` | Windows 的 C/C++ 首选；需支持 DAP 的 GDB |
 | `cudagdb` | `cuda-gdb` | CUDA launch；需 NVIDIA 工具链 |
-| `python` | `python -m debugpy.adapter` | main 是作者绝对路径；windows 是 Mason debugpy |
+| `python` | `python -m debugpy.adapter` | 两个系统均从 Mason debugpy 目录解析，并选择对应的 `bin` 或 `Scripts` 路径 |
 
 Windows 的 `c` 与 `cpp` 共用本机可用配置，优先原生 GDB DAP，并只加入命令实际存在的
 codelldb/cppdbg 选项。实机已用 GDB 16.2 调试带空格路径的 C 程序，断点成功命中并正常退出。
-main 的适配器路径仍按 Arch 指南核对。
+Arch Linux 与 Windows 均按 PATH 探测原生调试器；Python adapter 按平台使用 Mason debugpy。
 
 ## 快捷键
 

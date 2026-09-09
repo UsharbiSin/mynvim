@@ -2,8 +2,8 @@
 
 [返回项目使用说明](../README.md) · [插件索引](README.md)
 
-本配置采用 **官方 Codex CLI + 已有的 Snacks terminal**。`main`（Arch Linux）和
-`windows`（Windows 11 原生 Neovim）使用同一份 Codex 模块，各自保留平台配置。
+本配置采用 **官方 Codex CLI + 已有的 Snacks terminal**。统一的 `main` 分支在 Arch Linux
+和 Windows 11 原生 Neovim 中使用同一份 Codex 模块，并按操作系统选择启动命令和路径。
 
 ## 方案选择
 
@@ -39,12 +39,12 @@ codex login status
 也可使用[官方安装页面](https://learn.chatgpt.com/docs/codex/cli)提供的独立安装器。
 安装后重启 Neovim，使它获得新的 PATH，然后执行 `:checkhealth codex`。
 
-### Arch Linux / main
+### Arch Linux
 
 在运行 Neovim 的同一个 Linux 环境中安装、登录。终端检查通过后，打开项目中的文件，
 按 `<Space>ac` 即可。
 
-### Windows 11 / windows
+### Windows 11
 
 在 Windows 本机安装 Codex，与原生 Neovim 使用同一套文件路径、Git 和构建工具。
 当前官方支持原生 Windows；首次运行请按 CLI 提示完成 Windows sandbox 设置。

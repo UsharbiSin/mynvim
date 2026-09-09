@@ -22,4 +22,4 @@ formatting = {
 
 同时在终端选择支持相应字形的 Nerd Font。配置后用函数和变量候选对照检查图标。无需额外程序，不改变 LSP 分析能力，也没有独立快捷键。[上游 cmp 接入说明](https://github.com/onsails/lspkind.nvim#option-2-nvim-cmp)
 
-两分支一致，Windows 实机已确认配置可加载。出现方框先查终端字体；完全没有图标先查是否真的接入了 formatter，而非先重装 LSP。
+main 在两个系统配置一致，Windows 实机已确认配置可加载。出现方框先查终端字体；完全没有图标先查是否真的接入了 formatter，而非先重装 LSP。

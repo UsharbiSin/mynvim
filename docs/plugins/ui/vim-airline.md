@@ -2,7 +2,7 @@
 
 # vim-airline：状态栏
 
-仓库：`vim-airline/vim-airline`。它在底部显示模式、文件、Git、编码和文件类型；两个分支都
+仓库：`vim-airline/vim-airline`。它在底部显示模式、文件、Git、编码和文件类型；两个系统都
 在启动阶段加载，并通过 [ui.lua](../../../lua/config/ui.lua) 完成配置。
 
 本项目启用 hunks 扩展，并把 X 区设置成“当前 Conda 环境 + filetype”。只有启动 Neovim

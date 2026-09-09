@@ -34,4 +34,4 @@
 
 若只缺 LSP 项，查看 [LSP 文档](nvim-lspconfig.md)；如果路径项不出现，检查当前输入是否包含 `./` 等路径前缀。Markdown 的 bullets、table-mode、Vimwiki 也会映射回车，按当前缓冲区的 `:verbose imap <CR>` 确认最终生效者。
 
-两个分支配置一致，Windows 实机已确认配置加载。终端或输入法可能截获 Ctrl-Space，可先用菜单自动触发验证。[上游手册](https://github.com/hrsh7th/nvim-cmp/blob/main/doc/cmp.txt)
+main 在两个系统配置一致，Windows 实机已确认配置加载。终端或输入法可能截获 Ctrl-Space，可先用菜单自动触发验证。[上游手册](https://github.com/hrsh7th/nvim-cmp/blob/main/doc/cmp.txt)
