@@ -11,6 +11,11 @@ callout，并扩展 `[?]`、`[>]`、`[-]`、`[!]`、`[~]` checkbox。sign 关闭
 仍渲染。Normal 模式的当前行会隐藏 `**`、反引号等源码标记，进入 Insert 模式后显示这些
 标记以便编辑。
 
+内联 HTML 额外支持 `<a>` 和 `<span>` 的 `style="color: ..."`。例如
+`<span style="color: red;">警告</span>` 在 Normal 模式隐藏标签并把“警告”显示为红色，
+进入 Insert 模式后显示完整标签并实时更新颜色。颜色可使用名称、`#RGB`、`#RRGGBB` 或
+`rgb(r, g, b)`；其他 CSS 属性、跨行标签和嵌套标签仍交给浏览器预览。空标签没有可渲染的正文。
+
 用 `:RenderMarkdown toggle` 切换；该插件没有专用 health provider，可用
 `:checkhealth nvim-treesitter` 和 `:messages` 排错。它要求 Markdown 与 markdown_inline
 parser；图标要求 Nerd Font。配置开启 blink/LSP completion，但本项目没有

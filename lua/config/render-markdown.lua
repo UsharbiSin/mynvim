@@ -147,3 +147,5 @@ require("render-markdown").setup({
     lsp = { enabled = true },
   },
 })
+
+require("config.markdown-html").setup()

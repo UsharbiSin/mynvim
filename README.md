@@ -293,6 +293,7 @@ Vimwiki 在 Linux 使用 `~/vimwiki/`，在 Windows 使用 `E:/@home/usharbisin/
 渲染、图片粘贴和表格编辑是四套独立能力：
 
 - `render-markdown.nvim` 美化当前 Neovim buffer；
+- 内联 `<a>` / `<span style="color: ...">` 在编辑器内实时显示文字颜色；
 - `markdown-preview.nvim` 用 F8/F9 控制浏览器预览；
 - `img-clip.nvim` 把剪贴板图像放进当前目录的 `.markdown_images/`：Windows 保存 PNG，
   Linux 通过 ImageMagick 转为 AVIF；
