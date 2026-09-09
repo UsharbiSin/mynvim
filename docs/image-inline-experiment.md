@@ -14,6 +14,8 @@ diagram.nvim 负责生成 Mermaid、PlantUML、D2 和 Gnuplot 图片。Windows �
 
 按 `<leader>ilm` 可以同时切换普通图片、公式和流程图的行内显示，默认开启。Windows 切换 image.nvim，Linux 切换 Snacks inline。
 
-验证时请重启 Neovim，打开包含图片、公式和流程图的 Markdown 文件，检查首次显示、连续刷新、上下滚动、分屏、窗口缩放、折叠，以及关闭和重新开启行内显示。可以用 `:ImageReport` 查看 Windows 图像后端状态。
+为避免图片较多时阻塞 WezTerm，虚拟留白完成后的校正会按窗口合并，在 80 毫秒内只执行一次，并且只处理当前可见区域。每个窗口从最上方的可见图片开始一次级联重绘，不再为每张图片分别清除和重发 Kitty placement。进入插入模式后保留虚拟留白、暂停图片发送，退出插入模式后再统一恢复，从而避免编辑时文字布局反复变化造成错位。
+
+验证时请重启 Neovim，打开包含较多图片、公式和流程图的 Markdown 文件，检查首次显示、快速滚动、连续编辑、分屏、窗口缩放、折叠，以及关闭和重新开启行内显示。可以用 `:ImageReport` 查看 Windows 图像后端状态。
 
 WezTerm 的 Kitty 协议实现未获 image.nvim 官方支持，这仍是实验方案。首次转换和终端传输速度取决于外部渲染器、图片尺寸、磁盘速度及 WezTerm。

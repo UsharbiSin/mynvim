@@ -3,6 +3,8 @@ local M = {}
 local inline_enabled = true
 local math_images = {}
 local watch_padding
+local alignment_timer
+local alignment_pending = {}
 
 function M.is_windows()
   return vim.g.is_win == 1 or vim.fn.has('win32') == 1
@@ -48,7 +50,7 @@ function M.setup()
         end
         local ok, panes = pcall(vim.json.decode, result.stdout)
         if ok then terminal_size = M.size_from_panes(panes, vim.env.WEZTERM_PANE) end
-        if terminal_size then M.refresh() end
+        if terminal_size then M.refresh(true) end
       end)
     end)
   end
@@ -95,7 +97,7 @@ function M.setup()
       markdown = {
         enabled = true,
         filetypes = { 'markdown', 'vimwiki' },
-        clear_in_insert_mode = true,
+        clear_in_insert_mode = false,
         only_render_image_at_cursor = false,
         floating_windows = false,
       },
@@ -108,9 +110,19 @@ function M.setup()
 
   vim.api.nvim_create_autocmd({ 'BufWinEnter', 'FileType', 'WinResized', 'InsertLeave' }, {
     group = vim.api.nvim_create_augroup('ImageInlineInitialRender', { clear = true }),
-    callback = M.refresh,
+    callback = function() M.refresh() end,
   })
-  M.refresh()
+  vim.api.nvim_create_autocmd({ 'InsertEnter', 'TextChangedI' }, {
+    group = 'ImageInlineInitialRender',
+    callback = function(event)
+      local image = require('image')
+      for _, item in ipairs(image.get_images({ buffer = event.buf })) do item:clear(true) end
+      for key, entry in pairs(math_images) do
+        if key:match('^' .. event.buf .. ':') and not entry.pending then entry:clear(true) end
+      end
+    end,
+  })
+  M.refresh(true)
 end
 
 local function visible_document(item)
@@ -119,13 +131,49 @@ local function visible_document(item)
       and vim.api.nvim_win_get_buf(item.window) == item.buffer
 end
 
-local function align_after_padding(item)
-  vim.schedule(function()
-    if not visible_document(item) or vim.fn.mode():match('^[iR]') then return end
-    vim.cmd('redraw!')
-    item.global_state.backend.clear(item.id, true)
-    item:render()
-  end)
+local function visible_in_viewport(item)
+  if not visible_document(item) then return false end
+  local info = vim.fn.getwininfo(item.window)[1]
+  if not info then return false end
+  local row = ((item.geometry and item.geometry.y) or 0) + 1
+  local height = (item.rendered_geometry and item.rendered_geometry.height) or 1
+  return row <= info.botline and row + height >= info.topline - 1
+end
+
+local function flush_alignment()
+  alignment_timer = nil
+  if vim.fn.mode():match('^[iR]') then return end
+
+  local image = require('image')
+  local groups = {}
+  for _, item in ipairs(image.get_images()) do
+    local key = item.buffer and item.window and (item.buffer .. ':' .. item.window) or nil
+    if key and alignment_pending[key] and visible_in_viewport(item) and item:get_extmark_id() ~= nil then
+      local group = groups[key] or { first = item, items = {} }
+      group.items[#group.items + 1] = item
+      local item_row = (item.geometry and item.geometry.y) or 0
+      local first_row = (group.first.geometry and group.first.geometry.y) or 0
+      if item_row < first_row then group.first = item end
+      groups[key] = group
+    end
+  end
+  alignment_pending = {}
+
+  vim.cmd('redraw!')
+  for _, group in pairs(groups) do
+    -- 每组只从最上方图片开始一次级联重绘，避免逐图重发形成平方级 Kitty 请求。
+    for _, item in ipairs(group.items) do item.global_state.backend.clear(item.id, true) end
+    group.first:render()
+  end
+end
+
+local function schedule_alignment(item)
+  if item.buffer and item.window then alignment_pending[item.buffer .. ':' .. item.window] = true end
+  if alignment_timer then
+    alignment_timer:stop()
+    alignment_timer:close()
+  end
+  alignment_timer = vim.defer_fn(flush_alignment, 80)
 end
 
 watch_padding = function(item)
@@ -133,12 +181,16 @@ watch_padding = function(item)
   item._wezterm_inline_wrapped = true
   local original_render = item.render
   item.render = function(self, ...)
+    if vim.fn.mode():match('^[iR]') then
+      self.global_state.backend.clear(self.id, true)
+      return
+    end
     local had_padding = self:get_extmark_id() ~= nil
     local result = original_render(self, ...)
-    if not had_padding and self:get_extmark_id() ~= nil then align_after_padding(self) end
+    if not had_padding and self:get_extmark_id() ~= nil then schedule_alignment(self) end
     return result
   end
-  if item:get_extmark_id() ~= nil then align_after_padding(item) end
+  if item:get_extmark_id() ~= nil then schedule_alignment(item) end
 end
 
 local function render_math(buf, win)
@@ -236,7 +288,7 @@ function M.setup_toggle()
   vim.keymap.set('n', '<leader>ilm', M.toggle, { desc = '切换图片、公式和流程图的行内显示' })
 end
 
-function M.refresh()
+function M.refresh(force_scan)
   vim.schedule(function()
     local image = require('image')
     if not inline_enabled or not image.is_enabled() or vim.fn.mode():match('^[iR]') then return end
@@ -245,8 +297,10 @@ function M.refresh()
       local buf = vim.api.nvim_win_get_buf(win)
       local ft = vim.bo[buf].filetype
       if ft == 'markdown' or ft == 'vimwiki' then
-        local autocmds = vim.api.nvim_get_autocmds({ group = 'image.nvim:markdown', event = 'BufEnter' })
-        if #autocmds > 0 then
+        local autocmds = force_scan
+            and vim.api.nvim_get_autocmds({ group = 'image.nvim:markdown', event = 'BufEnter' })
+            or {}
+        if force_scan and #autocmds > 0 then
           vim.api.nvim_exec_autocmds('BufEnter', {
             group = autocmds[1].group,
             buffer = buf,

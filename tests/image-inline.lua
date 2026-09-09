@@ -13,7 +13,12 @@ print('PASS: inline image dimensions and configuration syntax')
 
 local scheduled, scans, clears, renders = {}, 0, 0, 0
 local original_schedule = vim.schedule
+local original_defer_fn = vim.defer_fn
 vim.schedule = function(fn) table.insert(scheduled, fn) end
+vim.defer_fn = function(fn)
+  table.insert(scheduled, fn)
+  return { stop = function() end, close = function() end }
+end
 vim.bo.filetype = 'markdown'
 vim.api.nvim_create_autocmd('BufEnter', {
   group = vim.api.nvim_create_augroup('image.nvim:markdown', { clear = true }),
@@ -39,7 +44,7 @@ package.loaded.image = {
 package.loaded['snacks.image.doc'] = {
   find = function(_, callback) callback({}) end,
 }
-m.refresh()
+m.refresh(true)
 while #scheduled > 0 do table.remove(scheduled, 1)() end
 assert(scans == 1, 'refresh must trigger one targeted document scan')
 item:render()
@@ -68,4 +73,5 @@ m.refresh()
 while #scheduled > 0 do table.remove(scheduled, 1)() end
 assert(conversions == 1, 'a pending formula must start only one conversion')
 vim.schedule = original_schedule
+vim.defer_fn = original_defer_fn
 print('PASS: initial alignment and formula conversion deduplication')
