@@ -2,6 +2,7 @@
 local M = {}
 local inline_enabled = true
 local math_images = {}
+local max_visible_math_images = 4
 local watch_padding
 local alignment_timer
 local alignment_pending = {}
@@ -108,7 +109,7 @@ function M.setup()
     hijack_file_patterns = {},
   })
 
-  vim.api.nvim_create_autocmd({ 'BufWinEnter', 'FileType', 'WinResized', 'InsertLeave' }, {
+  vim.api.nvim_create_autocmd({ 'BufWinEnter', 'FileType', 'WinResized', 'WinScrolled', 'InsertLeave' }, {
     group = vim.api.nvim_create_augroup('ImageInlineInitialRender', { clear = true }),
     callback = function() M.refresh() end,
   })
@@ -195,10 +196,19 @@ end
 
 local function render_math(buf, win)
   if not inline_enabled or not vim.api.nvim_buf_is_valid(buf) then return end
+  local info = vim.fn.getwininfo(win)[1]
+  if not info then return end
+  local viewport_top = math.max(1, info.topline - 2)
+  local viewport_bottom = info.botline + 2
   require('snacks.image.doc').find(buf, function(items)
     local visible = {}
+    local visible_count = 0
     for _, item in ipairs(items) do
-      if item and item.type == 'math' and item.src then
+      local row = item and item.pos and item.pos[1]
+      if item and item.type == 'math' and item.src and row
+          and row >= viewport_top and row <= viewport_bottom
+          and visible_count < max_visible_math_images then
+        visible_count = visible_count + 1
         local key = table.concat({ buf, win, item.id }, ':')
         visible[key] = true
         if math_images[key] == nil then
@@ -222,8 +232,8 @@ local function render_math(buf, win)
                   x = item.pos[2],
                   y = item.pos[1] - 1,
                   render_offset_top = 1,
-                  max_width_window_percentage = 90,
-                  max_height_window_percentage = 50,
+                  max_width_window_percentage = 75,
+                  max_height_window_percentage = 25,
                 })
                 if not image then
                   math_images[key] = nil

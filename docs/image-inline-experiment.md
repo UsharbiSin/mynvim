@@ -8,7 +8,7 @@ Windows 的终端尺寸来自 `wezterm cli list --format json` 中当前 pane �
 :lua vim.print(require('image/utils/term').get_size())
 ```
 
-LaTeX 公式由 Snacks 负责解析和转换，转换结果再交给 image.nvim 定位。系统需要安装 `tectonic` 或 `pdflatex`。同一公式处于转换中时只允许存在一个任务；文档发生变化或关闭行内显示后，过期结果不会再发送给终端，避免大量 Kitty 数据阻塞 WezTerm。
+LaTeX 公式由 Snacks 负责解析和转换，转换结果再交给 image.nvim 定位。系统需要安装 `tectonic` 或 `pdflatex`。Windows 只转换当前视口附近的公式，每个窗口最多同时保留 4 张，并限制公式图片高度；滚动后会按新的可视范围更新。同一公式处于转换中时只允许存在一个任务，文档发生变化或关闭行内显示后，过期结果不会再发送给终端，避免大量 Kitty 数据阻塞 WezTerm。
 
 diagram.nvim 负责生成 Mermaid、PlantUML、D2 和 Gnuplot 图片。Windows 使用同一套 image.nvim 行内定位；Mermaid 和 D2 使用 3 倍缩放，Mermaid 宽度为 2400 像素，Gnuplot 输出为 2400×1500。图表显示宽度根据当前窗口正文区域动态计算，目标为可用宽度的 90%，分屏后也会重新计算。配置还会把渲染尺寸版本写入图表缓存键，避免 diagram.nvim 继续复用调整尺寸前生成的小图。Linux 保持插件的原生图像后端。不同图表仍需安装相应的渲染命令。
 

@@ -72,6 +72,18 @@ m.refresh()
 m.refresh()
 while #scheduled > 0 do table.remove(scheduled, 1)() end
 assert(conversions == 1, 'a pending formula must start only one conversion')
+
+package.loaded['snacks.image.doc'].find = function(_, callback)
+  local items = {}
+  for id = 1, 10 do
+    items[id] = { id = id, type = 'math', src = id .. '.math.tex', pos = { id, 0 } }
+  end
+  callback(items)
+end
+conversions = 0
+m.refresh()
+while #scheduled > 0 do table.remove(scheduled, 1)() end
+assert(conversions <= 4, 'only a small number of visible formulas may be converted at once')
 vim.schedule = original_schedule
 vim.defer_fn = original_defer_fn
 print('PASS: initial alignment and formula conversion deduplication')
