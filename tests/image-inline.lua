@@ -56,11 +56,13 @@ assert(clears == 0 and renders == 2, 'stable padding must not clear the image')
 
 local conversions = 0
 local aborted = 0
+local conversion_callbacks = {}
 Snacks = {
   image = {
     convert = {
-      convert = function()
+      convert = function(opts)
         conversions = conversions + 1
+        table.insert(conversion_callbacks, opts.on_done)
         return {
           run = function() end,
           abort = function() aborted = aborted + 1 end,
@@ -92,6 +94,9 @@ while #scheduled > 0 do table.remove(scheduled, 1)() end
 assert(conversions < 10, 'formulas outside the viewport must not be converted')
 assert(find_opts and find_opts.from and find_opts.to, 'formula parsing must be limited to the viewport')
 assert(aborted == 1, 'a pending formula outside the viewport must be aborted')
+conversion_callbacks[1]({})
+while #scheduled > 0 do table.remove(scheduled, 1)() end
+assert(conversions == 1, 'formula conversions must run one at a time')
 vim.schedule = original_schedule
 vim.defer_fn = original_defer_fn
 print('PASS: padding refresh and formula conversion deduplication')

@@ -8,7 +8,7 @@ Windows 的终端尺寸来自 `wezterm cli list --format json` 中当前 pane �
 :lua vim.print(require('image/utils/term').get_size())
 ```
 
-LaTeX 公式由 Snacks 负责解析和转换，生成的透明图片直接交给 image.nvim 定位，不再额外启动 ImageMagick 进行二次缩放和重新编码。系统需要安装 `tectonic` 或 `pdflatex`。Windows 的 Tree-sitter 查询只覆盖当前视口附近，公式离开视口、文档修改或关闭显示时会中止尚未完成的转换，避免持续向下浏览后积累 LaTeX 任务。打开文档时显示全部可见图片和公式；进入 Insert 模式后保留现有图片并暂停向终端发送新的渲染。返回 Normal 模式时检查文档是否发生变化，未修改则保持原图，修改后才作废旧公式并重新扫描图片路径。Linux 仍使用 Snacks 完整 inline，不受此兼容层影响。
+LaTeX 公式由 Snacks 负责解析和转换，生成的透明图片直接交给 image.nvim 定位，不再额外启动 ImageMagick 进行二次缩放和重新编码。系统需要安装 `tectonic` 或 `pdflatex`；当前 Windows 环境使用 `pdflatex`。Windows 的 Tree-sitter 查询只覆盖当前视口附近，并在自身兼容层中串行编译公式，避免 Snacks 的并发进程队列随滚动累积。公式离开视口、文档修改或关闭显示时，尚未启动的任务会直接丢弃，正在运行的任务会中止。打开文档时显示全部可见图片和公式；进入 Insert 模式后保留现有图片并暂停向终端发送新的渲染。返回 Normal 模式时检查文档是否发生变化，未修改则保持原图，修改后才作废旧公式并重新扫描图片路径。Linux 仍使用 Snacks 完整 inline，不受此兼容层影响。
 
 图片首次创建虚拟留白时只刷新文本布局，不清除或重新发送已经完整显示的图片。WezTerm 对同一图片的快速清除和重传可能保留一块重复残图，因此定位流程不再使用二次图像传输。
 

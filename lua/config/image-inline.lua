@@ -2,6 +2,7 @@
 local M = {}
 local inline_enabled = true
 local math_images = {}
+local math_running_key
 local watch_padding
 local math_scroll_timer
 local insert_ticks = {}
@@ -206,12 +207,26 @@ watch_padding = function(item)
   end
 end
 
+local pump_math_queue
+
 local function clear_math_entry(key, entry)
   math_images[key] = nil
   if entry.pending then
-    if entry.conversion then entry.conversion:abort() end
+    if entry.started and entry.conversion then entry.conversion:abort() end
   else
     entry:clear()
+  end
+end
+
+pump_math_queue = function()
+  if math_running_key or not inline_enabled or vim.fn.mode():match('^[iR]') then return end
+  for key, entry in pairs(math_images) do
+    if entry.pending and not entry.started then
+      math_running_key = key
+      entry.started = true
+      entry:start()
+      return
+    end
   end
 end
 
@@ -232,39 +247,43 @@ local function render_math(buf, win)
         if math_images[key] == nil then
           local pending = { pending = true }
           math_images[key] = pending
-          local conversion = Snacks.image.convert.convert({
-            src = item.src,
-            on_done = function(result)
-              vim.schedule(function()
-                -- 文档变化或关闭显示后，旧转换结果不得再次发送到终端。
-                if math_images[key] ~= pending then return end
-                if not inline_enabled or result:error() or vim.fn.filereadable(result.file) ~= 1 then
-                  math_images[key] = nil
-                  return
-                end
-                local image = require('image').from_file(result.file, {
-                  buffer = buf,
-                  window = win,
-                  with_virtual_padding = true,
-                  inline = true,
-                  x = item.pos[2],
-                  y = item.pos[1] - 1,
-                  render_offset_top = 1,
-                  max_width_window_percentage = 75,
-                  max_height_window_percentage = 25,
-                })
-                if not image then
-                  math_images[key] = nil
-                  return
-                end
-                math_images[key] = image
-                watch_padding(image)
-                image:render()
-              end)
-            end,
-          })
-          pending.conversion = conversion
-          conversion:run()
+          pending.start = function()
+            local conversion = Snacks.image.convert.convert({
+              src = item.src,
+              on_done = function(result)
+                vim.schedule(function()
+                  if math_running_key == key then math_running_key = nil end
+                  -- 文档变化或关闭显示后，旧转换结果不得再次发送到终端。
+                  if math_images[key] == pending and inline_enabled
+                      and not result:error() and vim.fn.filereadable(result.file) == 1 then
+                    local image = require('image').from_file(result.file, {
+                      buffer = buf,
+                      window = win,
+                      with_virtual_padding = true,
+                      inline = true,
+                      x = item.pos[2],
+                      y = item.pos[1] - 1,
+                      render_offset_top = 1,
+                      max_width_window_percentage = 75,
+                      max_height_window_percentage = 25,
+                    })
+                    if image then
+                      math_images[key] = image
+                      watch_padding(image)
+                      image:render()
+                    else
+                      math_images[key] = nil
+                    end
+                  elseif math_images[key] == pending then
+                    math_images[key] = nil
+                  end
+                  pump_math_queue()
+                end)
+              end,
+            })
+            pending.conversion = conversion
+            conversion:run()
+          end
         end
       end
     end
@@ -275,6 +294,7 @@ local function render_math(buf, win)
         clear_math_entry(key, entry)
       end
     end
+    pump_math_queue()
   end, { from = viewport_top, to = viewport_bottom })
 end
 
