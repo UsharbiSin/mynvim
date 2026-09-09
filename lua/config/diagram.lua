@@ -9,16 +9,19 @@ require("diagram").setup({
   renderer_options = {
     mermaid = {
       theme = "forest",
+      scale = 2,
+      width = 1600,
     },
     plantuml = {
       charset = "utf-8",
     },
     d2 = {
       theme_id = 1,
+      scale = 2,
     },
     gnuplot = {
       theme = "dark",
-      size = "800,600",
+      size = "1600,1000",
     },
   },
 })
