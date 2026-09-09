@@ -6,6 +6,7 @@ local watch_padding
 local alignment_timer
 local math_scroll_timer
 local alignment_pending = {}
+local insert_ticks = {}
 
 function M.is_windows()
   return vim.g.is_win == 1 or vim.fn.has('win32') == 1
@@ -39,6 +40,23 @@ end
 
 function M.setup()
   local terminal_size
+  local deferred_document_renders = {}
+  local render_scheduler = require('image/utils/render_scheduler')
+  local original_schedule = render_scheduler.schedule
+
+  render_scheduler.schedule = function(key, callback)
+    if vim.fn.mode():match('^[iR]') then
+      deferred_document_renders[key] = callback
+      return
+    end
+    original_schedule(key, function()
+      if vim.fn.mode():match('^[iR]') then
+        deferred_document_renders[key] = callback
+      else
+        callback()
+      end
+    end)
+  end
 
   local function update_terminal_size()
     local executable = vim.fn.exepath('wezterm')
@@ -98,9 +116,8 @@ function M.setup()
       markdown = {
         enabled = true,
         filetypes = { 'markdown', 'vimwiki' },
-        clear_in_insert_mode = true,
-        only_render_image_at_cursor = true,
-        only_render_image_at_cursor_mode = 'inline',
+        clear_in_insert_mode = false,
+        only_render_image_at_cursor = false,
         floating_windows = false,
       },
     },
@@ -110,7 +127,15 @@ function M.setup()
     hijack_file_patterns = {},
   })
 
-  vim.api.nvim_create_autocmd({ 'BufWinEnter', 'FileType', 'WinResized', 'InsertLeave' }, {
+  local image = require('image')
+  local original_from_file = image.from_file
+  image.from_file = function(path, options)
+    local item = original_from_file(path, options)
+    if item then watch_padding(item) end
+    return item
+  end
+
+  vim.api.nvim_create_autocmd({ 'BufWinEnter', 'FileType', 'WinResized' }, {
     group = vim.api.nvim_create_augroup('ImageInlineInitialRender', { clear = true }),
     callback = function() M.refresh() end,
   })
@@ -130,15 +155,20 @@ function M.setup()
   vim.api.nvim_create_autocmd('InsertEnter', {
     group = 'ImageInlineInitialRender',
     callback = function(event)
-      for key, entry in pairs(math_images) do
-        if key:match('^' .. event.buf .. ':') then
-          math_images[key] = nil
-          if not entry.pending then
-            entry:clear()
-            if entry._math_temp_file then vim.fn.delete(entry._math_temp_file) end
-          end
-        end
+      insert_ticks[event.buf] = vim.api.nvim_buf_get_changedtick(event.buf)
+    end,
+  })
+  vim.api.nvim_create_autocmd('InsertLeave', {
+    group = 'ImageInlineInitialRender',
+    callback = function(event)
+      local changed = insert_ticks[event.buf] ~= vim.api.nvim_buf_get_changedtick(event.buf)
+      insert_ticks[event.buf] = nil
+      if changed then M.invalidate_math(event.buf) end
+      for key, callback in pairs(deferred_document_renders) do
+        deferred_document_renders[key] = nil
+        original_schedule(key, callback)
       end
+      M.refresh(changed)
     end,
   })
   M.refresh(true)
@@ -213,13 +243,14 @@ local function render_math(buf, win)
   if not inline_enabled or not vim.api.nvim_buf_is_valid(buf) then return end
   local info = vim.fn.getwininfo(win)[1]
   if not info then return end
-  local cursor_row = vim.api.nvim_win_get_cursor(win)[1]
+  local viewport_top = math.max(1, info.topline - 2)
+  local viewport_bottom = info.botline + 2
   require('snacks.image.doc').find(buf, function(items)
     local visible = {}
     for _, item in ipairs(items) do
       local row = item and item.pos and item.pos[1]
       if item and item.type == 'math' and item.src and row
-          and row == cursor_row then
+          and row >= viewport_top and row <= viewport_bottom then
         local key = table.concat({ buf, win, item.id }, ':')
         visible[key] = true
         if math_images[key] == nil then
@@ -304,6 +335,18 @@ function M.refresh_math_view()
   if ft == 'markdown' or ft == 'vimwiki' then render_math(buf, win) end
 end
 
+function M.invalidate_math(buf)
+  for key, entry in pairs(math_images) do
+    if key:match('^' .. buf .. ':') then
+      math_images[key] = nil
+      if not entry.pending then
+        entry:clear()
+        if entry._math_temp_file then vim.fn.delete(entry._math_temp_file) end
+      end
+    end
+  end
+end
+
 function M.toggle()
   inline_enabled = not inline_enabled
   if M.is_windows() then
@@ -370,7 +413,10 @@ function M.refresh(force_scan)
 
     vim.schedule(function()
       for _, item in ipairs(image.get_images()) do
-        if visible_document(item) then watch_padding(item) end
+        if visible_document(item) then
+          watch_padding(item)
+          if not item.is_rendered and visible_in_viewport(item) then item:render() end
+        end
       end
     end)
   end)
