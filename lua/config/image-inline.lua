@@ -2,7 +2,6 @@
 local M = {}
 local inline_enabled = true
 local math_images = {}
-local max_visible_math_images = 4
 local watch_padding
 local alignment_timer
 local math_scroll_timer
@@ -99,8 +98,9 @@ function M.setup()
       markdown = {
         enabled = true,
         filetypes = { 'markdown', 'vimwiki' },
-        clear_in_insert_mode = false,
-        only_render_image_at_cursor = false,
+        clear_in_insert_mode = true,
+        only_render_image_at_cursor = true,
+        only_render_image_at_cursor_mode = 'inline',
         floating_windows = false,
       },
     },
@@ -114,7 +114,7 @@ function M.setup()
     group = vim.api.nvim_create_augroup('ImageInlineInitialRender', { clear = true }),
     callback = function() M.refresh() end,
   })
-  vim.api.nvim_create_autocmd('WinScrolled', {
+  vim.api.nvim_create_autocmd({ 'WinScrolled', 'CursorMoved' }, {
     group = 'ImageInlineInitialRender',
     callback = function()
       if math_scroll_timer then
@@ -127,15 +127,16 @@ function M.setup()
       end, 180)
     end,
   })
-  vim.api.nvim_create_autocmd({ 'InsertEnter', 'TextChangedI' }, {
+  vim.api.nvim_create_autocmd('InsertEnter', {
     group = 'ImageInlineInitialRender',
     callback = function(event)
-      local image = require('image')
-      for _, item in ipairs(image.get_images({ buffer = event.buf })) do item:clear(true) end
       for key, entry in pairs(math_images) do
-        if key:match('^' .. event.buf .. ':') and not entry.pending then
-          entry:clear(true)
-          if entry._math_temp_file then vim.fn.delete(entry._math_temp_file) end
+        if key:match('^' .. event.buf .. ':') then
+          math_images[key] = nil
+          if not entry.pending then
+            entry:clear()
+            if entry._math_temp_file then vim.fn.delete(entry._math_temp_file) end
+          end
         end
       end
     end,
@@ -199,10 +200,7 @@ watch_padding = function(item)
   item._wezterm_inline_wrapped = true
   local original_render = item.render
   item.render = function(self, ...)
-    if vim.fn.mode():match('^[iR]') then
-      self.global_state.backend.clear(self.id, true)
-      return
-    end
+    if vim.fn.mode():match('^[iR]') then return end
     local had_padding = self:get_extmark_id() ~= nil
     local result = original_render(self, ...)
     if not had_padding and self:get_extmark_id() ~= nil then schedule_alignment(self) end
@@ -215,17 +213,13 @@ local function render_math(buf, win)
   if not inline_enabled or not vim.api.nvim_buf_is_valid(buf) then return end
   local info = vim.fn.getwininfo(win)[1]
   if not info then return end
-  local viewport_top = math.max(1, info.topline - 2)
-  local viewport_bottom = info.botline + 2
+  local cursor_row = vim.api.nvim_win_get_cursor(win)[1]
   require('snacks.image.doc').find(buf, function(items)
     local visible = {}
-    local visible_count = 0
     for _, item in ipairs(items) do
       local row = item and item.pos and item.pos[1]
       if item and item.type == 'math' and item.src and row
-          and row >= viewport_top and row <= viewport_bottom
-          and visible_count < max_visible_math_images then
-        visible_count = visible_count + 1
+          and row == cursor_row then
         local key = table.concat({ buf, win, item.id }, ':')
         visible[key] = true
         if math_images[key] == nil then

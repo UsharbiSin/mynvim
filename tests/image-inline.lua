@@ -83,7 +83,7 @@ end
 conversions = 0
 m.refresh()
 while #scheduled > 0 do table.remove(scheduled, 1)() end
-assert(conversions <= 4, 'only a small number of visible formulas may be converted at once')
+assert(conversions <= 1, 'Windows must only convert the formula under the cursor')
 vim.schedule = original_schedule
 vim.defer_fn = original_defer_fn
 print('PASS: initial alignment and formula conversion deduplication')
