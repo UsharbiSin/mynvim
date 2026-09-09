@@ -226,7 +226,9 @@ Windows 分支由 `lua/core/runner.lua` 生成参数数组，不通过 PowerShel
 
 ## 8. 图片与剪贴板
 
-img-clip 会调用 `magick convert`，保存 AVIF 到当前 Markdown 文件旁的 `.markdown_images/`。
+img-clip 在 Windows 上通过系统剪贴板接口保存 PNG 到当前 Markdown 文件旁的
+`.markdown_images/`。插件在原生 Windows 上不支持 `process_cmd`，因此不会直接转换为
+AVIF；Linux 配置仍使用 ImageMagick 保存 AVIF。
 确认 `magick` 在 Neovim 内可见：
 
 ```vim

@@ -1,3 +1,5 @@
+local is_windows = vim.g.is_win == 1 or vim.fn.has('win32') == 1
+
 require("img-clip").setup({
   default = {
     dir_path = ".markdown_images",
@@ -6,9 +8,9 @@ require("img-clip").setup({
     prompt_for_file_name = false,
     -- 设为 false：粘贴完毕后光标保持在 Normal 模式
     insert_mode_after_paste = false,
-    -- 设为体积更小的 avif 格式
-    extension = 'avif',
-    process_cmd = 'magick convert - -quality 75 avif:-'
+    -- Windows 原生保存 PNG；Linux 使用 ImageMagick 转成体积更小的 AVIF。
+    extension = is_windows and 'png' or 'avif',
+    process_cmd = is_windows and '' or 'magick convert - -quality 75 avif:-'
   },
 
   filetypes = {
