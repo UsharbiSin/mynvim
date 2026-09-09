@@ -116,5 +116,8 @@ assert(vim.deep_equal(browser._next_sorts({
   { column = "name", dir = "ASC" },
   { column = "id", dir = "DESC" },
 }), "a second column must preserve multi-column sort priority")
+assert(browser._resize_width(10, -20) == 6, "column width must have a lower bound")
+assert(browser._resize_width(10, 4) == 14, "column width must grow by the requested amount")
+assert(browser._resize_width(199, 4) == 200, "column width must have an upper bound")
 
 print("PASS: SQL result column actions")

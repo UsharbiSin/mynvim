@@ -367,6 +367,36 @@ function M.reorder_result_column(direction)
   end
 end
 
+local function resize_width(width, delta)
+  return math.max(6, math.min(200, (width or 10) + delta))
+end
+
+function M.resize_result_column(delta)
+  local bufnr = vim.api.nvim_get_current_buf()
+  local view = require("dadbod-grip.view")
+  local session = view._sessions[bufnr]
+  if not session or not session._render then
+    vim.notify("当前窗口没有可调整宽度的结果表", vim.log.levels.WARN)
+    return
+  end
+  local cursor = vim.api.nvim_win_get_cursor(0)
+  local visible = session._render.visible_columns or session.state.columns
+  local column = view._resolve_col_at(session._render, visible, cursor[1], cursor[2])
+  if not column then
+    vim.notify("请先把光标移到需要调整宽度的列", vim.log.levels.INFO)
+    return
+  end
+  session.col_width_overrides = session.col_width_overrides or {}
+  local current = session._render.widths and session._render.widths[column]
+  session.col_width_overrides[column] = resize_width(
+    session.col_width_overrides[column] or current,
+    delta
+  )
+  view.render(bufnr, session.state)
+end
+
+M._resize_width = resize_width
+
 function M.sort_result_column(direction)
   local bufnr = vim.api.nvim_get_current_buf()
   local view = require("dadbod-grip.view")
@@ -508,6 +538,20 @@ function M.setup()
           buffer = event.buf,
           silent = true,
           desc = "SQL：按当前列降序或取消降序",
+        })
+        vim.keymap.set("n", "<leader>[", function()
+          M.resize_result_column(-4)
+        end, {
+          buffer = event.buf,
+          silent = true,
+          desc = "SQL：缩窄当前列",
+        })
+        vim.keymap.set("n", "<leader>]", function()
+          M.resize_result_column(4)
+        end, {
+          buffer = event.buf,
+          silent = true,
+          desc = "SQL：加宽当前列",
         })
       end)
     end,
