@@ -5,6 +5,7 @@ local math_images = {}
 local max_visible_math_images = 4
 local watch_padding
 local alignment_timer
+local math_scroll_timer
 local alignment_pending = {}
 
 function M.is_windows()
@@ -109,9 +110,22 @@ function M.setup()
     hijack_file_patterns = {},
   })
 
-  vim.api.nvim_create_autocmd({ 'BufWinEnter', 'FileType', 'WinResized', 'WinScrolled', 'InsertLeave' }, {
+  vim.api.nvim_create_autocmd({ 'BufWinEnter', 'FileType', 'WinResized', 'InsertLeave' }, {
     group = vim.api.nvim_create_augroup('ImageInlineInitialRender', { clear = true }),
     callback = function() M.refresh() end,
+  })
+  vim.api.nvim_create_autocmd('WinScrolled', {
+    group = 'ImageInlineInitialRender',
+    callback = function()
+      if math_scroll_timer then
+        math_scroll_timer:stop()
+        math_scroll_timer:close()
+      end
+      math_scroll_timer = vim.defer_fn(function()
+        math_scroll_timer = nil
+        M.refresh_math_view()
+      end, 180)
+    end,
   })
   vim.api.nvim_create_autocmd({ 'InsertEnter', 'TextChangedI' }, {
     group = 'ImageInlineInitialRender',
@@ -119,7 +133,10 @@ function M.setup()
       local image = require('image')
       for _, item in ipairs(image.get_images({ buffer = event.buf })) do item:clear(true) end
       for key, entry in pairs(math_images) do
-        if key:match('^' .. event.buf .. ':') and not entry.pending then entry:clear(true) end
+        if key:match('^' .. event.buf .. ':') and not entry.pending then
+          entry:clear(true)
+          if entry._math_temp_file then vim.fn.delete(entry._math_temp_file) end
+        end
       end
     end,
   })
@@ -224,24 +241,46 @@ local function render_math(buf, win)
                   math_images[key] = nil
                   return
                 end
-                local image = require('image').from_file(result.file, {
-                  buffer = buf,
-                  window = win,
-                  with_virtual_padding = true,
-                  inline = true,
-                  x = item.pos[2],
-                  y = item.pos[1] - 1,
-                  render_offset_top = 1,
-                  max_width_window_percentage = 75,
-                  max_height_window_percentage = 25,
-                })
-                if not image then
-                  math_images[key] = nil
-                  return
-                end
-                math_images[key] = image
-                watch_padding(image)
-                image:render()
+                local output = vim.fn.tempname() .. '.png'
+                local normal = vim.api.nvim_get_hl(0, { name = 'Normal' })
+                local background = string.format('#%06x', normal.bg or 0)
+                vim.system({
+                  vim.fn.exepath('magick'), result.file,
+                  '-resize', '1200x400>', '-background', background,
+                  '-alpha', 'remove', '-alpha', 'off', '-strip', 'PNG24:' .. output,
+                }, { timeout = 5000 }, function(normalized)
+                  vim.schedule(function()
+                    if math_images[key] ~= pending then
+                      vim.fn.delete(output)
+                      return
+                    end
+                    if normalized.code ~= 0 or vim.fn.filereadable(output) ~= 1 then
+                      math_images[key] = nil
+                      vim.fn.delete(output)
+                      return
+                    end
+                    local image = require('image').from_file(output, {
+                      buffer = buf,
+                      window = win,
+                      with_virtual_padding = true,
+                      inline = true,
+                      x = item.pos[2],
+                      y = item.pos[1] - 1,
+                      render_offset_top = 1,
+                      max_width_window_percentage = 75,
+                      max_height_window_percentage = 25,
+                    })
+                    if not image then
+                      math_images[key] = nil
+                      vim.fn.delete(output)
+                      return
+                    end
+                    image._math_temp_file = output
+                    math_images[key] = image
+                    watch_padding(image)
+                    image:render()
+                  end)
+                end)
               end)
             end,
           })
@@ -253,11 +292,22 @@ local function render_math(buf, win)
     local prefix = '^' .. buf .. ':' .. win .. ':'
     for key, entry in pairs(math_images) do
       if key:match(prefix) and not visible[key] then
-        if not entry.pending then entry:clear() end
+        if not entry.pending then
+          entry:clear()
+          if entry._math_temp_file then vim.fn.delete(entry._math_temp_file) end
+        end
         math_images[key] = nil
       end
     end
   end)
+end
+
+function M.refresh_math_view()
+  if not inline_enabled or vim.fn.mode():match('^[iR]') then return end
+  local win = vim.api.nvim_get_current_win()
+  local buf = vim.api.nvim_win_get_buf(win)
+  local ft = vim.bo[buf].filetype
+  if ft == 'markdown' or ft == 'vimwiki' then render_math(buf, win) end
 end
 
 function M.toggle()
@@ -271,7 +321,10 @@ function M.toggle()
     else
       image.disable()
       for key, entry in pairs(math_images) do
-        if not entry.pending then entry:clear() end
+        if not entry.pending then
+          entry:clear()
+          if entry._math_temp_file then vim.fn.delete(entry._math_temp_file) end
+        end
         math_images[key] = nil
       end
     end
