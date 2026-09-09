@@ -8,7 +8,7 @@ Windows 的终端尺寸来自 `wezterm cli list --format json` 中当前 pane �
 :lua vim.print(require('image/utils/term').get_size())
 ```
 
-LaTeX 公式由 Snacks 负责解析和转换，转换结果先经 ImageMagick 缩小到 1200×400 像素以内并移除透明通道，再交给 image.nvim 定位。系统需要安装 `tectonic` 或 `pdflatex`。Windows 打开文档时显示全部可见图片和公式；进入 Insert 模式后保留现有图片并暂停向终端发送新的渲染。返回 Normal 模式时检查文档是否发生变化，未修改则保持原图，修改后才作废旧公式并重新扫描图片路径，避免无意义的清除、重传和残影。Linux 仍使用 Snacks 完整 inline，不受此兼容层影响。
+LaTeX 公式由 Snacks 负责解析和转换，生成的透明图片直接交给 image.nvim 定位，不再额外启动 ImageMagick 进行二次缩放和重新编码。系统需要安装 `tectonic` 或 `pdflatex`。Windows 打开文档时显示全部可见图片和公式；进入 Insert 模式后保留现有图片并暂停向终端发送新的渲染。返回 Normal 模式时检查文档是否发生变化，未修改则保持原图，修改后才作废旧公式并重新扫描图片路径，避免无意义的清除、重传和残影。Linux 仍使用 Snacks 完整 inline，不受此兼容层影响。
 
 图片首次创建虚拟留白时只刷新文本布局，不清除或重新发送已经完整显示的图片。WezTerm 对同一图片的快速清除和重传可能保留一块重复残图，因此定位流程不再使用二次图像传输。
 
