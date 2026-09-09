@@ -19,6 +19,10 @@ function M.active()
   return inline_enabled
 end
 
+function M.is_scroll_render_key(key)
+  return key:match('^core:window:') ~= nil or key:match('^document:markdown:window:') ~= nil
+end
+
 function M.size_from_panes(panes, pane_id)
   for _, pane in ipairs(panes) do
     local size = pane.size or {}
@@ -40,8 +44,7 @@ end
 function M.setup()
   local terminal_size
   local deferred_document_renders = {}
-  local deferred_scroll_renders = {}
-  local scroll_render_timer
+  local scroll_dirty = false
   local render_scheduler = require('image/utils/render_scheduler')
   local original_schedule = render_scheduler.schedule
 
@@ -50,23 +53,8 @@ function M.setup()
       deferred_document_renders[key] = callback
       return
     end
-    if key:match('^core:window:') or key:match('^document:markdown:window:') then
-      deferred_scroll_renders[key] = callback
-      if scroll_render_timer then
-        scroll_render_timer:stop()
-        scroll_render_timer:close()
-      end
-      scroll_render_timer = vim.defer_fn(function()
-        scroll_render_timer = nil
-        for scroll_key, scroll_callback in pairs(deferred_scroll_renders) do
-          deferred_scroll_renders[scroll_key] = nil
-          if vim.fn.mode():match('^[iR]') then
-            deferred_document_renders[scroll_key] = scroll_callback
-          else
-            original_schedule(scroll_key, scroll_callback)
-          end
-        end
-      end, 120)
+    if M.is_scroll_render_key(key) then
+      -- Windows 统一由下方 WinScrolled 回调完成清屏、扫描和重绘。
       return
     end
     original_schedule(key, function()
@@ -155,6 +143,15 @@ function M.setup()
     return item
   end
 
+  local function refresh_scrolled_images()
+    if vim.fn.mode():match('^[iR]') then return end
+    local images = image.get_images()
+    if #images > 0 then images[1].global_state.backend.clear(nil, true) end
+    vim.cmd('redraw!')
+    scroll_dirty = false
+    M.refresh(true)
+  end
+
   vim.api.nvim_create_autocmd({ 'BufWinEnter', 'FileType', 'WinResized' }, {
     group = vim.api.nvim_create_augroup('ImageInlineInitialRender', { clear = true }),
     callback = function() M.refresh() end,
@@ -162,13 +159,14 @@ function M.setup()
   vim.api.nvim_create_autocmd('WinScrolled', {
     group = 'ImageInlineInitialRender',
     callback = function()
+      scroll_dirty = true
       if math_scroll_timer then
         math_scroll_timer:stop()
         math_scroll_timer:close()
       end
       math_scroll_timer = vim.defer_fn(function()
         math_scroll_timer = nil
-        M.refresh_math_view()
+        refresh_scrolled_images()
       end, 180)
     end,
   })
@@ -188,7 +186,11 @@ function M.setup()
         deferred_document_renders[key] = nil
         original_schedule(key, callback)
       end
-      M.refresh(changed)
+      if scroll_dirty then
+        refresh_scrolled_images()
+      else
+        M.refresh(changed)
+      end
     end,
   })
   M.refresh(true)
