@@ -5,6 +5,11 @@
 仓库：`keaising/im-select.nvim`。仅在 Windows 启动时配置，调用 `im-select.exe`，把普通
 模式默认输入法设为 `1033`（美式英语），再在插入模式恢复之前的输入法。
 
+配置预先把首次插入模式的输入法设为 `2052`（简体中文），因此启动后第一次按 `i` 或 `a`
+也会切到中文输入法。小狼毫用户还需要在 `weasel.custom.yaml` 的 `patch` 中启用
+`"global_ascii": true` 并重新部署；这样临时切到 `1033` 再返回时，小狼毫会保留 Shift
+切换出的中英文状态，而不会总是重置为中文。该选项会在小狼毫的不同窗口间同步中英文状态。
+
 首次运行 `im-select.exe` 查看当前 IME 标识，用 `Get-Command im-select.exe` 检查 PATH；你的
 英文输入法 ID 不同就修改 `default_im_select`。若每次切换都闪烁或无法恢复，先在普通
 PowerShell 中验证 executable，再执行 `:checkhealth`。Linux 不安装此插件。

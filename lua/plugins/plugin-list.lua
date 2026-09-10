@@ -316,6 +316,8 @@ return {
       return vim.g.is_win == 1
     end,
     config = function()
+      -- 上游首次进入插入模式时还没有保存值，先使用简体中文布局。
+      vim.g.im_select_saved_state = vim.g.im_select_saved_state or "2052"
       require("im_select").setup({
         -- 英文输入法代码，运行 im-select获得
         default_im_select = "1033",

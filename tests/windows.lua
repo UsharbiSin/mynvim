@@ -125,6 +125,7 @@ local function test()
   for _, autocmd in ipairs(vim.api.nvim_get_autocmds({ group = "im-select" })) do
     im_select_events[autocmd.event] = true
   end
+  check(vim.g.im_select_saved_state == "2052", "first Insert mode must restore the Chinese input method")
   check(im_select_events.InsertLeave, "im-select must switch to English after leaving Insert mode")
   check(not im_select_events.CmdlineLeave, "im-select must ignore expression-register CmdlineLeave events")
 
