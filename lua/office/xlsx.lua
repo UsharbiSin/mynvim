@@ -190,6 +190,11 @@ function M.open(buf, path)
       vim.wo[win].cursorline = true
       vim.wo[win].cursorcolumn = true
     end
+    vim.schedule(function()
+      if vim.api.nvim_buf_is_valid(buf) and vim.fn.exists(':CsvViewEnable') == 2 then
+        vim.api.nvim_buf_call(buf, function() vim.cmd('CsvViewEnable') end)
+      end
+    end)
     vim.api.nvim_create_autocmd('BufWriteCmd', { buffer = buf, callback = function() save(buf) end })
     ui.map(buf, ']s', function() switch(buf, 1) end, '下一个工作表')
     ui.map(buf, '[s', function() switch(buf, -1) end, '上一个工作表')

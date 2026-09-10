@@ -51,11 +51,29 @@ function M.open(buf, path)
     local namespace = vim.api.nvim_create_namespace('office_docx_readonly')
     vim.api.nvim_buf_clear_namespace(buf, namespace, 0, -1)
     for row, paragraph in ipairs(result.paragraphs) do
-      if not paragraph.editable then
+      local prefix, highlight
+      if paragraph.role == 'heading' then
+        prefix = string.rep('#', paragraph.level or 1) .. ' '
+        highlight = 'Title'
+      elseif paragraph.role == 'list' then
+        prefix = '• '
+      elseif paragraph.role == 'table' then
+        prefix = '│ '
+      end
+      local options = {}
+      if prefix then options.virt_text = { { prefix, 'Comment' } }; options.virt_text_pos = 'inline' end
+      if highlight then options.line_hl_group = highlight end
+      if not paragraph.editable and (paragraph.node_count or 0) > 0 then
+        options.line_hl_group = options.line_hl_group or 'Comment'
+        options.virt_text = options.virt_text or {}
+        options.virt_text[#options.virt_text + 1] = { ' [复杂结构，只读]', 'WarningMsg' }
+        options.virt_text_pos = prefix and 'inline' or 'eol'
+      end
+      if next(options) then
         vim.api.nvim_buf_set_extmark(buf, namespace, row - 1, 0, {
-          line_hl_group = 'Comment',
-          virt_text = { { ' [复杂结构，只读]', 'WarningMsg' } },
-          virt_text_pos = 'eol',
+          line_hl_group = options.line_hl_group,
+          virt_text = options.virt_text,
+          virt_text_pos = options.virt_text_pos,
         })
       end
     end

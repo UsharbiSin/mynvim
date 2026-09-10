@@ -121,6 +121,24 @@ def docx_nodes(paragraph: str) -> list[dict[str, object]]:
     return nodes
 
 
+def paragraph_role(document: str, paragraph: str, start: int) -> tuple[str, int | None]:
+    style_tag = re.search(r"<w:pStyle\b[^>]*/?>", paragraph)
+    style_match = style_tag and re.search(r'w:val=(?:"([^"]+)"|\'([^\']+)\')', style_tag.group(0))
+    style = (style_match.group(1) or style_match.group(2)) if style_match else ""
+    heading = re.search(r"(?:Heading|标题)\s*([1-9])", style, re.I)
+    if heading:
+        return "heading", int(heading.group(1))
+    if style.lower() in {"title", "标题"}:
+        return "heading", 1
+    if "<w:numPr" in paragraph:
+        return "list", None
+    table_start = document.rfind("<w:tbl", 0, start)
+    table_end = document.rfind("</w:tbl>", 0, start)
+    if table_start > table_end:
+        return "table", None
+    return "paragraph", None
+
+
 def inspect_docx(path: Path) -> dict[str, object]:
     with zipfile.ZipFile(path) as archive:
         document = archive.read("word/document.xml").decode("utf-8")
@@ -129,19 +147,20 @@ def inspect_docx(path: Path) -> dict[str, object]:
     for index, match in enumerate(PARAGRAPH.finditer(document)):
         raw = match.group(0)
         nodes = docx_nodes(raw)
-        if not nodes:
-            continue
+        role, level = paragraph_role(document, raw, match.start())
         unsafe = any(token in raw for token in (
             "<w:txbxContent", "<w:fldChar", "<w:instrText", "<w:del", "<w:moveFrom", "<w:br", "<w:tab"
         ))
-        if unsafe:
+        if unsafe and nodes:
             warnings.append(f"段落 {index + 1} 含文本框、域或修订结构，已设为只读")
         paragraphs.append({
             "id": f"p{index}",
             "paragraph_index": index,
             "text": "".join(str(node["text"]) for node in nodes),
-            "editable": not unsafe,
+            "editable": bool(nodes) and not unsafe,
             "node_count": len(nodes),
+            "role": role,
+            "level": level,
         })
     return {"kind": "docx", "paragraphs": paragraphs, "warnings": warnings, "fingerprint": fingerprint(path)}
 

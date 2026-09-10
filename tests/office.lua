@@ -17,8 +17,10 @@ process.run = function(command, _, input, callback)
       fingerprint = 'docx-before',
       warnings = {},
       paragraphs = {
-        { id = 'p0', paragraph_index = 0, text = '项目名称', editable = true },
-        { id = 'p1', paragraph_index = 1, text = '复杂域', editable = false },
+        { id = 'p0', paragraph_index = 0, text = '项目名称', editable = true,
+          node_count = 1, role = 'heading', level = 2 },
+        { id = 'p1', paragraph_index = 1, text = '复杂域', editable = false,
+          node_count = 1, role = 'paragraph' },
       },
     })
   elseif command == 'save-docx' then
@@ -49,6 +51,8 @@ vim.api.nvim_set_current_buf(docx_buf)
 require('office.docx').open(docx_buf, 'C:/tmp/sample.docx')
 check(vim.bo[docx_buf].filetype == 'office-docx', 'DOCX must use its structured edit filetype')
 check(vim.api.nvim_buf_get_lines(docx_buf, 0, -1, false)[1] == '项目名称', 'DOCX text must be editable')
+local marks = vim.api.nvim_buf_get_extmarks(docx_buf, -1, 0, -1, { details = true })
+check(#marks == 2, 'DOCX must annotate heading and readonly paragraph structure')
 check(vim.fn.maparg('<leader>op', 'n', false, true).buffer == 1, 'DOCX preview mapping must be local')
 vim.api.nvim_buf_set_lines(docx_buf, 0, 1, false, { '工程名称' })
 vim.fn.maparg('<leader>os', 'n', false, true).callback()

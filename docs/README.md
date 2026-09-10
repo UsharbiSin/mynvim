@@ -81,6 +81,7 @@
 - [vim-FIGlet](plugins/editing/vim-FIGlet.md)
 - [vim-signature](plugins/editing/vim-signature.md)
 - [boole.nvim](plugins/editing/boole.nvim.md)
+- [csvview.nvim](plugins/editing/csvview.nvim.md)：Office XLSX 表格显示和单元格导航
 
 ## 输入法
 

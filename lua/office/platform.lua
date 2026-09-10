@@ -25,6 +25,10 @@ function M.pdf_renderer()
   if path then return { kind = 'mutool', command = path } end
 end
 
+function M.pdf_info()
+  return M.executable({ 'pdfinfo' })
+end
+
 function M.libreoffice()
   return M.executable({ 'libreoffice', 'soffice' })
 end

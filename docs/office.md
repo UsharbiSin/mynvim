@@ -32,7 +32,9 @@ PPTX/PDF 会直接进入高保真预览。Office 缓冲区提供以下命令和�
 | `:OfficeRefresh` | `<Space>or` | 清除当前文档预览缓存并重新转换 |
 | `:OfficeHealth` | 无 | 运行 Office 依赖检查 |
 
-XLSX 缓冲区额外使用 `]s` / `[s` 切换下一个/上一个 Sheet，按 `K` 查看当前单元格的
+XLSX 缓冲区使用 `csvview.nvim` 绘制表格边框并对齐列。该插件只负责显示和导航，不参与读取或
+保存 XLSX；文件仍由 OOXML 模块按单元格最小回写。使用 `Tab` / `Shift-Tab` 切换单元格，
+`]s` / `[s` 切换下一个/上一个 Sheet，按 `K` 查看当前单元格的
 引用、类型、样式索引或公式。第一列是只读语义的行号，第二行是列名；只应修改数据区域。
 单元格中的换行和 Tab 会显示为 `\n` 和 `\t`，保存时还原。
 
@@ -43,7 +45,8 @@ XLSX 缓冲区额外使用 `]s` / `[s` 切换下一个/上一个 Sheet，按 `K`
 
 ## Preview Mode
 
-转换和页面生成通过 `vim.system()` 异步执行，不阻塞 Neovim。处理链如下：
+转换和页面生成通过 `vim.system()` 异步执行，不阻塞 Neovim。预览窗口会立即打开并显示进度；
+第一页生成后立即显示，其余页面继续在后台生成。处理链如下：
 
 ```text
 DOCX / XLSX / PPTX -> Microsoft Office COM 或 LibreOffice -> PDF
@@ -54,13 +57,15 @@ Windows 优先调用已安装的 Word、Excel 或 PowerPoint COM；COM 不可用
 LibreOffice。Arch Linux 使用 LibreOffice headless。PDF 页面复用现有 `image.nvim`，没有安装
 重复的图片插件。
 
-缓存位于 `stdpath('cache')/office-preview/`。缓存键由文件绝对路径、mtime 和大小组成；源文件
-没有变化时直接复用页面。`:OfficeRefresh` 强制刷新当前文档。预览展示的是磁盘版本，因此应先
+缓存位于 `stdpath('cache')/office-preview/`。缓存键由文件绝对路径、mtime 和大小组成；只有全部
+页面成功生成后才将缓存标记为完整。源文件没有变化时直接复用页面。默认以 120 DPI 生成页面，
+可以通过 `vim.g.office_preview_dpi` 调整。`:OfficeRefresh` 强制刷新当前文档。预览展示的是磁盘版本，因此应先
 保存 Edit Mode 中的修改。
 
 ## Edit Mode 与文件安全
 
-DOCX 以文档 XML 中的段落索引和文本节点顺序建立稳定映射，不依赖全文搜索。一个可见词语即使
+DOCX 编辑缓冲区用类似 Markdown 的虚拟标题、列表符号和表格标记呈现结构；这些标记不会写入
+文档。DOCX 以文档 XML 中的段落索引和文本节点顺序建立稳定映射，不依赖全文搜索。一个可见词语即使
 被拆成多个 `<w:r>/<w:t>`，保存时仍会按照原节点边界分配修改，保留对应 `<w:rPr>` 中的字体、
 字号、粗体和斜体等属性。相同文本出现在多处时也会按段落 ID 定点修改。
 
@@ -103,7 +108,9 @@ sudo pacman -S --needed python libreoffice-fresh poppler imagemagick wezterm
 - XLSX 第一版展示每个 Sheet 最多前 1000 行和 52 列；不编辑 chart、image、pivot table、
   drawing、条件格式规则或数据验证规则，但保存会保留这些 ZIP 条目。
 - 创建空白单元格支持字符串和以 `=` 开头的公式；现有数字、布尔值和日期必须保持原类型。
-- DOCX/XLSX 的排版只能在 Preview Mode 查看，Edit Mode 是文本和表格结构视图。
+- DOCX/XLSX 的排版只能在 Preview Mode 查看，Edit Mode 是接近 Markdown/表格的结构视图。
+- 首次 Preview 仍需启动 Office 或 LibreOffice 并导出 PDF，速度取决于文档复杂度和外部程序；
+  第一页会优先显示，后续打开相同且未修改的文件直接使用缓存。
 - WezTerm 图像协议的显示质量和滚动行为仍受当前 Windows `image.nvim` 兼容层限制。
 
 ## 排错

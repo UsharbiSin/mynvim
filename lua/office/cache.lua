@@ -20,6 +20,7 @@ function M.entry(path)
     dir = dir,
     pdf = vim.fs.joinpath(dir, 'document.pdf'),
     pages = vim.fs.joinpath(dir, 'pages'),
+    complete = vim.fs.joinpath(dir, 'complete'),
   }
 end
 

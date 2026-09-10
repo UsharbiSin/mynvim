@@ -32,7 +32,8 @@ def test_docx(root: Path) -> None:
     document = (
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
         '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'
-        '<w:p><w:r><w:rPr><w:b/><w:sz w:val="32"/></w:rPr><w:t>项目</w:t></w:r>'
+        '<w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr>'
+        '<w:r><w:rPr><w:b/><w:sz w:val="32"/></w:rPr><w:t>项目</w:t></w:r>'
         '<w:r><w:rPr><w:i/></w:rPr><w:t>名称</w:t></w:r></w:p>'
         '<w:p><w:r><w:t>相同文本</w:t></w:r></w:p>'
         '<w:p><w:r><w:t>相同文本</w:t></w:r></w:p>'
@@ -53,7 +54,10 @@ def test_docx(root: Path) -> None:
     original_package = path.read_bytes()
     inspected = MODULE.inspect_docx(path)
     assert inspected["paragraphs"][0]["text"] == "项目名称"
+    assert inspected["paragraphs"][0]["role"] == "heading"
+    assert inspected["paragraphs"][0]["level"] == 2
     assert inspected["paragraphs"][1]["id"] != inspected["paragraphs"][2]["id"]
+    assert inspected["paragraphs"][3]["role"] == "table"
     assert inspected["paragraphs"][-1]["editable"] is False
     MODULE.save_docx(path, {"fingerprint": MODULE.fingerprint(path), "changes": {
         "p0": "工程名称", "p2": "第二处文本"
