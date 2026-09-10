@@ -5,6 +5,9 @@
 本索引按实际用途分类。每个插件有独立 Markdown，内容区分“上游能力”和“本项目确实启用
 的能力”。平台独有项通过运行时条件加载并已标注。
 
+内置的 [Office 文档支持](office.md)不新增重复的图片插件，负责 DOCX/XLSX/PPTX/PDF
+预览、OOXML 安全保存、跨平台依赖和已知限制。
+
 ## UI 与显示
 
 - [vim-airline](plugins/ui/vim-airline.md)：底部状态栏
@@ -78,6 +81,7 @@
 - [vim-FIGlet](plugins/editing/vim-FIGlet.md)
 - [vim-signature](plugins/editing/vim-signature.md)
 - [boole.nvim](plugins/editing/boole.nvim.md)
+- [csvview.nvim](plugins/editing/csvview.nvim.md)：Office XLSX 表格显示和单元格导航
 
 ## 输入法
 

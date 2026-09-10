@@ -16,6 +16,7 @@ Arch Linux 和 Windows 11 原生 Neovim，运行时通过 `vim.g.is_win` 选择�
 | Arch Linux 与 Windows 的设置差异 | [系统设置差异](docs/platform-differences.md) |
 | 全部插件按功能分类，每个插件单独说明 | [插件文档索引](docs/README.md) |
 | 内置 Codex 终端 | [Codex 使用说明](docs/codex.md) |
+| Office 文档预览与轻度编辑 | [Office 文档支持](docs/office.md) |
 
 ## 安装
 
@@ -75,6 +76,7 @@ ImageMagick 和 Nerd Font，并把命令加入 PATH。插件下载完成后执�
 ├── init.lua                  # 入口、lazy.nvim 引导、F10 一键运行
 ├── lazy-lock.json            # Lazy 本地生成的插件锁文件，已被 Git 忽略
 ├── markdown.css              # 浏览器 Markdown 预览样式
+├── scripts/                  # Office 转换与 OOXML 安全修改辅助程序
 ├── ftplugin/
 │   └── markdown.lua          # Markdown 专用缩写、表格回车逻辑
 ├── lsp/                      # Neovim 0.11+ 原生 LSP 配置覆盖
@@ -92,6 +94,7 @@ ImageMagick 和 Nerd Font，并把命令加入 PATH。插件下载完成后执�
 │   ├── plugins/
 │   │   └── plugin-list.lua   # 所有插件声明、依赖和加载条件
 │   ├── config/               # 各插件实际 setup 与快捷键
+│   ├── office/               # Office 预览、编辑、缓存、平台和 UI 模块
 │   └── codex/                # Codex 命令、终端与 :checkhealth codex
 ├── docs/                     # 中文总文档、平台文档和插件单页
 └── tests/                    # Codex 与 Windows 配置的无界面测试
@@ -197,6 +200,8 @@ LSP 按键只在语言服务器成功附着后存在。
 | `<Space>g` | 在右侧终端运行 `gemini` |
 | `<Space>ac` / `<Space>ar` | 开关 Codex / 恢复 Codex 历史会话 |
 | `F10` | 按 filetype 保存、编译或运行当前文件 |
+| `<Space>op` / `<Space>oe` | Office 高保真预览 / DOCX、XLSX 轻度编辑 |
+| `<Space>os` / `<Space>or` | 安全保存 Office 修改 / 强制刷新预览缓存 |
 
 `<Space>pw` 会直接打开个人密码文档（Linux 为 `~/Documents/pswd.md`，Windows 为
 `$USERPROFILE/Documents/pswd.md`）。这是仓库作者的个人路径；不需要此功能时应删除映射，
@@ -305,6 +310,17 @@ Vimwiki 在 Linux 使用 `~/vimwiki/`，在 Windows 使用 `E:/@home/usharbisin/
 两个系统都使用 `stdpath('config')` 定位 Markdown CSS，并交给系统默认浏览器打开预览。
 Vimwiki 根目录按系统选择，详细说明见[Markdown 插件分类](docs/README.md#markdown-与知识库)。
 
+## Office 文档
+
+`.docx` 和 `.xlsx` 直接打开为结构化轻度编辑缓冲区，`.pptx` 和 `.pdf` 直接进入页面预览。
+预览在 Windows 优先使用 Microsoft Office COM，失败后使用 LibreOffice；Arch Linux 使用
+LibreOffice。生成的 PDF 页面由 `pdftoppm` 或 `mutool` 转成 PNG，并复用现有 image.nvim
+在 WezTerm 中显示。
+
+DOCX/XLSX 保存不会经过 Markdown 或 CSV，而是按稳定 XML 映射只修改目标文字或 cell。
+保存前会校验外部文件指纹，写入同目录临时 ZIP，验证后才原子替换，并只创建一次
+`.office-backup`。完整依赖、命令、快捷键和限制见 [Office 文档支持](docs/office.md)。
+
 ## 更新、回滚与诊断
 
 日常更新前先提交自己的配置改动。`lazy-lock.json` 是各系统本地维护的文件，不参与 Git 提交：
@@ -339,6 +355,8 @@ Mason 的 LSP、formatter 和调试器有独立生命周期，
 - `:Codex` / `:CodexResume` 命令已注册；
 - Windows 配置列出的 14 个 Tree-sitter parser 均可加载，6 个 Mason LSP 均能附着；
 - 带空格路径的 C 文件可由 F10 编译运行，GDB DAP 可命中 C 断点并正常退出。
+- Windows 已验证 Word、Excel、PowerPoint COM 导出、PDF 页面渲染，以及 DOCX/XLSX 修改后
+  能由对应 Office 应用重新打开并导出。
 
 数据库网络、未安装的可选编译器和所有 GUI/剪贴板组合没有逐一验证。平台文档提供了可复现
 的检查步骤，并区分必需依赖与可选工具。

@@ -25,7 +25,8 @@ test ! -e ~/.cache/nvim || mv ~/.cache/nvim ~/.cache/nvim.bak-$backup_stamp
 
 ```bash
 sudo pacman -Syu
-sudo pacman -S --needed neovim git curl unzip base-devel tree-sitter-cli nodejs npm imagemagick
+sudo pacman -S --needed neovim git curl unzip base-devel tree-sitter-cli nodejs npm
+sudo pacman -S --needed imagemagick python libreoffice-fresh poppler
 ```
 
 - `base-devel` 提供构建 Tree-sitter parser 和部分插件所需的工具链。

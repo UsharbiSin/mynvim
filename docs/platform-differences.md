@@ -28,6 +28,8 @@
 | LSP 行尾诊断 | 开启 virtual text | 开启 virtual text |
 | 代码折叠 | LSP 语法折叠优先，Tree-sitter 回退 | LSP 语法折叠优先，Tree-sitter 回退 |
 | WezTerm 配置快捷键 | 不创建 | `<leader>wezt` 打开用户目录下的 WezTerm 配置 |
+| Office 排版引擎 | LibreOffice headless | 优先 Microsoft Office COM，LibreOffice 回退 |
+| PDF 页面渲染 | `pdftoppm` 或 `mutool` | `pdftoppm` 或 `mutool` |
 
 SQLS、SQL Runner、Dadbod Grip、diagram.nvim、image.nvim、Codex、Markdown 表格和布尔值切换
 在两个系统共用同一份配置。SQL 与图表功能已在 Windows 实测；合并后的 Arch Linux 配置仍需

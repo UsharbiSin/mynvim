@@ -276,6 +276,28 @@ return {
   },
   { "fadein/vim-FIGlet",    cmd = "FIGlet" }, -- 生成 ASCII 艺术大字
   {
+    "hat0uma/csvview.nvim", -- 为 XLSX 轻度编辑缓冲区提供表格边框和单元格导航
+    ft = "office-xlsx",
+    opts = {
+      parser = {
+        delimiter = { ft = { ["office-xlsx"] = "\t" } },
+        quote_char = "\31",
+        comment_lines = 1,
+      },
+      view = {
+        display_mode = "border",
+        header_lnum = 2,
+        min_column_width = 8,
+        sticky_columns = { enabled = true, count = 1 },
+      },
+      keymaps = {
+        jump_next_field_end = { "<Tab>", mode = { "n", "v" } },
+        jump_prev_field_end = { "<S-Tab>", mode = { "n", "v" } },
+        jump_next_row = { "<CR>", mode = { "n", "v" } },
+      },
+    },
+  },
+  {
     "kshenoy/vim-signature",                  -- 侧边栏书签标记显示
     event = "BufReadPost",
     config = function()

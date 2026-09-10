@@ -41,6 +41,9 @@ end
 -- 这里的 "plugin-list" 对应下方新建的 lua/plugin-list.lua 文件
 require("lazy").setup("plugins", lazy_opts)
 
+-- Office 文档预览与轻度编辑使用独立模块，不影响普通文本缓冲区。
+require('office').setup()
+
 -- 一键编译运行；参数以 argv 传递，兼容 Windows 路径和 PowerShell。
 vim.keymap.set('n', '<F10>', require("core.runner").run_current,
   { noremap = true, silent = true, desc = "一键编译运行当前文件" })
