@@ -4,6 +4,7 @@ local metadata = require("config.sql-metadata")
 local namespace = vim.api.nvim_create_namespace("SqlCommentBrowser")
 local result_column_orders = {}
 local result_cleanup_registered = {}
+local export_in_progress = {}
 local state = {
   bufnr = nil,
   winid = nil,
@@ -397,6 +398,85 @@ end
 
 M._resize_width = resize_width
 
+local function export_rows(state)
+  local data = require("dadbod-grip.data")
+  local rows = {}
+  for _, row_index in ipairs(data.get_ordered_rows(state)) do
+    if not state.deleted[row_index] then
+      local row = {}
+      for _, column in ipairs(state.columns or {}) do
+        row[#row + 1] = data.effective_value(state, row_index, column)
+      end
+      rows[#rows + 1] = row
+    end
+  end
+  return rows
+end
+
+function M.export_result()
+  local bufnr = vim.api.nvim_get_current_buf()
+  local view = require("dadbod-grip.view")
+  local session = view._sessions[bufnr]
+  if not session or not session.state or #(session.state.columns or {}) == 0 then
+    vim.notify("当前窗口没有可导出的查询结果", vim.log.levels.WARN)
+    return
+  end
+  if export_in_progress[bufnr] then
+    vim.notify("当前查询结果正在导出，请稍候", vim.log.levels.INFO)
+    return
+  end
+
+  vim.ui.select({ "xlsx", "csv" }, { prompt = "选择查询结果导出格式：" }, function(format)
+    if not format or not vim.api.nvim_buf_is_valid(bufnr) then return end
+    local default = vim.fs.joinpath(vim.fn.getcwd(), "查询结果." .. format)
+    vim.ui.input({
+      prompt = "导出到：",
+      default = default,
+      completion = "file",
+    }, function(path)
+      if not path or vim.trim(path) == "" or not vim.api.nvim_buf_is_valid(bufnr) then return end
+      path = vim.fs.normalize(vim.fn.fnamemodify(path, ":p"))
+      if vim.fn.fnamemodify(path, ":e"):lower() ~= format then path = path .. "." .. format end
+      if vim.fn.filereadable(path) == 1 then
+        local choice = vim.fn.confirm("文件已存在，是否覆盖？\n" .. path, "&覆盖\n&取消", 2)
+        if choice ~= 1 then return end
+      end
+      local python
+      for _, executable in ipairs(vim.fn.has("win32") == 1 and { "python", "python3" } or { "python3", "python" }) do
+        local candidate = vim.fn.exepath(executable)
+        if candidate ~= "" then python = candidate; break end
+      end
+      if not python then
+        vim.notify("导出查询结果需要 Python 3", vim.log.levels.ERROR)
+        return
+      end
+      local script = vim.fs.joinpath(vim.fn.stdpath("config"), "scripts", "sql_export.py")
+      local rows = export_rows(session.state)
+      local payload = vim.json.encode({
+        format = format,
+        path = path,
+        columns = session.state.columns,
+        rows = rows,
+      })
+      export_in_progress[bufnr] = true
+      vim.notify("正在导出查询结果……")
+      vim.system({ python, script }, { text = true, stdin = payload }, function(result)
+        export_in_progress[bufnr] = nil
+        vim.schedule(function()
+          if result.code ~= 0 then
+            local message = vim.trim(result.stderr or "")
+            vim.notify("查询结果导出失败：" .. (message ~= "" and message or "未知错误"), vim.log.levels.ERROR)
+            return
+          end
+          vim.notify(("已导出 %d 行到：%s"):format(#rows, path))
+        end)
+      end)
+    end)
+  end)
+end
+
+M._export_rows = export_rows
+
 function M.sort_result_column(direction)
   local bufnr = vim.api.nvim_get_current_buf()
   local view = require("dadbod-grip.view")
@@ -552,6 +632,11 @@ function M.setup()
           buffer = event.buf,
           silent = true,
           desc = "SQL：加宽当前列",
+        })
+        vim.keymap.set("n", "<leader>sx", M.export_result, {
+          buffer = event.buf,
+          silent = true,
+          desc = "SQL：导出当前结果页为 XLSX 或 CSV",
         })
       end)
     end,
