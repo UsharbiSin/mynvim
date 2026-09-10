@@ -2,6 +2,34 @@ local M = {}
 
 local supported_filetypes = { markdown = true, vimwiki = true }
 local lsp_languages = { "python", "lua", "c", "cpp", "html", "json", "sql" }
+local publish_diagnostics = vim.lsp.protocol.Methods.textDocument_publishDiagnostics
+
+local function is_e303(diagnostic)
+  return tostring(diagnostic.code or ""):upper() == "E303"
+      or (diagnostic.message or ""):match("^E303[%s:]") ~= nil
+end
+
+local function filter_diagnostics(result)
+  if not result or not result.uri or not result.uri:lower():match("%.otter%.py$") then
+    return result
+  end
+  result = vim.deepcopy(result)
+  result.diagnostics = vim.tbl_filter(function(diagnostic)
+    return not is_e303(diagnostic)
+  end, result.diagnostics or {})
+  return result
+end
+
+local function filter_python_e303(client)
+  if client._markdown_otter_e303_filter then
+    return
+  end
+  client._markdown_otter_e303_filter = true
+  local original = client.handlers[publish_diagnostics] or vim.lsp.handlers[publish_diagnostics]
+  client.handlers[publish_diagnostics] = function(error, result, context, config)
+    return original(error, filter_diagnostics(result), context, config)
+  end
+end
 
 local function activate(buffer)
   if not vim.api.nvim_buf_is_valid(buffer) or not supported_filetypes[vim.bo[buffer].filetype] then
@@ -43,10 +71,24 @@ function M.setup()
       end)
     end,
   })
+  vim.api.nvim_create_autocmd("LspAttach", {
+    group = group,
+    callback = function(args)
+      local name = vim.api.nvim_buf_get_name(args.buf):lower()
+      if name:match("%.otter%.py$") then
+        local client = vim.lsp.get_client_by_id(args.data.client_id)
+        if client and client.name == "pylsp" then
+          filter_python_e303(client)
+        end
+      end
+    end,
+  })
 
   vim.schedule(function()
     activate(vim.api.nvim_get_current_buf())
   end)
 end
+
+M.filter_diagnostics = filter_diagnostics
 
 return M

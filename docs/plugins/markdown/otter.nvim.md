@@ -9,6 +9,9 @@
 `cpp`、`html`、`json`、`sql` 围栏同样会尝试连接对应 LSP。语言服务器、Tree-sitter parser
 或围栏语言标识缺失时，该语言只保留基础语法高亮。
 
+嵌入式 Python 会过滤 Flake8/pycodestyle 的 `E303`（空行过多），因为 Otter 为保持主文档
+行号而填充的空行会让这条规则产生干扰。普通 `.py` 文件仍保留 `E303` 检查，其他诊断不变。
+
 LSP Semantic Tokens 当前不能由 Otter 转发到 Markdown 主缓冲区，因此代码颜色继续由
 Tree-sitter 注入提供；LSP 负责语义操作和诊断。这样可避免多个嵌入语言使用不同 token
 legend 时发生错色。隐藏缓冲区不会写入磁盘，诊断在保存、离开插入模式和文本变化后更新。
