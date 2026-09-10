@@ -29,7 +29,9 @@
 
 `:LspInstall pylsp` 可以按 LSP 名安装 Python 服务；`:Mason` 可以按包名检查状态。新增语言时，修改 `ensure_installed`，必要时新建 `lsp/<server>.lua`，并在 [lsp.lua](../../../lua/config/lsp.lua) 按本项目习惯显式启用。格式化器和调试适配器不应写进此列表。
 
-例如本项目仅给 JavaScript 安装语法与格式化支持，未显式安装 `ts_ls`；PHP 同样没有默认 PHP LSP。安装 PIV、vim-javascript 并不会自动变成完整语言服务器支持。
+JavaScript/TypeScript 通过 `ts_ls` 提供 LSP，Java 通过 `jdtls` 提供 LSP。`jdtls` 要求 Java 21
+或更高版本；版本不足时配置不会启动它，避免每次打开 Java 围栏都产生进程错误。PHP 仍然没有
+默认 PHP LSP。安装 PIV、vim-javascript 本身不会自动变成语言服务器支持。
 
 ## 平台与排错
 

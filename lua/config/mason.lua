@@ -20,10 +20,12 @@ require("mason-lspconfig").setup({
   ensure_installed = {
     "pylsp",  -- Python
     "html",   -- HTML
+    "jdtls",  -- Java
     "jsonls", -- JSON
     "sqls",   -- SQL
     "lua_ls", -- Lua
-    "clangd"  -- C/C++
+    "clangd", -- C/C++
+    "ts_ls"   -- JavaScript/TypeScript
   },
   -- 自动安装 ensure_installed 中配置的 servers
   automatic_installation = true,

@@ -28,5 +28,10 @@ return {
   init_options = {
     provideFormatter = true,
   },
+  settings = {
+    json = {
+      validate = { enable = true },
+    },
+  },
   root_markers = { '.git' },
 }

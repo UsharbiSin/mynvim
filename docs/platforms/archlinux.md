@@ -63,7 +63,7 @@ nvim
 
 ## 4. 安装语言服务和外部工具
 
-Mason 会自动请求 `pylsp`、`html`、`jsonls`、`sqls`、`lua_ls`、`clangd`。在 `:Mason`
+Mason 会自动请求 `pylsp`、`html`、`jsonls`、`sqls`、`lua_ls`、`clangd`、`ts_ls`、`jdtls`。在 `:Mason`
 中等待它们全部完成。再安装保存格式化与调试需要的工具：
 
 ```vim
@@ -75,6 +75,8 @@ SQLS 的 Mason 包需要 Go 工具链时，先 `sudo pacman -S go`，重开 Neov
 `go install github.com/SantaChains/LspProxy@latest`，并确保 Go bin 目录在 PATH 中。Python
 LSP 配置声明了 flake8、mypy/isort 插件，但布尔配置不会安装 Python 扩展；应在 pylsp 实际
 运行环境中确认 `python-lsp-server[all]`、`pylsp-mypy` 等是否存在，并核对本仓库的插件键名。
+Java 语言服务要求 Java 21 或更高版本，可安装 `jdk21-openjdk` 并确保 `java -version` 指向它；
+版本不足时配置不会启动 jdtls。
 
 ## 5. 修改个人路径
 

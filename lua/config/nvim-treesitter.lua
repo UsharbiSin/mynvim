@@ -1,7 +1,10 @@
-local parsers = { "python", "lua", "c", "cpp", "vim", "vimdoc", "query", "markdown", "markdown_inline", "latex", "css",
-  "html", "javascript", "sql" }
+local parsers = {
+  "python", "lua", "c", "cpp", "java", "vim", "vimdoc", "query", "markdown", "markdown_inline",
+  "latex", "css", "html", "javascript", "json", "sql",
+}
 if vim.g.is_win == 1 then
-  require('nvim-treesitter.install').compilers = { "gcc" }
+  local gcc = vim.fn.exepath("gcc")
+  if gcc ~= "" then vim.env.CC = gcc end
 end
 require('nvim-treesitter').install(parsers)
 local folding = require('config.folding')
@@ -24,3 +27,4 @@ vim.api.nvim_create_autocmd('FileType', {
 
 -- 用markdown 解析器来解析 vimmarkdown 文件
 vim.treesitter.language.register('markdown', 'vimwiki')
+vim.treesitter.language.register('json', 'jsonc')

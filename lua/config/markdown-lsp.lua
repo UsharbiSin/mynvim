@@ -1,7 +1,7 @@
 local M = {}
 
 local supported_filetypes = { markdown = true, vimwiki = true }
-local lsp_languages = { "python", "lua", "c", "cpp", "html", "json", "sql" }
+local lsp_languages = { "python", "lua", "c", "cpp", "java", "javascript", "html", "json", "sql" }
 local publish_diagnostics = vim.lsp.protocol.Methods.textDocument_publishDiagnostics
 
 local function is_e303(diagnostic)
@@ -38,6 +38,8 @@ local function activate(buffer)
   if vim.bo[buffer].buftype ~= "" then
     return
   end
+  local keeper_ok, keeper = pcall(require, "otter.keeper")
+  if keeper_ok and keeper.rafts[buffer] then return end
 
   vim.api.nvim_buf_call(buffer, function()
     require("otter").activate(lsp_languages, true, true)

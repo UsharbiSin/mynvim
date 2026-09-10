@@ -12,10 +12,12 @@
 | --- | --- | --- |
 | clangd | [clangd.lua](../../../lsp/clangd.lua) | C/C++/Objective-C/CUDA；支持头文件切换与符号信息命令 |
 | html | [html.lua](../../../lsp/html.lua) | HTML 服务 |
+| jdtls | nvim-lspconfig 默认配置 | Java；仅检测到 Java 21 或更高版本时启动 |
 | jsonls | [jsonls.lua](../../../lsp/jsonls.lua) | JSON/JSONC，启用服务器格式化能力 |
 | lua_ls | [lua_ls.lua](../../../lsp/lua_ls.lua) | Lua code lens、inlay hint 设置，搭配 lazydev |
 | pylsp | [pylsp.lua](../../../lsp/pylsp.lua) | Jedi，声明 isort、flake8、mypy；禁用 pycodestyle |
 | sqls | [sqls.lua](../../../lsp/sqls.lua) | 四组 MySQL 环境变量连接，关闭自身诊断并保留格式化 |
+| ts_ls | nvim-lspconfig 默认配置 | JavaScript/TypeScript 诊断与语言功能 |
 
 服务器能力仍取决于外部程序、项目依赖及配置。启用 `flake8`、`mypy` 的布尔值不会自动安装对应 pylsp 扩展；应在 **运行 pylsp 的 Python 环境** 中确认插件可用。尤其本项目写的是 `plugins.mypy`，常见的 pylsp-mypy 扩展使用 `plugins.pylsp_mypy`，不能假定当前已经有类型检查。[pylsp-mypy 配置](https://github.com/python-lsp/pylsp-mypy)
 
@@ -37,7 +39,7 @@
 
 `[f`、`]f` 的源码按 documentSymbol 范围寻找符号，没有过滤成“仅函数”；在类等符号内也可能跳到其边界，请勿理解为上一个/下一个函数。
 
-配置检测到 [LspProxy](lsp-proxy.md) 后，会让六个语言服务器通过代理启动。`K` 返回的英文
+配置检测到 [LspProxy](lsp-proxy.md) 后，会让已配置的语言服务器通过代理启动。`K` 返回的英文
 说明会翻译为中文；函数签名、类型名和代码块保持原样。未安装代理时直接启动原语言服务器。
 
 支持折叠范围的服务器附着时会把当前窗口设为 LSP 表达式折叠，按函数、class 和代码块等
@@ -63,8 +65,9 @@ clangd 成功附着后可用 `:LspClangdSwitchSourceHeader` 和 `:LspClangdShowS
 ## 平台差异与已知限制
 
 两个系统均启用诊断行尾 virtual text，并使用 Neovim 0.12 的接口显式启用 semantic tokens。
-Windows 实机已确认 clangd、html、jsonls、
-lua_ls、pylsp 与 sqls 均能附着；工程工具链和 SQL 网络连接仍需按项目验证。
+Windows 实机已确认 clangd、html、jsonls、lua_ls、pylsp 与 sqls 均能附着，`ts_ls` 的进程
+可启动。当前机器只有 Java 8，因此 `jdtls` 会保持禁用；升级到 Java 21 后需再验证 Java
+项目和 Markdown Java 围栏。工程工具链和 SQL 网络连接仍需按项目验证。
 
 本项目没有统一调用 `cmp_nvim_lsp.default_capabilities()`，也没有配置补全 snippet 展开器，复杂补全能力需另见 [cmp-nvim-lsp](cmp-nvim-lsp.md)。SQL 命令注册可能被自定义回调覆盖，详见 [sqls.nvim](sqls.nvim.md)。
 

@@ -8,7 +8,8 @@
 
 配置调用 `require("nvim-treesitter").install(parsers)` 安装下列 14 个 parser：
 
-`python`、`lua`、`c`、`cpp`、`vim`、`vimdoc`、`query`、`markdown`、`markdown_inline`、`latex`、`css`、`html`、`javascript`、`sql`。
+`python`、`lua`、`c`、`cpp`、`java`、`vim`、`vimdoc`、`query`、`markdown`、`markdown_inline`、
+`latex`、`css`、`html`、`javascript`、`json`、`sql`。`jsonc` 复用 JSON parser。
 
 每次 FileType 事件用 `pcall(vim.treesitter.start, args.buf)` 尝试启用高亮；缺 parser 时安静跳过。Vimwiki 的 filetype 被注册给 Markdown parser。它还服务于 [render-markdown](../markdown/render-markdown.nvim.md) 和 [DAP 变量文本](../debugging/nvim-dap-virtual-text.md)。
 

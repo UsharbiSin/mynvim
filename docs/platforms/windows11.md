@@ -120,7 +120,7 @@ nvim
 
 ## 4. Mason、LSP 和格式化器
 
-Mason 配置会请求六个 LSP：pylsp、html、jsonls、sqls、lua_ls、clangd。等待 `:Mason`
+Mason 配置会请求八个 LSP：pylsp、html、jsonls、sqls、lua_ls、clangd、ts_ls、jdtls。等待 `:Mason`
 显示安装完成，再安装其余程序：
 
 ```vim
@@ -134,6 +134,9 @@ winget search GoLang.Go
 winget install --id GoLang.Go -e
 go version
 ```
+
+`jdtls` 要求 Java 21 或更高版本。配置会检测 `java -version`，版本不足时不启动 jdtls，
+但 Java Tree-sitter 高亮仍然生效。安装新版 JDK 后重新打开 WezTerm 和 Neovim。
 
 若要把 `K` 打开的 LSP 文档翻译为中文，再安装 LspProxy：
 
@@ -263,7 +266,7 @@ Snacks 行内图片还取决于 Windows Terminal/终端模拟器是否支持相�
 ## 9. 完整验收清单
 
 1. `nvim --version` 至少 0.11，`tree-sitter --version` 至少 0.26.1。
-2. `:Lazy` 无 failed，`:Mason` 六个 LSP 已安装。
+2. `:Lazy` 无 failed，`:Mason` 八个 LSP 已安装；使用 Java 时确认 `java -version` 至少为 21。
 3. 检查 `:checkhealth`、`:checkhealth nvim-treesitter`、`:checkhealth snacks`；无界面模式会因
    `TERM=dumb` 报图像协议错误，未启用的 lazygit/picker 项也可忽略。
 4. 打开 Lua/Python/C++/Markdown/SQL 文件检查 filetype、LSP 和高亮。

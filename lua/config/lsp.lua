@@ -6,10 +6,12 @@ local translate = require("config.lsp-translate")
 for name, command in pairs({
   clangd = { "clangd" },
   html = { "vscode-html-language-server", "--stdio" },
+  jdtls = { "jdtls" },
   jsonls = { "vscode-json-language-server", "--stdio" },
   lua_ls = { "lua-language-server" },
   pylsp = { "pylsp" },
   sqls = { "sqls" },
+  ts_ls = { "typescript-language-server", "--stdio" },
 }) do
   vim.lsp.config(name, { cmd = translate.command(command) })
 end
@@ -54,6 +56,15 @@ vim.lsp.enable("jsonls")
 vim.lsp.enable("lua_ls")
 vim.lsp.enable("pylsp")
 vim.lsp.enable("sqls")
+vim.lsp.enable("ts_ls")
+
+local java = vim.fn.exepath("java")
+if java ~= "" then
+  local version = vim.system({ java, "-version" }, { text = true }):wait(3000)
+  local output = (version.stdout or "") .. (version.stderr or "")
+  local major = tonumber(output:match('version "1%.(%d+)')) or tonumber(output:match('version "(%d+)'))
+  if major and major >= 21 then vim.lsp.enable("jdtls") end
+end
 
 local function format_with_lsp(bufnr, range)
   local method = range
