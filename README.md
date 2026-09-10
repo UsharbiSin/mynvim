@@ -169,7 +169,7 @@ LSP 按键只在语言服务器成功附着后存在。
 | --- | --- |
 | `gd` / `gr` / `gi` / `gy` | 定义 / 引用 / 实现 / 类型定义 |
 | `gD` | 自动选择水平或垂直分屏后跳定义 |
-| `K` | 悬浮文档 |
+| `K` | 悬浮文档；安装 LspProxy 后自动翻译为中文 |
 | `<Space>rn` / `<Space>ca` | 重命名 / 代码操作 |
 | `[g` / `]g` | 上一处 / 下一处诊断 |
 | `[f` / `]f` | 当前文档符号的起点 / 终点 |
@@ -232,6 +232,7 @@ LSP 按键只在语言服务器成功附着后存在。
 | --- | --- | --- |
 | 工具安装 | Mason + mason-lspconfig | 下载 LSP 与可选外部程序 |
 | 语言服务 | Neovim LSP + nvim-lspconfig | 跳转、悬浮、诊断、重命名 |
+| 文档翻译 | LspProxy（可选） | 翻译悬浮、补全、签名和诊断中的英文说明 |
 | 补全 | nvim-cmp + cmp-buffer/path/nvim-lsp | 显示和选择候选 |
 | 格式化 | Neovim LSP / conform.nvim | `<Space>lf` 调用 LSP；`<Space>fm` 手动调用外部格式化器 |
 | 独立检查 | nvim-lint | SQL 保存、进入 buffer、退出插入时运行 sqlfluff |

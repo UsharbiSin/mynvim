@@ -28,6 +28,7 @@
 
 - [mason.nvim](plugins/language/mason.nvim.md) / [mason-lspconfig.nvim](plugins/language/mason-lspconfig.nvim.md)
 - [nvim-lspconfig](plugins/language/nvim-lspconfig.md)
+- [LspProxy](plugins/language/lsp-proxy.md)：LSP 文档中文翻译
 - [nvim-cmp](plugins/language/nvim-cmp.md)、[cmp-nvim-lsp](plugins/language/cmp-nvim-lsp.md)、[cmp-buffer](plugins/language/cmp-buffer.md)、[cmp-path](plugins/language/cmp-path.md)、[lspkind.nvim](plugins/language/lspkind.nvim.md)
 - [conform.nvim](plugins/language/conform.nvim.md) / [nvim-lint](plugins/language/nvim-lint.md)
 - [nvim-treesitter](plugins/language/nvim-treesitter.md)

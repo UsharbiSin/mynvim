@@ -2,6 +2,18 @@
 -- require("lazydev").setup({})
 require("lspconfig")
 
+local translate = require("config.lsp-translate")
+for name, command in pairs({
+  clangd = { "clangd" },
+  html = { "vscode-html-language-server", "--stdio" },
+  jsonls = { "vscode-json-language-server", "--stdio" },
+  lua_ls = { "lua-language-server" },
+  pylsp = { "pylsp" },
+  sqls = { "sqls" },
+}) do
+  vim.lsp.config(name, { cmd = translate.command(command) })
+end
+
 -- 两个平台共用同一套诊断展示；LSP 附着前也保持一致。
 vim.diagnostic.config({
   virtual_text = true,

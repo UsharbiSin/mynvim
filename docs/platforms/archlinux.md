@@ -69,7 +69,9 @@ Mason 会自动请求 `pylsp`、`html`、`jsonls`、`sqls`、`lua_ls`、`clangd`
 :MasonInstall black isort prettier stylua sqlfluff debugpy
 ```
 
-SQLS 的 Mason 包需要 Go 工具链时，先 `sudo pacman -S go`，重开 Neovim 后重试。Python
+SQLS 的 Mason 包需要 Go 工具链时，先 `sudo pacman -S go`，重开 Neovim 后重试。若要把
+`K` 打开的 LSP 文档翻译为中文，再执行
+`go install github.com/SantaChains/LspProxy@latest`，并确保 Go bin 目录在 PATH 中。Python
 LSP 配置声明了 flake8、mypy/isort 插件，但布尔配置不会安装 Python 扩展；应在 pylsp 实际
 运行环境中确认 `python-lsp-server[all]`、`pylsp-mypy` 等是否存在，并核对本仓库的插件键名。
 
