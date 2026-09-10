@@ -28,3 +28,4 @@ vim.api.nvim_create_autocmd('FileType', {
 -- 用markdown 解析器来解析 vimmarkdown 文件
 vim.treesitter.language.register('markdown', 'vimwiki')
 vim.treesitter.language.register('json', 'jsonc')
+vim.treesitter.language.register('cpp', 'c++')

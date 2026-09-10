@@ -10,6 +10,7 @@
 
 `python`、`lua`、`c`、`cpp`、`java`、`vim`、`vimdoc`、`query`、`markdown`、`markdown_inline`、
 `latex`、`css`、`html`、`javascript`、`json`、`sql`。`jsonc` 复用 JSON parser。
+Markdown 中的 `c++` 围栏通过额外的 injection query 复用 `cpp` parser。
 
 每次 FileType 事件用 `pcall(vim.treesitter.start, args.buf)` 尝试启用高亮；缺 parser 时安静跳过。Vimwiki 的 filetype 被注册给 Markdown parser。它还服务于 [render-markdown](../markdown/render-markdown.nvim.md) 和 [DAP 变量文本](../debugging/nvim-dap-virtual-text.md)。
 

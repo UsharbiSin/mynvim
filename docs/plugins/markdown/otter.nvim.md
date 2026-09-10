@@ -20,6 +20,8 @@ JSON/JSONC、C/C++、Java、JavaScript 和 HTML 均安装对应 Tree-sitter pars
 文件的缩进作用域由 `indent-blankline.nvim` 根据 `object` 和 `array` 节点显示。JSON、C/C++、
 JavaScript、HTML 分别使用 `jsonls`、`clangd`、`ts_ls`、`html`；Java 使用 `jdtls`，要求
 Java 21 或更高版本。Java 版本不满足时仍有围栏高亮，但不会启动 Java 诊断。
+围栏标识 `cpp` 和 `c++` 都会按 C++ 解析；C/C++ 围栏中的系统头文件沿用当前 PATH 里的
+GCC/G++ 搜索目录，避免 F10 可以编译但 clangd 仍误报标准头文件缺失。
 
 在代码块内使用现有的 `K`、`gd`、`gr`、`gi` 和重命名快捷键即可。执行 `:LspInfo` 可看到
 当前 Markdown 缓冲区的 `otter-ls[缓冲区号]`；若没有连接，先检查围栏语言名和对应 LSP。

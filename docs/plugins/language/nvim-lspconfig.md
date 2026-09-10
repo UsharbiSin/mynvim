@@ -61,6 +61,9 @@
 ```
 
 clangd 成功附着后可用 `:LspClangdSwitchSourceHeader` 和 `:LspClangdShowSymbolInfo`。窗口跳转后用原生 `Ctrl-o` 返回。
+配置会动态查找 PATH 中的 `gcc`、`g++`、`clang` 和 `clang++`，允许 clangd 查询实际编译驱动。
+没有 `compile_commands.json` 的单文件会额外使用 GCC 报告的目标平台和系统头文件目录，这与
+F10 的 GCC/G++ 工具链保持一致；项目提供编译数据库时仍以项目参数为准。
 
 ## 平台差异与已知限制
 

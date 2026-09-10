@@ -3,8 +3,45 @@
 require("lspconfig")
 
 local translate = require("config.lsp-translate")
+local clangd_command = { "clangd" }
+local query_drivers = {}
+local clangd_fallback_flags = {}
+for _, compiler in ipairs({ "gcc", "g++", "clang", "clang++" }) do
+  local path = vim.fn.exepath(compiler)
+  if path ~= "" then query_drivers[#query_drivers + 1] = vim.fs.normalize(path) end
+end
+if #query_drivers > 0 then
+  clangd_command[#clangd_command + 1] = "--query-driver=" .. table.concat(query_drivers, ",")
+end
+
+local gcc = vim.fn.exepath("gcc")
+if gcc ~= "" then
+  local target = vim.system({ gcc, "-dumpmachine" }, { text = true }):wait(3000)
+  if target.code == 0 and vim.trim(target.stdout or "") ~= "" then
+    clangd_fallback_flags[#clangd_fallback_flags + 1] = "--target=" .. vim.trim(target.stdout)
+  end
+  local includes = vim.system({ gcc, "-E", "-x", "c++", "-", "-v" }, {
+    text = true,
+    stdin = "",
+  }):wait(5000)
+  local collecting = false
+  for line in ((includes.stderr or "") .. "\n"):gmatch("([^\r\n]*)\r?\n") do
+    if line:find("#include <...> search starts here:", 1, true) then
+      collecting = true
+    elseif collecting and line:find("End of search list.", 1, true) then
+      break
+    elseif collecting then
+      local path = vim.trim(line:gsub(" %(framework directory%)$", ""))
+      if path ~= "" then
+        clangd_fallback_flags[#clangd_fallback_flags + 1] = "-isystem"
+        clangd_fallback_flags[#clangd_fallback_flags + 1] = vim.fs.normalize(path)
+      end
+    end
+  end
+end
+
 for name, command in pairs({
-  clangd = { "clangd" },
+  clangd = clangd_command,
   html = { "vscode-html-language-server", "--stdio" },
   jdtls = { "jdtls" },
   jsonls = { "vscode-json-language-server", "--stdio" },
@@ -13,7 +50,11 @@ for name, command in pairs({
   sqls = { "sqls" },
   ts_ls = { "typescript-language-server", "--stdio" },
 }) do
-  vim.lsp.config(name, { cmd = translate.command(command) })
+  local config = { cmd = translate.command(command) }
+  if name == "clangd" and #clangd_fallback_flags > 0 then
+    config.init_options = { fallbackFlags = clangd_fallback_flags }
+  end
+  vim.lsp.config(name, config)
 end
 
 -- 两个平台共用同一套诊断展示；LSP 附着前也保持一致。
