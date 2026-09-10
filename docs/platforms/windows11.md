@@ -42,6 +42,17 @@ tar --version
 curl.exe --version
 ```
 
+Office 高保真预览优先使用本机 Microsoft Word、Excel 和 PowerPoint，但不强制安装
+Microsoft Office；没有 Office 时可安装 LibreOffice，并把 `soffice` 或 `libreoffice` 加入
+`PATH`。还需安装 Poppler 的 `pdftoppm`，也可使用 MuPDF 的 `mutool`。安装后执行：
+
+```vim
+:checkhealth office
+```
+
+该检查会报告 Python、Office 转换器、PDF 渲染器和 image.nvim。完整操作与限制见
+[Office 文档支持](../office.md)。
+
 若 PowerShell profile 把 `nvim` 定义成启动 GUI 的函数，普通 `nvim --headless` 并不会执行
 无界面检查。先运行 `Get-Command nvim -All` 和 `where.exe nvim`，测试时直接调用返回的
 `nvim.exe` 路径。
