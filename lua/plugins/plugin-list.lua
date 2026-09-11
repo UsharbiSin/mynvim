@@ -316,7 +316,13 @@ return {
       return vim.g.is_win == 1
     end,
     config = function()
-      require("config.windows-ime").setup()
+      require("im_select").setup({
+        -- 英文输入法代码，运行 im-select获得
+        default_im_select = "1033",
+        default_command = "im-select.exe",
+        -- bullets.vim 的回车会通过表达式寄存器触发 CmdlineLeave，但此时仍在插入模式。
+        set_default_events = { "InsertLeave" },
+      })
     end,
   },
   { "folke/which-key.nvim", event = "VeryLazy" }, -- 快捷键提示
