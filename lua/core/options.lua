@@ -31,6 +31,11 @@ opt.signcolumn = 'auto'    -- 在左侧显示标记列（报错图标等）
 opt.scrolloff = 10         -- 底部永远空10行
 opt.conceallevel = 3       -- neovim 隐藏级别
 
+-- Neovim 自带的 SQL ftplugin 默认占用插入模式左右键来切换补全层级。
+-- 改用 Ctrl-左右键，保留补全能力并恢复方向键的常规移动行为。
+vim.g.ftplugin_sql_omni_key_right = '<C-Right>'
+vim.g.ftplugin_sql_omni_key_left = '<C-Left>'
+
 
 -- python 和 sql 使用4格空格缩进
 vim.api.nvim_create_autocmd("FileType", {
