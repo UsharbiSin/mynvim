@@ -38,6 +38,7 @@ Conform 只调用工具，不负责安装。Mason 完成后确认 `:ConformInfo`
 Black、isort、Prettier、StyLua 和 SQLFluff 可读取各自的项目配置。优先把团队格式写在项目根
 目录相应配置文件中，而非全部写死到个人 Neovim 配置。SQLFluff 的检查和格式化均固定使用
 MySQL 方言，并在 Windows 上显式使用 UTF-8 处理中文 SQL。
+标识符大小写规则 `CP02` 已关闭，避免格式化改变大小写敏感的 MySQL 表名。
 
 SQL 项目可添加如下 `.sqlfluff`（示意，需按实际 SQL 方言选择）：
 

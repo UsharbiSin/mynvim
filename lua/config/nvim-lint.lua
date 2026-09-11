@@ -12,7 +12,7 @@ sqlfluff.args = {
   "lint",
   "--format=json",
   "--dialect=mysql",
-  "--exclude-rules=RF05,ST06",
+  "--exclude-rules=CP02,RF05,ST06",
   "-"
 }
 sqlfluff.env = vim.fn.environ()

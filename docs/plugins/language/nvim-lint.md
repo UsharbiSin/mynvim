@@ -11,7 +11,7 @@
 调用参数为：
 
 ```text
-sqlfluff lint --format=json --dialect=mysql --exclude-rules=RF05,ST06 -
+sqlfluff lint --format=json --dialect=mysql --exclude-rules=CP02,RF05,ST06 -
 ```
 
 SQL 内容经标准输入传递，方言固定为 MySQL。进入缓冲区、保存后、退出插入模式分别通过 `BufEnter`、`BufWritePost`、`InsertLeave` 自动触发；结果转为 Neovim 诊断。

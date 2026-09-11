@@ -3,7 +3,7 @@ local conform = require("conform")
 conform.setup({
   formatters = {
     sqlfluff = {
-      args = { "fix", "--dialect=mysql", "--exclude-rules=RF05,ST06", "-" },
+      args = { "fix", "--dialect=mysql", "--exclude-rules=CP02,RF05,ST06", "-" },
       env = {
         PYTHONUTF8 = "1",
         PYTHONIOENCODING = "utf-8",
