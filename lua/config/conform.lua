@@ -8,6 +8,7 @@ conform.setup({
         PYTHONUTF8 = "1",
         PYTHONIOENCODING = "utf-8",
       },
+      exit_codes = { 0, 1 },
       require_cwd = false,
     },
   },

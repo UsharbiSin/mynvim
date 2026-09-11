@@ -15,7 +15,10 @@
 
 `mysql`、`vimwiki`、`jsonc`、C/C++ 未在本表登记。扩展名为 .md 但实际 filetype 是 vimwiki 时，不会因为扩展名自动走 Markdown formatter。用 `:set filetype?` 检查。
 
-`:w` 只写入文件，不触发 Conform 或 LSP 格式化。手动 `空格 fm` 支持普通/可视模式，设置 `lsp_fallback=true`、同步执行、超时 3000ms；当前文件没有已配置的外部格式化器时才尝试 LSP。
+`:w` 只写入文件，不触发 Conform 或 LSP 格式化。手动 `空格 fm` 支持普通/可视模式，设置
+`lsp_fallback=true`；当前文件没有已配置的外部格式化器时才尝试 LSP。SQLFluff 在复杂查询
+上可能需要数秒，因此 SQL 的 `空格 lf` 和 `空格 fm` 异步执行，不会受同步格式化超时限制；
+其他格式化器同步执行，超时 3000ms。
 
 ## 安装与首次使用
 
@@ -26,11 +29,15 @@
 
 Conform 只调用工具，不负责安装。Mason 完成后确认 `:ConformInfo` 中当前文件的 formatter 可用。按空格 fm 测试整个文件；也可视选择若干行后尝试范围格式化，具体支持由 formatter 决定。
 
-`空格 fm` 本身会加载插件。LSP 的 `空格 lf` 属于另一条格式化路径，只使用当前文件已附着且声明支持相应格式化方式的语言服务器；普通模式格式化全文，可视模式只请求格式化选中范围。
+`空格 fm` 本身会加载插件。LSP 的 `空格 lf` 通常只使用当前文件已附着且声明支持相应格式化
+方式的语言服务器；SQLS 不提供可靠的格式化结果，所以 SQL 的 `空格 lf` 会改用 SQLFluff。
+普通模式格式化全文，可视模式只格式化选中范围。
 
 ## 项目配置文件
 
-Black、isort、Prettier、StyLua 和 SQLFluff 可读取各自的项目配置。优先把团队格式写在项目根目录相应配置文件中，而非全部写死到个人 Neovim 配置。SQLFluff **格式化** 没有在本项目强制指定方言；检查器虽固定 MySQL，但不会自动影响 Conform。
+Black、isort、Prettier、StyLua 和 SQLFluff 可读取各自的项目配置。优先把团队格式写在项目根
+目录相应配置文件中，而非全部写死到个人 Neovim 配置。SQLFluff 的检查和格式化均固定使用
+MySQL 方言，并在 Windows 上显式使用 UTF-8 处理中文 SQL。
 
 SQL 项目可添加如下 `.sqlfluff`（示意，需按实际 SQL 方言选择）：
 

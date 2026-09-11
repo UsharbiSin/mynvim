@@ -111,9 +111,10 @@ return {
       {
         "<leader>fm",
         function()
+          local is_sql = vim.tbl_contains({ "sql", "mysql" }, vim.bo.filetype)
           require("conform").format({
             lsp_fallback = true,
-            async = false,
+            async = is_sql,
             timeout_ms = 3000,
           })
         end,

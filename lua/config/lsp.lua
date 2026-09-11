@@ -121,7 +121,7 @@ local function format_with_lsp(bufnr, range)
     end
     require("conform").format({
       bufnr = bufnr,
-      async = false,
+      async = true,
       lsp_format = "never",
       range = conform_range,
     })
