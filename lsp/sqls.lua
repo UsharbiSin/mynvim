@@ -51,7 +51,7 @@ end
 return {
   cmd = { 'sqls' },
   filetypes = { 'sql', 'mysql' },
-  -- 禁用格式化与语法诊断
+  -- 语法诊断和格式化交给 SQLFluff。
   handlers = {
     ["textDocument/publishDiagnostics"] = function() end,
   },

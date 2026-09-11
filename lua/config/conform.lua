@@ -1,6 +1,12 @@
 local conform = require("conform")
 
 conform.setup({
+  formatters = {
+    sqlfluff = {
+      args = { "fix", "--dialect=mysql", "--exclude-rules=RF05,ST06", "-" },
+      require_cwd = false,
+    },
+  },
   formatters_by_ft = {
     python = { "isort", "black" },
 

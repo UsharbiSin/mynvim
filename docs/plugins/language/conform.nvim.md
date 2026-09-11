@@ -9,7 +9,7 @@
 | 文件类型 | 外部格式化器 |
 | --- | --- |
 | Python | 先 `isort` 排序导入，再 `black` |
-| SQL | `sqlfluff` |
+| SQL | `sqlfluff`（MySQL 方言；`空格 lf` 与 `空格 fm`） |
 | JavaScript、HTML、CSS、JSON、Markdown | `prettier` |
 | Lua | `stylua` |
 

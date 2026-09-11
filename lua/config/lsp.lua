@@ -108,6 +108,26 @@ if java ~= "" then
 end
 
 local function format_with_lsp(bufnr, range)
+  if vim.tbl_contains({ "sql", "mysql" }, vim.bo[bufnr].filetype) then
+    local conform_range
+    if range then
+      local first = vim.fn.getpos("'<")
+      local last = vim.fn.getpos("'>")
+      local end_line = vim.api.nvim_buf_get_lines(bufnr, last[2] - 1, last[2], true)[1] or ""
+      conform_range = {
+        start = { first[2], first[3] - 1 },
+        ["end"] = { last[2], #end_line },
+      }
+    end
+    require("conform").format({
+      bufnr = bufnr,
+      async = false,
+      lsp_format = "never",
+      range = conform_range,
+    })
+    return
+  end
+
   local method = range
       and vim.lsp.protocol.Methods.textDocument_rangeFormatting
       or vim.lsp.protocol.Methods.textDocument_formatting
@@ -143,6 +163,11 @@ vim.api.nvim_create_autocmd("LspAttach", {
   group = vim.api.nvim_create_augroup("SetupLSP", {}),
   callback = function(event)
     local client = assert(vim.lsp.get_client_by_id(event.data.client_id))
+
+    if client.name == "sqls" then
+      client.server_capabilities.documentFormattingProvider = false
+      client.server_capabilities.documentRangeFormattingProvider = false
+    end
 
     -- 开启 LSP 语义高亮 (Semantic Tokens)
     if client.server_capabilities.semanticTokensProvider and vim.lsp.semantic_tokens.enable then

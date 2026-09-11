@@ -75,7 +75,7 @@ local function test()
     return false
   end, 50), "sqls must attach without database environment variables")
   check(vim.fn.exists(":SqlsSwitchConnection") == 2, "sqls.nvim buffer commands must be registered")
-  check(sql_client.server_capabilities.documentFormattingProvider == true, "SQLS formatting must remain available")
+  check(sql_client.server_capabilities.documentFormattingProvider == false, "SQLS unsafe formatting must be disabled")
   local lsp_format = vim.fn.maparg("<leader>lf", "n", false, true)
   check(lsp_format.buffer == 1 and lsp_format.desc:find("LSP", 1, true), "LSP formatting must be mapped per buffer")
   local lsp_range_format = vim.fn.maparg("<leader>lf", "x", false, true)

@@ -21,14 +21,19 @@
 
 ## 命令注册与格式化职责
 
-本地锁定 sqls.nvim 通过自身 `lsp/sqls.lua` 的 `on_attach` 创建 `Sqls*` 缓冲区命令。本项目保留 SQLS 报告的格式化能力，因此 SQL 缓冲区可用普通模式 `空格 lf` 调用 SQLS 文档格式化；只有 SQLS 同时报告范围格式化能力时，可视模式 `空格 lf` 才会格式化选中范围。可用以下命令检查当前状态：
+本地锁定 sqls.nvim 通过自身 `lsp/sqls.lua` 的 `on_attach` 创建 `Sqls*` 缓冲区命令。SQLS
+自带格式化器会激进展开 `FROM`、`JOIN` 和 `IN`，部分查询还可能返回错误的文本编辑，因此配置
+关闭其文档与范围格式化能力。SQL 缓冲区的普通模式和可视模式 `空格 lf` 改由 SQLFluff
+处理；其他语言的 `空格 lf` 仍调用对应 LSP。可用以下命令检查当前状态：
 
 ```vim
 :lua vim.print(vim.lsp.get_clients({ bufnr = 0 }))
 :echo exists(':SqlsSwitchConnection')
 ```
 
-Windows 专项测试会确认 SQLS 无数据库连接时能附着、第二条命令已注册，且没有被配置主动关闭格式化。第二条为 0 时先确认当前是 SQL buffer 且客户端已经附着。[上游 SQL 客户端说明](https://github.com/nanotee/sqls.nvim)
+Windows 专项测试会确认 SQLS 无数据库连接时能附着、第二条命令已注册，且 SQLS 格式化能力
+已经关闭。第二条为 0 时先确认当前是 SQL buffer 且客户端已经附着。
+[上游 SQL 客户端说明](https://github.com/nanotee/sqls.nvim)
 
 ## 命令与操作顺序
 
@@ -48,6 +53,8 @@ Windows 专项测试会确认 SQLS 无数据库连接时能附着、第二条命
 
 ## 诊断与平台说明
 
-项目只关闭 sqls 的 publishDiagnostics，诊断交给 [nvim-lint](nvim-lint.md)；SQLS 格式化由 `空格 lf` 手动触发，[Conform](conform.nvim.md) 的 SQLFluff 格式化则由 `空格 fm` 手动触发。SQL 补全和表结构信息仍需要有效连接。
+项目关闭 sqls 的 publishDiagnostics 和格式化能力，诊断交给 [nvim-lint](nvim-lint.md)；
+`空格 lf` 与 `空格 fm` 都使用 [Conform](conform.nvim.md) 的 SQLFluff 格式化。SQL 补全和
+表结构信息仍需要有效连接。
 
 Windows 11 已实测 SQLS 在没有数据库环境变量时仍能附着；真实数据库网络未测试。无候选时先区分 SQL 服务器进程未启动、环境变量缺失、连接网络不可达、账号权限不足与插件命令未注册；不要输出整个 DSN 排错，以免把密码写入日志。
