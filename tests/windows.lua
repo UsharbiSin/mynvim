@@ -121,13 +121,15 @@ local function test()
   local diagram_markdown = require("diagram.integrations.markdown")
   check(vim.tbl_contains(diagram_markdown.filetypes, "vimwiki"), "diagram.nvim must support Vimwiki buffers")
 
-  local im_select_events = {}
-  for _, autocmd in ipairs(vim.api.nvim_get_autocmds({ group = "im-select" })) do
-    im_select_events[autocmd.event] = true
+  local ime_events = {}
+  for _, autocmd in ipairs(vim.api.nvim_get_autocmds({ group = "windows-ime" })) do
+    ime_events[autocmd.event] = true
   end
-  check(vim.g.im_select_saved_state == "2052", "first Insert mode must restore the Chinese input method")
-  check(im_select_events.InsertLeave, "im-select must switch to English after leaving Insert mode")
-  check(not im_select_events.CmdlineLeave, "im-select must ignore expression-register CmdlineLeave events")
+  check(ime_events.InsertEnter, "Insert mode must restore the saved Rime state")
+  check(ime_events.InsertLeave, "Insert mode must save the current Rime state")
+  check(ime_events.TermEnter, "Terminal mode must restore the saved Rime state")
+  check(ime_events.TermLeave, "Terminal mode must save the current Rime state")
+  check(not ime_events.CmdlineLeave, "expression-register evaluation must not change the IME")
 
   local vimwiki_file = vim.fs.joinpath(tmp, "notes.md")
   vim.fn.writefile({ "- first item" }, vimwiki_file)
