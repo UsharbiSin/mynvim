@@ -12,6 +12,7 @@ sqlfluff.args = {
   "lint",
   "--format=json",
   "--dialect=mysql",
+  "--exclude-rules=AM05,RF05,ST06",
   "-"
 }
 

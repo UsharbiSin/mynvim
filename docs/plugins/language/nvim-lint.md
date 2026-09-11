@@ -11,10 +11,14 @@
 调用参数为：
 
 ```text
-sqlfluff lint --format=json --dialect=mysql -
+sqlfluff lint --format=json --dialect=mysql --exclude-rules=AM05,RF05,ST06 -
 ```
 
 SQL 内容经标准输入传递，方言固定为 MySQL。进入缓冲区、保存后、退出插入模式分别通过 `BufEnter`、`BufWritePost`、`InsertLeave` 自动触发；结果转为 Neovim 诊断。
+
+配置关闭三条不会影响 SQL 执行的主观风格规则：`AM05` 不再强制把 `JOIN` 写成
+`INNER JOIN`，`RF05` 允许反引号包裹的展示型中文别名，`ST06` 不再强制调整 SELECT 字段顺序。
+语法错误、歧义字段、引用错误和文件格式等诊断继续保留。
 
 ## 首次使用
 
