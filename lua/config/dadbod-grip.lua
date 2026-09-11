@@ -38,7 +38,7 @@ require("dadbod-grip").setup({
   ai = false,
   completion = false,
   discovery = false,
-  timeout = 60000,
+  timeout = 300000,
 })
 
 require("config.sql-browser").setup()
