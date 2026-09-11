@@ -112,6 +112,7 @@ function M.with_connection(callback)
 end
 
 function M.run(sql)
+  local source_buf = vim.api.nvim_get_current_buf()
   local current = M.current_connection()
   local url = current and current.url
 
@@ -131,7 +132,9 @@ function M.run(sql)
     return
   end
 
-  require("dadbod-grip").open(sql, url)
+  require("dadbod-grip").open(sql, url, {
+    source_path = vim.api.nvim_buf_get_name(source_buf),
+  })
 end
 
 function M.run_buffer()

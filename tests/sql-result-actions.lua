@@ -159,4 +159,26 @@ assert(vim.deep_equal(browser._export_rows(export_state), {
   { "3", "Carol" },
 }), "export must use effective values and omit staged deletions")
 
+assert(
+  vim.fn.fnamemodify(browser._export_default_path({
+    state = { table_name = "monitor.platform" },
+    opts = { source_path = "C:/queries/Script.sql" },
+  }, "xlsx"), ":t") == "monitor.platform.xlsx",
+  "table results must use the database table name"
+)
+assert(
+  vim.fn.fnamemodify(browser._export_default_path({
+    state = {},
+    query_spec = { is_raw = true },
+    opts = { source_path = "C:/queries/巡检脚本.sql" },
+  }, "csv"), ":t") == "巡检脚本.csv",
+  "raw queries must use the source SQL file name"
+)
+assert(
+  vim.fn.fnamemodify(browser._export_default_path({
+    state = { table_name = 'bad:name*' },
+  }, "csv"), ":t") == "bad_name_.csv",
+  "export names must replace characters forbidden by Windows"
+)
+
 print("PASS: SQL result column actions")

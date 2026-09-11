@@ -413,6 +413,24 @@ local function export_rows(state)
   return rows
 end
 
+local function sanitize_export_name(name)
+  name = vim.trim(tostring(name or ""))
+  name = name:gsub("[<>:\"/\\|%?%*%c]", "_")
+  name = name:gsub("[%. ]+$", "")
+  return name ~= "" and name or "查询结果"
+end
+
+local function export_default_path(session, format)
+  local table_name = session.state and session.state.table_name
+    or session.query_spec and session.query_spec.table_name
+  local source_path = session.opts and session.opts.source_path
+  local name = table_name
+  if not name and source_path and source_path ~= "" then
+    name = vim.fn.fnamemodify(source_path, ":t:r")
+  end
+  return vim.fs.joinpath(vim.fn.getcwd(), sanitize_export_name(name) .. "." .. format)
+end
+
 function M.export_result()
   local bufnr = vim.api.nvim_get_current_buf()
   local view = require("dadbod-grip.view")
@@ -428,7 +446,7 @@ function M.export_result()
 
   vim.ui.select({ "xlsx", "csv" }, { prompt = "选择查询结果导出格式：" }, function(format)
     if not format or not vim.api.nvim_buf_is_valid(bufnr) then return end
-    local default = vim.fs.joinpath(vim.fn.getcwd(), "查询结果." .. format)
+    local default = export_default_path(session, format)
     vim.ui.input({
       prompt = "导出到：",
       default = default,
@@ -476,6 +494,7 @@ function M.export_result()
 end
 
 M._export_rows = export_rows
+M._export_default_path = export_default_path
 
 function M.sort_result_column(direction)
   local bufnr = vim.api.nvim_get_current_buf()
