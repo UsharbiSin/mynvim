@@ -61,8 +61,8 @@ local function test()
   vim.bo.filetype = "sql"
   local sqlfluff_args = require("lint").linters.sqlfluff.args
   check(
-    vim.tbl_contains(sqlfluff_args, "--exclude-rules=AM05,RF05,ST06"),
-    "SQLFluff must ignore subjective JOIN, identifier, and column-order rules"
+    vim.tbl_contains(sqlfluff_args, "--exclude-rules=RF05,ST06"),
+    "SQLFluff must ignore subjective identifier and column-order rules"
   )
   local sql_client
   check(vim.wait(10000, function()
