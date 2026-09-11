@@ -15,6 +15,9 @@ sqlfluff.args = {
   "--exclude-rules=RF05,ST06",
   "-"
 }
+sqlfluff.env = vim.fn.environ()
+sqlfluff.env.PYTHONUTF8 = "1"
+sqlfluff.env.PYTHONIOENCODING = "utf-8"
 
 -- AM04 会把整条查询作为诊断范围返回，导致无关的 FROM、WHERE 等内容也被画黄线。
 -- 保留该检查，但将提示精确放到 SELECT 列表中的通配符上。
