@@ -714,6 +714,45 @@ end
 
 function M.toggle_filter_join_mode()
   local bufnr = vim.api.nvim_get_current_buf()
+
+  local view = require("dadbod-grip.view")
+  local session = view._sessions[bufnr]
+  local filter_index = session and session.query_spec and filter_index_at_cursor(bufnr, session) or nil
+  if filter_index then
+    local filters = session.query_spec.filters or {}
+    local filter = filters[filter_index]
+    if not filter then return end
+
+    if filter.pinned then
+      vim.notify("固定筛选上下文不能切换 AND/OR", vim.log.levels.INFO)
+      return
+    end
+
+    local has_previous_user_filter = false
+    for index = 1, filter_index - 1 do
+      if not filters[index].pinned then
+        has_previous_user_filter = true
+        break
+      end
+    end
+    if not has_previous_user_filter then
+      vim.notify("首个筛选条件没有 AND/OR 连接符", vim.log.levels.INFO)
+      return
+    end
+
+    if not confirm_discard_result_changes(session, "切换筛选连接方式") then return end
+
+    local spec = vim.deepcopy(session.query_spec)
+    local current = spec.filters[filter_index].join == "OR" and "OR" or "AND"
+    local next_mode = current == "AND" and "OR" or "AND"
+    spec.filters[filter_index].join = next_mode
+    spec.page = 1
+    if requery_result(bufnr, view, spec) then
+      vim.notify("当前筛选连接方式：" .. next_mode, vim.log.levels.INFO)
+    end
+    return
+  end
+
   local current = result_filter_join_modes[bufnr] or "AND"
   local next_mode = current == "AND" and "OR" or "AND"
   result_filter_join_modes[bufnr] = next_mode
@@ -901,7 +940,7 @@ function M.setup()
         vim.keymap.set("n", "|", M.toggle_filter_join_mode, {
           buffer = event.buf,
           silent = true,
-          desc = "SQL：切换新筛选条件 AND/OR 连接方式",
+          desc = "SQL：切换当前筛选或新筛选的 AND/OR 连接方式",
         })
         vim.keymap.set("n", "d", M.delete_filter_or_row, {
           buffer = event.buf,

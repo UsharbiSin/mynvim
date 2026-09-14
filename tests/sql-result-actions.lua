@@ -110,7 +110,7 @@ assert(
   "result grid must map / to the current-column WHERE filter"
 )
 assert(
-  vim.fn.maparg("|", "n", false, true).desc == "SQL：切换新筛选条件 AND/OR 连接方式",
+  vim.fn.maparg("|", "n", false, true).desc == "SQL：切换当前筛选或新筛选的 AND/OR 连接方式",
   "result grid must map | to the filter join toggle"
 )
 assert(
@@ -290,6 +290,20 @@ vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, {
   "hint",
 })
 vim.api.nvim_win_set_cursor(0, { 3, 0 })
+
+local toggled_filter_spec
+session.on_requery = function(_, spec)
+  toggled_filter_spec = spec
+  session.query_spec = spec
+  session.state = {
+    columns = { "id", "name", "created_at" },
+    rows = { { "2", "Bob", "2026-09-09" } },
+  }
+end
+browser.toggle_filter_join_mode()
+assert(toggled_filter_spec.filters[2].join == "AND", "| on a filter row must toggle that row from OR to AND")
+assert(toggled_filter_spec.page == 1, "toggling a filter-row join must return to the first page")
+
 local deleted_filter_spec
 session.on_requery = function(_, spec)
   deleted_filter_spec = spec
