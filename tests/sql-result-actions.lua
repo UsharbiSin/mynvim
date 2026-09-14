@@ -23,6 +23,9 @@ local fake_view = {
   _resolve_col_at = function()
     return "name"
   end,
+  get_cell = function()
+    return { row_idx = 1 }
+  end,
   render = function(_, state)
     session.state = state
     session._render = {
@@ -71,6 +74,25 @@ package.loaded["dadbod-grip.query"] = {
     next_spec.page = 1
     return next_spec
   end,
+  build_sql = function(spec)
+    local parts = { "SELECT * FROM (" .. spec.base_sql .. ") AS _grip" }
+    if #(spec.filters or {}) > 0 then
+      local clauses = {}
+      for _, filter in ipairs(spec.filters) do clauses[#clauses + 1] = "(" .. filter.clause .. ")" end
+      parts[#parts + 1] = "WHERE " .. table.concat(clauses, " AND ")
+    end
+    parts[#parts + 1] = "LIMIT " .. spec.page_size
+    return table.concat(parts, " ")
+  end,
+  build_count_sql = function(spec)
+    local sql = "SELECT COUNT(*) AS _grip_count FROM (" .. spec.base_sql .. ") AS _grip"
+    if #(spec.filters or {}) > 0 then
+      local clauses = {}
+      for _, filter in ipairs(spec.filters) do clauses[#clauses + 1] = "(" .. filter.clause .. ")" end
+      sql = sql .. " WHERE " .. table.concat(clauses, " AND ")
+    end
+    return sql
+  end,
 }
 
 local browser = require("config.sql-browser")
@@ -86,6 +108,14 @@ assert(
 assert(
   vim.fn.maparg("/", "n", false, true).desc == "SQL：按当前列输入 WHERE 条件筛选",
   "result grid must map / to the current-column WHERE filter"
+)
+assert(
+  vim.fn.maparg("|", "n", false, true).desc == "SQL：切换新筛选条件 AND/OR 连接方式",
+  "result grid must map | to the filter join toggle"
+)
+assert(
+  vim.fn.maparg("d", "n", false, true).desc == "SQL：删除当前筛选条件或数据行",
+  "result grid must make d context-sensitive for filters and rows"
 )
 vim.api.nvim_win_set_cursor(0, { 1, 0 })
 browser.reorder_result_column(-1)
@@ -193,13 +223,97 @@ end
 browser.filter_result_column()
 vim.ui.input = original_input
 
-assert(filter_prompt == 'WHERE "name" ', "filter prompt must identify the current column")
+assert(filter_prompt == 'WHERE "name"  [AND] ', "filter prompt must identify the current column and join mode")
 assert(filtered.page == 1, "filtering must return to the first page")
 assert(filtered.filters[1].clause == '"name" LIKE \'%Ali%\'', "filter must target the current column")
+assert(filtered.filters[1].join == "AND", "new filters must record the active join mode")
 assert(vim.deep_equal(
   session.state.columns,
   { "name", "id", "created_at" }
 ), "filter requery must preserve the manually reordered columns")
+
+local joined_spec = {
+  is_raw = true,
+  base_sql = "SELECT * FROM people",
+  filters = {
+    { clause = '"id" = 1', join = "AND" },
+    { clause = '"name" = \'Alice\'', join = "OR" },
+    { clause = '"active" = 1', join = "AND" },
+  },
+  sorts = {},
+  page = 1,
+  page_size = 100,
+}
+assert(
+  browser._joined_where_clause(joined_spec)
+    == 'WHERE ((("id" = 1) OR ("name" = \'Alice\')) AND ("active" = 1))',
+  "mixed AND/OR filters must be grouped in input order"
+)
+local joined_sql = package.loaded["dadbod-grip.query"].build_sql(joined_spec)
+assert(
+  joined_sql
+    == 'SELECT * FROM (SELECT * FROM people) AS _grip WHERE (((("id" = 1) OR ("name" = \'Alice\')) AND ("active" = 1))) LIMIT 100',
+  "query builder must use the stored filter joins"
+)
+
+browser.toggle_filter_join_mode()
+local or_prompt
+vim.ui.input = function(opts, callback)
+  or_prompt = opts.prompt
+  callback("LIKE '%Bob%'")
+end
+session.on_requery = function(_, spec)
+  filtered = spec
+  session.query_spec = spec
+  session.state = {
+    columns = { "id", "name", "created_at" },
+    rows = { { "2", "Bob", "2026-09-09" } },
+  }
+end
+browser.filter_result_column()
+vim.ui.input = original_input
+assert(or_prompt == 'WHERE "name"  [OR] ', "| must switch the next filter to OR")
+assert(filtered.filters[#filtered.filters].join == "OR", "OR mode must be stored on the appended filter")
+
+session.query_spec = {
+  sorts = {},
+  filters = {
+    { clause = '"id" LIKE \'%0%\'', join = "AND" },
+    { clause = '"name" LIKE \'%Bob%\'', join = "OR" },
+  },
+  page = 2,
+}
+vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, {
+  "status",
+  ' ▾ "id" LIKE \'%0%\'',
+  ' ▾ "name" LIKE \'%Bob%\'',
+  "hint",
+})
+vim.api.nvim_win_set_cursor(0, { 3, 0 })
+local deleted_filter_spec
+session.on_requery = function(_, spec)
+  deleted_filter_spec = spec
+  session.query_spec = spec
+  session.state = {
+    columns = { "id", "name", "created_at" },
+    rows = { { "2", "Bob", "2026-09-09" } },
+  }
+end
+assert(browser.delete_result_filter() == true, "d on a filter line must handle that filter")
+assert(#deleted_filter_spec.filters == 1, "deleting a filter line must remove only that condition")
+assert(deleted_filter_spec.filters[1].clause == '"id" LIKE \'%0%\'', "the other filter must remain")
+assert(deleted_filter_spec.page == 1, "deleting a filter must return to the first page")
+
+session.query_spec = { sorts = {}, filters = {}, page = 1 }
+session.state.readonly = false
+vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { "data" })
+vim.api.nvim_win_set_cursor(0, { 1, 0 })
+local deleted_row
+session.on_delete = function(_, row_idx)
+  deleted_row = row_idx
+end
+browser.delete_filter_or_row()
+assert(deleted_row == 1, "d outside filter lines must retain the original row-delete behavior")
 
 local stable_state = session.state
 local stable_spec = {

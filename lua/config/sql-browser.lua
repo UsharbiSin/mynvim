@@ -2,8 +2,10 @@ local M = {}
 
 local metadata = require("config.sql-metadata")
 local namespace = vim.api.nvim_create_namespace("SqlCommentBrowser")
+local filter_join_namespace = vim.api.nvim_create_namespace("SqlFilterJoin")
 local result_column_orders = {}
 local result_cleanup_registered = {}
+local result_filter_join_modes = {}
 local export_in_progress = {}
 local state = {
   bufnr = nil,
@@ -496,6 +498,168 @@ end
 M._export_rows = export_rows
 M._export_default_path = export_default_path
 
+local function has_joined_filters(spec)
+  for _, filter in ipairs((spec and spec.filters) or {}) do
+    if filter.join then return true end
+  end
+  return false
+end
+
+local function joined_where_clause(spec)
+  local pinned = {}
+  local user = {}
+  for _, filter in ipairs((spec and spec.filters) or {}) do
+    if filter.pinned then
+      pinned[#pinned + 1] = filter
+    else
+      user[#user + 1] = filter
+    end
+  end
+
+  local parts = {}
+  for _, filter in ipairs(pinned) do
+    parts[#parts + 1] = "(" .. filter.clause .. ")"
+  end
+
+  if #user > 0 then
+    local expr = "(" .. user[1].clause .. ")"
+    for index = 2, #user do
+      local join = user[index].join == "OR" and "OR" or "AND"
+      expr = "(" .. expr .. " " .. join .. " (" .. user[index].clause .. "))"
+    end
+    parts[#parts + 1] = expr
+  end
+
+  if #parts == 0 then return nil end
+  return "WHERE " .. table.concat(parts, " AND ")
+end
+
+M._joined_where_clause = joined_where_clause
+
+local function install_query_join_support()
+  local query = require("dadbod-grip.query")
+  if query._sql_browser_join_support then return end
+
+  local original_build_sql = query.build_sql
+  local original_build_count_sql = query.build_count_sql
+
+  local function compatible_spec(spec)
+    if not has_joined_filters(spec) then return spec end
+    local where = joined_where_clause(spec)
+    local next_spec = vim.deepcopy(spec)
+    next_spec.filters = where and { { clause = where:gsub("^WHERE%s+", "") } } or {}
+    return next_spec
+  end
+
+  query.build_sql = function(spec, opts)
+    return original_build_sql(compatible_spec(spec), opts)
+  end
+
+  query.build_count_sql = function(spec)
+    return original_build_count_sql(compatible_spec(spec))
+  end
+
+  query._sql_browser_join_support = true
+end
+
+local function filter_block_start(bufnr, filters)
+  if #filters == 0 or not vim.api.nvim_buf_is_valid(bufnr) then return nil end
+  local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+  for start = 1, #lines - #filters + 1 do
+    local matched = true
+    for index, filter in ipairs(filters) do
+      if lines[start + index - 1] ~= " ▾ " .. filter.clause then
+        matched = false
+        break
+      end
+    end
+    if matched then return start end
+  end
+end
+
+local function filter_index_at_cursor(bufnr, session)
+  local filters = session and session.query_spec and session.query_spec.filters or {}
+  local start = filter_block_start(bufnr, filters)
+  if not start then return nil end
+  local row = vim.api.nvim_win_get_cursor(0)[1]
+  if row < start or row >= start + #filters then return nil end
+  return row - start + 1
+end
+
+local function annotate_filter_joins(bufnr, view)
+  if not vim.api.nvim_buf_is_valid(bufnr) then return end
+  vim.api.nvim_buf_clear_namespace(bufnr, filter_join_namespace, 0, -1)
+  local session = view._sessions[bufnr]
+  local filters = session and session.query_spec and session.query_spec.filters or {}
+  local start = filter_block_start(bufnr, filters)
+  if not start then return end
+
+  local seen_user = 0
+  for index, filter in ipairs(filters) do
+    local join
+    if index > 1 then
+      if filter.pinned or seen_user == 0 then
+        join = "AND"
+      else
+        join = filter.join == "OR" and "OR" or "AND"
+      end
+    end
+    if not filter.pinned then seen_user = seen_user + 1 end
+    if join then
+      vim.api.nvim_buf_set_extmark(bufnr, filter_join_namespace, start + index - 2, 5, {
+        virt_text = { { join .. " ", "Keyword" } },
+        virt_text_pos = "inline",
+      })
+    end
+  end
+end
+
+local function install_filter_join_render()
+  local view = require("dadbod-grip.view")
+  if view._sql_browser_join_render then return end
+  local original_render = view.render
+  view.render = function(bufnr, render_state)
+    local result = original_render(bufnr, render_state)
+    annotate_filter_joins(bufnr, view)
+    return result
+  end
+  view._sql_browser_join_render = true
+end
+
+local function confirm_discard_result_changes(session, action)
+  local data = require("dadbod-grip.data")
+  if not data.has_changes(session.state) then return true end
+  local staged = data.count_staged(session.state)
+  return vim.fn.confirm(
+    ("%s会放弃 %d 项尚未提交的修改，是否继续？"):format(action, staged),
+    "&继续\n&取消",
+    2
+  ) == 1
+end
+
+local function requery_result(bufnr, view, spec)
+  local current = view._sessions[bufnr]
+  if not current or not current.on_requery then return false end
+
+  local previous_state = current.state
+  local previous_spec = vim.deepcopy(current.query_spec)
+  local previous_sql = current.query_sql
+  local previous_total_rows = current.total_rows
+  current.on_requery(bufnr, spec)
+
+  local refreshed = view._sessions[bufnr]
+  if not refreshed then return false end
+  if refreshed.state == previous_state then
+    refreshed.query_spec = previous_spec
+    refreshed.query_sql = previous_sql
+    refreshed.total_rows = previous_total_rows
+    return false
+  end
+
+  restore_result_column_order(bufnr, view)
+  return true
+end
+
 local function build_column_where_clause(column, condition)
   condition = vim.trim(tostring(condition or ""))
   if condition == "" then return nil end
@@ -523,20 +687,12 @@ function M.filter_result_column()
     return
   end
 
-  local data = require("dadbod-grip.data")
-  if data.has_changes(session.state) then
-    local staged = data.count_staged(session.state)
-    local choice = vim.fn.confirm(
-      ("筛选会放弃 %d 项尚未提交的修改，是否继续？"):format(staged),
-      "&继续\n&取消",
-      2
-    )
-    if choice ~= 1 then return end
-  end
+  if not confirm_discard_result_changes(session, "筛选") then return end
 
   local quoted = require("dadbod-grip.sql").quote_ident(column)
+  local join_mode = result_filter_join_modes[bufnr] or "AND"
   vim.ui.input({
-    prompt = "WHERE " .. quoted .. " ",
+    prompt = ("WHERE %s  [%s] "):format(quoted, join_mode),
   }, function(condition)
     local clause = build_column_where_clause(column, condition)
     if not clause or not vim.api.nvim_buf_is_valid(bufnr) then return end
@@ -544,32 +700,63 @@ function M.filter_result_column()
     local current = view._sessions[bufnr]
     if not current or not current.query_spec then return end
 
-    local previous_state = current.state
-    local previous_spec = vim.deepcopy(current.query_spec)
-    local previous_sql = current.query_sql
-    local previous_total_rows = current.total_rows
     local spec = require("dadbod-grip.query").add_filter(current.query_spec, clause)
-    if current.on_requery then
-      current.on_requery(bufnr, spec)
-
-      local refreshed = view._sessions[bufnr]
-      if not refreshed then return end
-
-      -- Dadbod Grip 的 on_requery 即使查询失败也会先保存新的
-      -- query_spec/query_sql；但失败时 apply_refresh 不会替换 state。
-      -- 利用 state 是否发生替换判断查询是否真正成功，失败时恢复旧查询状态，
-      -- 避免无效 WHERE 条件在下一次筛选时继续通过 AND 累积。
-      if refreshed.state == previous_state then
-        refreshed.query_spec = previous_spec
-        refreshed.query_sql = previous_sql
-        refreshed.total_rows = previous_total_rows
-        return
-      end
-
-      restore_result_column_order(bufnr, view)
+    local filters = spec.filters or {}
+    if #filters > 0 then
+      filters[#filters].join = join_mode
     end
+    requery_result(bufnr, view, spec)
   end)
 end
+
+function M.toggle_filter_join_mode()
+  local bufnr = vim.api.nvim_get_current_buf()
+  local current = result_filter_join_modes[bufnr] or "AND"
+  local next_mode = current == "AND" and "OR" or "AND"
+  result_filter_join_modes[bufnr] = next_mode
+  vim.notify("SQL 新筛选连接方式：" .. next_mode, vim.log.levels.INFO)
+end
+
+function M.delete_result_filter()
+  local bufnr = vim.api.nvim_get_current_buf()
+  local view = require("dadbod-grip.view")
+  local session = view._sessions[bufnr]
+  if not session or not session.query_spec then return false end
+
+  local filter_index = filter_index_at_cursor(bufnr, session)
+  if not filter_index then return false end
+  if not confirm_discard_result_changes(session, "删除筛选条件") then return true end
+
+  local spec = vim.deepcopy(session.query_spec)
+  local removed = table.remove(spec.filters, filter_index)
+  if not removed then return true end
+  if spec.filters[1] then spec.filters[1].join = nil end
+  spec.page = 1
+  requery_result(bufnr, view, spec)
+  return true
+end
+
+function M.delete_filter_or_row()
+  if M.delete_result_filter() then return end
+
+  local bufnr = vim.api.nvim_get_current_buf()
+  local view = require("dadbod-grip.view")
+  local session = view._sessions[bufnr]
+  if not session then return end
+  if session.state and session.state.readonly then
+    vim.notify("Read-only: no primary key detected", vim.log.levels.INFO)
+    return
+  end
+
+  local cell = view.get_cell(bufnr)
+  if not cell then
+    vim.notify("请把光标移到筛选条件或数据行", vim.log.levels.INFO)
+    return
+  end
+  if session.on_delete then session.on_delete(bufnr, cell.row_idx) end
+end
+
+M._filter_index_at_cursor = filter_index_at_cursor
 
 function M.sort_result_column(direction)
   local bufnr = vim.api.nvim_get_current_buf()
@@ -646,6 +833,9 @@ end
 M._merge_column_order = merge_column_order
 
 function M.setup()
+  install_query_join_support()
+  install_filter_join_render()
+
   local group = vim.api.nvim_create_augroup("SqlResultComments", { clear = true })
   vim.api.nvim_create_autocmd("BufEnter", {
     group = group,
@@ -662,6 +852,7 @@ function M.setup()
             once = true,
             callback = function()
               result_column_orders[event.buf] = nil
+              result_filter_join_modes[event.buf] = nil
               result_cleanup_registered[event.buf] = nil
             end,
           })
@@ -703,6 +894,16 @@ function M.setup()
           buffer = event.buf,
           silent = true,
           desc = "SQL：按当前列输入 WHERE 条件筛选",
+        })
+        vim.keymap.set("n", "|", M.toggle_filter_join_mode, {
+          buffer = event.buf,
+          silent = true,
+          desc = "SQL：切换新筛选条件 AND/OR 连接方式",
+        })
+        vim.keymap.set("n", "d", M.delete_filter_or_row, {
+          buffer = event.buf,
+          silent = true,
+          desc = "SQL：删除当前筛选条件或数据行",
         })
         vim.keymap.set("n", "<leader>ss", function()
           M.sort_result_column("ASC")
