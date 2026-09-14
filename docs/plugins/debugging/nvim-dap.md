@@ -39,6 +39,10 @@ Arch Linux 与 Windows 均按 PATH 探测原生调试器；Python adapter 按平
 | `<Space>db` / `<Space>dB` | 普通 / 条件断点 |
 | `<Space>dD` | 清全部断点 |
 
+断点会按文件绝对路径持久化到 `stdpath("state")/dap-breakpoints.json`。普通断点和条件断点都会
+保存；重新打开文件或重启 Neovim 后自动恢复。文件保存和退出 Neovim 时会再次同步断点行号，
+因此编辑导致断点随文本移动后也会保存新位置。`<Space>dD` 会同时清除当前和持久化断点。
+
 典型流程：编译带调试符号的程序，打开源码，设断点，F2，从列表选择 launch 配置，再输入
 可执行文件。Python 直接选择 `file` 或带 args 的配置；激活 Conda 时分别解析
 `$CONDA_PREFIX/bin/python` 或 Windows `python.exe`。

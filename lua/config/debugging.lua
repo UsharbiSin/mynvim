@@ -1,4 +1,5 @@
 local dap = require("dap")
+require("config.dap-breakpoints").setup(dap)
 
 local function adapter_command(name)
   local path = vim.fn.exepath(name)
