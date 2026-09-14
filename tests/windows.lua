@@ -60,10 +60,18 @@ local function test()
   vim.cmd("edit! " .. vim.fn.fnameescape(sql_file))
   vim.bo.filetype = "sql"
   local sqlfluff_args = require("lint").linters.sqlfluff.args
-  check(
-    vim.tbl_contains(sqlfluff_args, "--exclude-rules=RF05,ST06"),
-    "SQLFluff must ignore subjective identifier and column-order rules"
-  )
+  local excluded_rules = {}
+  for _, arg in ipairs(sqlfluff_args) do
+    local value = arg:match("^%-%-exclude%-rules=(.+)$")
+    if value then
+      for rule in value:gmatch("[^,]+") do
+        excluded_rules[vim.trim(rule)] = true
+      end
+    end
+  end
+  check(excluded_rules.CP02, "SQLFluff must preserve database identifier case")
+  check(excluded_rules.RF05, "SQLFluff must ignore subjective identifier rules")
+  check(excluded_rules.ST06, "SQLFluff must ignore subjective column-order rules")
   local sql_client
   check(vim.wait(10000, function()
     for _, client in ipairs(vim.lsp.get_clients({ bufnr = 0 })) do
