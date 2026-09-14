@@ -544,9 +544,28 @@ function M.filter_result_column()
     local current = view._sessions[bufnr]
     if not current or not current.query_spec then return end
 
+    local previous_state = current.state
+    local previous_spec = vim.deepcopy(current.query_spec)
+    local previous_sql = current.query_sql
+    local previous_total_rows = current.total_rows
     local spec = require("dadbod-grip.query").add_filter(current.query_spec, clause)
     if current.on_requery then
       current.on_requery(bufnr, spec)
+
+      local refreshed = view._sessions[bufnr]
+      if not refreshed then return end
+
+      -- Dadbod Grip 的 on_requery 即使查询失败也会先保存新的
+      -- query_spec/query_sql；但失败时 apply_refresh 不会替换 state。
+      -- 利用 state 是否发生替换判断查询是否真正成功，失败时恢复旧查询状态，
+      -- 避免无效 WHERE 条件在下一次筛选时继续通过 AND 累积。
+      if refreshed.state == previous_state then
+        refreshed.query_spec = previous_spec
+        refreshed.query_sql = previous_sql
+        refreshed.total_rows = previous_total_rows
+        return
+      end
+
       restore_result_column_order(bufnr, view)
     end
   end)

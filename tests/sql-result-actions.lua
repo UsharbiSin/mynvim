@@ -201,6 +201,33 @@ assert(vim.deep_equal(
   { "name", "id", "created_at" }
 ), "filter requery must preserve the manually reordered columns")
 
+local stable_state = session.state
+local stable_spec = {
+  sorts = { { column = "created_at", dir = "DESC" } },
+  filters = { { clause = '"name" LIKE \'%Alice%\'' } },
+  page = 2,
+}
+session.query_spec = vim.deepcopy(stable_spec)
+session.query_sql = "previous valid sql"
+session.total_rows = 321
+vim.ui.input = function(_, callback)
+  callback("LIKE")
+end
+session.on_requery = function(_, spec)
+  -- 模拟 Dadbod Grip 当前失败路径：query_spec/query_sql/total_rows 已更新，
+  -- 但 apply_refresh 因查询失败而不会替换 state。
+  session.query_spec = spec
+  session.query_sql = "invalid sql"
+  session.total_rows = 0
+end
+browser.filter_result_column()
+vim.ui.input = original_input
+
+assert(session.state == stable_state, "failed filter must keep the previous result state")
+assert(vim.deep_equal(session.query_spec, stable_spec), "failed filter must restore the previous query spec")
+assert(session.query_sql == "previous valid sql", "failed filter must restore the previous query SQL")
+assert(session.total_rows == 321, "failed filter must restore the previous row count")
+
 assert(browser._resize_width(10, -20) == 6, "column width must have a lower bound")
 assert(browser._resize_width(10, 4) == 14, "column width must grow by the requested amount")
 assert(browser._resize_width(199, 4) == 200, "column width must have an upper bound")
