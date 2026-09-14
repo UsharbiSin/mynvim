@@ -496,6 +496,62 @@ end
 M._export_rows = export_rows
 M._export_default_path = export_default_path
 
+local function build_column_where_clause(column, condition)
+  condition = vim.trim(tostring(condition or ""))
+  if condition == "" then return nil end
+
+  local quoted = require("dadbod-grip.sql").quote_ident(column)
+  return quoted .. " " .. condition
+end
+
+M._build_column_where_clause = build_column_where_clause
+
+function M.filter_result_column()
+  local bufnr = vim.api.nvim_get_current_buf()
+  local view = require("dadbod-grip.view")
+  local session = view._sessions[bufnr]
+  if not session or not session.query_spec or not session._render then
+    vim.notify("当前窗口没有可用的列筛选功能", vim.log.levels.WARN)
+    return
+  end
+
+  local cursor = vim.api.nvim_win_get_cursor(0)
+  local visible = session._render.visible_columns or session.state.columns
+  local column = view._resolve_col_at(session._render, visible, cursor[1], cursor[2])
+  if not column then
+    vim.notify("请先把光标移到需要筛选的列", vim.log.levels.INFO)
+    return
+  end
+
+  local data = require("dadbod-grip.data")
+  if data.has_changes(session.state) then
+    local staged = data.count_staged(session.state)
+    local choice = vim.fn.confirm(
+      ("筛选会放弃 %d 项尚未提交的修改，是否继续？"):format(staged),
+      "&继续\n&取消",
+      2
+    )
+    if choice ~= 1 then return end
+  end
+
+  local quoted = require("dadbod-grip.sql").quote_ident(column)
+  vim.ui.input({
+    prompt = "WHERE " .. quoted .. " ",
+  }, function(condition)
+    local clause = build_column_where_clause(column, condition)
+    if not clause or not vim.api.nvim_buf_is_valid(bufnr) then return end
+
+    local current = view._sessions[bufnr]
+    if not current or not current.query_spec then return end
+
+    local spec = require("dadbod-grip.query").add_filter(current.query_spec, clause)
+    if current.on_requery then
+      current.on_requery(bufnr, spec)
+      restore_result_column_order(bufnr, view)
+    end
+  end)
+end
+
 function M.sort_result_column(direction)
   local bufnr = vim.api.nvim_get_current_buf()
   local view = require("dadbod-grip.view")
@@ -623,6 +679,11 @@ function M.setup()
           buffer = event.buf,
           silent = true,
           desc = "SQL：按当前列降序排列",
+        })
+        vim.keymap.set("n", "/", M.filter_result_column, {
+          buffer = event.buf,
+          silent = true,
+          desc = "SQL：按当前列输入 WHERE 条件筛选",
         })
         vim.keymap.set("n", "<leader>ss", function()
           M.sort_result_column("ASC")

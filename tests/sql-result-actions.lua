@@ -58,6 +58,20 @@ local fake_data = {
   end,
 }
 package.loaded["dadbod-grip.data"] = fake_data
+package.loaded["dadbod-grip.sql"] = {
+  quote_ident = function(name)
+    return '"' .. tostring(name):gsub('"', '""') .. '"'
+  end,
+}
+package.loaded["dadbod-grip.query"] = {
+  add_filter = function(spec, clause)
+    local next_spec = vim.deepcopy(spec)
+    next_spec.filters = next_spec.filters or {}
+    next_spec.filters[#next_spec.filters + 1] = { clause = clause }
+    next_spec.page = 1
+    return next_spec
+  end,
+}
 
 local browser = require("config.sql-browser")
 browser.setup()
@@ -68,6 +82,10 @@ end)
 assert(
   vim.fn.maparg("<leader>sx", "n", false, true).desc == "SQL：导出当前结果页为 XLSX 或 CSV",
   "result grid must expose the export mapping"
+)
+assert(
+  vim.fn.maparg("/", "n", false, true).desc == "SQL：按当前列输入 WHERE 条件筛选",
+  "result grid must map / to the current-column WHERE filter"
 )
 vim.api.nvim_win_set_cursor(0, { 1, 0 })
 browser.reorder_result_column(-1)
@@ -143,6 +161,46 @@ assert(vim.deep_equal(browser._next_sorts({
   { column = "name", dir = "ASC" },
   { column = "id", dir = "DESC" },
 }), "a second column must preserve multi-column sort priority")
+
+assert(
+  browser._build_column_where_clause("name", " LIKE '%Ali%' ") == '"name" LIKE \'%Ali%\'',
+  "column WHERE builder must prefix the current quoted column and trim the condition"
+)
+assert(browser._build_column_where_clause("name", "   ") == nil, "blank filters must be ignored")
+
+local filter_prompt
+local filtered
+local original_input = vim.ui.input
+vim.ui.input = function(opts, callback)
+  filter_prompt = opts.prompt
+  callback("LIKE '%Ali%'")
+end
+session.query_spec = {
+  sorts = {},
+  filters = {},
+  page = 3,
+}
+session.on_requery = function(_, spec)
+  filtered = spec
+  session.query_spec = spec
+  session.state = {
+    columns = { "id", "name", "created_at" },
+    rows = {
+      { "1", "Alice", "2026-09-08" },
+    },
+  }
+end
+browser.filter_result_column()
+vim.ui.input = original_input
+
+assert(filter_prompt == 'WHERE "name" ', "filter prompt must identify the current column")
+assert(filtered.page == 1, "filtering must return to the first page")
+assert(filtered.filters[1].clause == '"name" LIKE \'%Ali%\'', "filter must target the current column")
+assert(vim.deep_equal(
+  session.state.columns,
+  { "name", "id", "created_at" }
+), "filter requery must preserve the manually reordered columns")
+
 assert(browser._resize_width(10, -20) == 6, "column width must have a lower bound")
 assert(browser._resize_width(10, 4) == 14, "column width must grow by the requested amount")
 assert(browser._resize_width(199, 4) == 200, "column width must have an upper bound")
