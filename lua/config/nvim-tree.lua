@@ -6,23 +6,48 @@ vim.opt.termguicolors = true
 local api = require("nvim-tree.api")
 local M = {}
 
--- 让 .gitignore 命中的节点在仍然可见时整体变淡。
--- 使用自定义 Decorator，只影响 ignored 节点，不改变其他 Git 状态的颜色。
-local IgnoredDecorator = api.Decorator:extend()
+-- nvim-tree 自身的节点高亮优先级为 200。之前只通过 Decorator 追加 ignored
+-- 高亮时，会和文件名/DevIcon 的同优先级高亮竞争，实际终端里可能仍显示普通颜色。
+-- 因此在每次 TreeRendered 后，用更高优先级覆盖整条 ignored 节点，确保稳定变淡。
+local ignored_namespace = vim.api.nvim_create_namespace("NvimTreeGitIgnoredDim")
 
-function IgnoredDecorator:new()
-  self.enabled = true
-  self.highlight_range = "all"
-  self.icon_placement = "none"
+local function set_ignored_highlight()
+  local comment = vim.api.nvim_get_hl(0, { name = "Comment", link = false })
+  vim.api.nvim_set_hl(0, "NvimTreeGitIgnoredDim", { fg = comment.fg })
 end
 
-function IgnoredDecorator:highlight_group(node)
-  if node.git_status and node.git_status.file == "!!" then
-    return "NvimTreeGitIgnoredDim"
+local function dim_ignored_nodes(payload)
+  local bufnr = payload and payload.bufnr
+  if not bufnr or not vim.api.nvim_buf_is_valid(bufnr) then return end
+
+  local core = require("nvim-tree.core")
+  local explorer = core.get_explorer()
+  if not explorer then return end
+
+  vim.api.nvim_buf_clear_namespace(bufnr, ignored_namespace, 0, -1)
+  local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+  local nodes_by_line = explorer:get_nodes_by_line(core.get_nodes_starting_line())
+  for line, node in pairs(nodes_by_line) do
+    if node:is_git_ignored() then
+      local text = lines[line] or ""
+      if text ~= "" then
+        vim.api.nvim_buf_set_extmark(bufnr, ignored_namespace, line - 1, 0, {
+          end_row = line - 1,
+          end_col = #text,
+          hl_group = "NvimTreeGitIgnoredDim",
+          priority = 1000,
+        })
+      end
+    end
   end
 end
 
-vim.api.nvim_set_hl(0, "NvimTreeGitIgnoredDim", { link = "Comment" })
+set_ignored_highlight()
+vim.api.nvim_create_autocmd("ColorScheme", {
+  callback = set_ignored_highlight,
+  desc = "更新 nvim-tree Git 忽略项的淡化颜色",
+})
+api.events.subscribe(api.events.Event.TreeRendered, dim_ignored_nodes)
 
 function M.toggle_current_dir()
   if api.tree.is_visible() then
@@ -100,17 +125,6 @@ require("nvim-tree").setup({
 
   -- 对应 "explorer.file.column.indent.indentLine": true
   renderer = {
-    decorators = {
-      "Git",
-      "Open",
-      "Hidden",
-      "Modified",
-      "Bookmark",
-      "Diagnostics",
-      IgnoredDecorator,
-      "Copied",
-      "Cut",
-    },
     indent_markers = {
       enable = true,
       icons = { corner = "└", edge = "│", item = "│", none = " " },
