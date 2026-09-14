@@ -6,6 +6,24 @@ vim.opt.termguicolors = true
 local api = require("nvim-tree.api")
 local M = {}
 
+-- 让 .gitignore 命中的节点在仍然可见时整体变淡。
+-- 使用自定义 Decorator，只影响 ignored 节点，不改变其他 Git 状态的颜色。
+local IgnoredDecorator = api.Decorator:extend()
+
+function IgnoredDecorator:new()
+  self.enabled = true
+  self.highlight_range = "all"
+  self.icon_placement = "none"
+end
+
+function IgnoredDecorator:highlight_group(node)
+  if node.git_status and node.git_status.file == "!!" then
+    return "NvimTreeGitIgnoredDim"
+  end
+end
+
+vim.api.nvim_set_hl(0, "NvimTreeGitIgnoredDim", { link = "Comment" })
+
 function M.toggle_current_dir()
   if api.tree.is_visible() then
     api.tree.close()
@@ -42,6 +60,7 @@ local function my_on_attach(bufnr)
   vim.keymap.set('n', 'R', api.tree.reload, opts('刷新文件树'))
   vim.keymap.set('n', '.', api.filter.dotfiles.toggle, opts('开关显示隐藏文件'))
   vim.keymap.set('n', 'zh', api.filter.dotfiles.toggle, opts('开关显示隐藏文件'))
+  vim.keymap.set('n', 'I', api.filter.git.ignored.toggle, opts('开关显示 Git 忽略文件'))
   vim.keymap.set('n', 'X', api.node.run.system, opts('使用系统默认应用打开'))
 
   -- ================= 文件操作 =================
@@ -74,11 +93,24 @@ require("nvim-tree").setup({
   -- 对应 "explorer.file.showHiddenFiles": false
   filters = {
     dotfiles = true,
+    -- 默认显示 .gitignore 忽略项；按 I 可临时隐藏/重新显示。
+    git_ignored = false,
     custom = { "^.git$" },
   },
 
   -- 对应 "explorer.file.column.indent.indentLine": true
   renderer = {
+    decorators = {
+      "Git",
+      "Open",
+      "Hidden",
+      "Modified",
+      "Bookmark",
+      "Diagnostics",
+      IgnoredDecorator,
+      "Copied",
+      "Cut",
+    },
     indent_markers = {
       enable = true,
       icons = { corner = "└", edge = "│", item = "│", none = " " },
