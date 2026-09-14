@@ -407,7 +407,10 @@ local function export_rows(state)
     if not state.deleted[row_index] then
       local row = {}
       for _, column in ipairs(state.columns or {}) do
-        row[#row + 1] = data.effective_value(state, row_index, column)
+        local value = data.effective_value(state, row_index, column)
+        -- SQL NULL 在 Dadbod Grip 中表示为 nil。Lua 数组写入 nil 会直接
+        -- 丢失该位置，导致后续字段左移、导出行列数不一致；导出时保留为空单元格。
+        row[#row + 1] = value == nil and "" or value
       end
       rows[#rows + 1] = row
     end

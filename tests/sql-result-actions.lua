@@ -358,6 +358,18 @@ assert(vim.deep_equal(browser._export_rows(export_state), {
   { "3", "Carol" },
 }), "export must use effective values and omit staged deletions")
 
+local export_null_state = {
+  columns = { "id", "bidding_name", "project_region" },
+  rows = { { "1", "", "浦东" } },
+  changes = {},
+  deleted = {},
+  inserted = {},
+}
+local export_null_rows = browser._export_rows(export_null_state)
+assert(#export_null_rows[1] == 3, "SQL NULL must not shorten an exported row")
+assert(vim.deep_equal(export_null_rows[1], { "1", "", "浦东" }),
+  "SQL NULL must export as an empty cell without shifting later columns")
+
 assert(
   vim.fn.fnamemodify(browser._export_default_path({
     state = { table_name = "monitor.platform" },
