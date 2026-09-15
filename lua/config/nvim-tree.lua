@@ -135,6 +135,9 @@ require("nvim-tree").setup({
       glyphs = {
         default = "",
         symlink = "",
+        git = {
+          ignored = "",
+        },
         folder = {
           arrow_closed = "❯",
           arrow_open = "▼",
