@@ -33,6 +33,25 @@ assert(vim.treesitter.language.get_lang("c++") == "cpp", "c++ fences must reuse 
 assert(require("ibl.scope_languages").json.object, "JSON object must be an indent scope")
 assert(require("ibl.scope_languages").json.array, "JSON array must be an indent scope")
 
+local filter_diagnostics = require("config.markdown-lsp").filter_diagnostics
+local filtered_json = filter_diagnostics({
+  uri = "file:///tmp/note.md.otter.json",
+  diagnostics = {
+    { message = "End of file expected." },
+    { message = "Property keys must be doublequoted" },
+  },
+})
+assert(#filtered_json.diagnostics == 1, "embedded JSON EOF false positive must be filtered")
+assert(
+  filtered_json.diagnostics[1].message == "Property keys must be doublequoted",
+  "other embedded JSON diagnostics must remain visible"
+)
+local regular_json = filter_diagnostics({
+  uri = "file:///tmp/config.json",
+  diagnostics = { { message = "End of file expected." } },
+})
+assert(#regular_json.diagnostics == 1, "regular JSON diagnostics must not be filtered")
+
 assert(vim.wait(15000, function()
   for _, client in ipairs(vim.lsp.get_clients()) do
     if client.name == "jsonls" then return true end

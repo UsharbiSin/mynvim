@@ -9,22 +9,32 @@ local function is_e303(diagnostic)
       or (diagnostic.message or ""):match("^E303[%s:]") ~= nil
 end
 
+local function is_json_end_of_file_expected(diagnostic)
+  return (diagnostic.message or ""):lower() == "end of file expected."
+end
+
 local function filter_diagnostics(result)
-  if not result or not result.uri or not result.uri:lower():match("%.otter%.py$") then
+  if not result or not result.uri then
     return result
   end
+
+  local uri = result.uri:lower()
+  local is_python_raft = uri:match("%.otter%.py$") ~= nil
+  local is_json_raft = uri:match("%.otter%.json$") ~= nil
+  if not is_python_raft and not is_json_raft then return result end
+
   result = vim.deepcopy(result)
   result.diagnostics = vim.tbl_filter(function(diagnostic)
-    return not is_e303(diagnostic)
+    if is_python_raft and is_e303(diagnostic) then return false end
+    if is_json_raft and is_json_end_of_file_expected(diagnostic) then return false end
+    return true
   end, result.diagnostics or {})
   return result
 end
 
-local function filter_python_e303(client)
-  if client._markdown_otter_e303_filter then
-    return
-  end
-  client._markdown_otter_e303_filter = true
+local function filter_markdown_raft_diagnostics(client)
+  if client._markdown_otter_diagnostic_filter then return end
+  client._markdown_otter_diagnostic_filter = true
   local original = client.handlers[publish_diagnostics] or vim.lsp.handlers[publish_diagnostics]
   client.handlers[publish_diagnostics] = function(error, result, context, config)
     return original(error, filter_diagnostics(result), context, config)
@@ -77,10 +87,10 @@ function M.setup()
     group = group,
     callback = function(args)
       local name = vim.api.nvim_buf_get_name(args.buf):lower()
-      if name:match("%.otter%.py$") then
+      if name:match("%.otter%.py$") or name:match("%.otter%.json$") then
         local client = vim.lsp.get_client_by_id(args.data.client_id)
-        if client and client.name == "pylsp" then
-          filter_python_e303(client)
+        if client and (client.name == "pylsp" or client.name == "jsonls") then
+          filter_markdown_raft_diagnostics(client)
         end
       end
     end,
