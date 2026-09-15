@@ -3,6 +3,7 @@ local M = {}
 local supported_filetypes = { markdown = true, vimwiki = true }
 local lsp_languages = { "python", "lua", "c", "cpp", "java", "javascript", "html", "json", "sql" }
 local publish_diagnostics = vim.lsp.protocol.Methods.textDocument_publishDiagnostics
+local pull_diagnostics = vim.lsp.protocol.Methods.textDocument_diagnostic
 
 local function is_e303(diagnostic)
   return tostring(diagnostic.code or ""):upper() == "E303"
@@ -13,31 +14,52 @@ local function is_json_end_of_file_expected(diagnostic)
   return (diagnostic.message or ""):lower() == "end of file expected."
 end
 
-local function filter_diagnostics(result)
-  if not result or not result.uri then
-    return result
-  end
-
-  local uri = result.uri:lower()
+local function filter_diagnostic_items(uri, diagnostics)
+  uri = (uri or ""):lower()
   local is_python_raft = uri:match("%.otter%.py$") ~= nil
   local is_json_raft = uri:match("%.otter%.json$") ~= nil
-  if not is_python_raft and not is_json_raft then return result end
+  if not is_python_raft and not is_json_raft then return diagnostics end
 
-  result = vim.deepcopy(result)
-  result.diagnostics = vim.tbl_filter(function(diagnostic)
+  return vim.tbl_filter(function(diagnostic)
     if is_python_raft and is_e303(diagnostic) then return false end
     if is_json_raft and is_json_end_of_file_expected(diagnostic) then return false end
     return true
-  end, result.diagnostics or {})
+  end, diagnostics or {})
+end
+
+local function filter_diagnostics(result)
+  if not result or not result.uri then return result end
+
+  result = vim.deepcopy(result)
+  result.diagnostics = filter_diagnostic_items(result.uri, result.diagnostics)
+  return result
+end
+
+local function filter_pull_diagnostics(result, context)
+  if not result or result.kind == "unchanged" then return result end
+
+  local params = context and context.params or nil
+  local text_document = params and params.textDocument or nil
+  local uri = text_document and text_document.uri or nil
+  if not uri then return result end
+
+  result = vim.deepcopy(result)
+  result.items = filter_diagnostic_items(uri, result.items)
   return result
 end
 
 local function filter_markdown_raft_diagnostics(client)
   if client._markdown_otter_diagnostic_filter then return end
   client._markdown_otter_diagnostic_filter = true
+
   local original = client.handlers[publish_diagnostics] or vim.lsp.handlers[publish_diagnostics]
   client.handlers[publish_diagnostics] = function(error, result, context, config)
     return original(error, filter_diagnostics(result), context, config)
+  end
+
+  local original_pull = client.handlers[pull_diagnostics] or vim.lsp.handlers[pull_diagnostics]
+  client.handlers[pull_diagnostics] = function(error, result, context, config)
+    return original_pull(error, filter_pull_diagnostics(result, context), context, config)
   end
 end
 
@@ -102,5 +124,6 @@ function M.setup()
 end
 
 M.filter_diagnostics = filter_diagnostics
+M.filter_pull_diagnostics = filter_pull_diagnostics
 
 return M
