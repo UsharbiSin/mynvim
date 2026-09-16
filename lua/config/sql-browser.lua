@@ -622,9 +622,8 @@ local function result_query_lines(session)
   local sql = session and session.query_sql
   if not sql or vim.trim(sql) == "" then return {} end
 
-  local lines = { " 查询 SQL：" }
-  vim.list_extend(lines, vim.split(sql, "\n", { plain = true }))
-  return lines
+  sql = vim.trim(sql:gsub("%s+", " "))
+  return { " 查询 SQL：" .. sql }
 end
 
 M._result_query_lines = result_query_lines
@@ -657,6 +656,85 @@ local function install_filter_join_render()
     return result
   end
   view._sql_browser_join_render = true
+end
+
+local function line_in_result_data(session, line)
+  local render = session and session._render
+  if not render then return false end
+
+  local data_start = render.data_start or 4
+  local data_end = data_start + #(render.ordered or {}) - 1
+  return line >= data_start and line <= data_end
+end
+
+M._line_in_result_data = line_in_result_data
+
+local function visual_selection_in_result_data(session)
+  local start_line = vim.fn.line("v")
+  local end_line = vim.fn.line(".")
+  if start_line > end_line then start_line, end_line = end_line, start_line end
+  return line_in_result_data(session, start_line)
+    and line_in_result_data(session, end_line)
+end
+
+function M.result_yank_expr()
+  local bufnr = vim.api.nvim_get_current_buf()
+  local view = require("dadbod-grip.view")
+  local session = view._sessions[bufnr]
+  local line = vim.api.nvim_win_get_cursor(0)[1]
+
+  if line_in_result_data(session, line) then
+    local cell = view.get_cell(bufnr)
+    if cell then
+      local value = cell.value or ""
+      vim.fn.setreg("+", value)
+      vim.schedule(function()
+        vim.notify("Yanked: " .. value, vim.log.levels.INFO)
+      end)
+      return "<Ignore>"
+    end
+  end
+
+  -- 表格外恢复 Vim 原生 yank 运算符，并直接写入系统剪贴板。
+  return '"+y'
+end
+
+
+function M.result_visual_yank_expr()
+  local bufnr = vim.api.nvim_get_current_buf()
+  local view = require("dadbod-grip.view")
+  local session = view._sessions[bufnr]
+
+  if visual_selection_in_result_data(session) then
+    local cell = view.get_cell(bufnr)
+    if cell then
+      local render = session._render
+      local data_start = render.data_start or 4
+      local start_line = vim.fn.line("v")
+      local end_line = vim.fn.line(".")
+      if start_line > end_line then start_line, end_line = end_line, start_line end
+
+      local data = require("dadbod-grip.data")
+      local values = {}
+      for line = start_line, end_line do
+        local row_index = render.ordered[line - data_start + 1]
+        local value = row_index and data.effective_value(session.state, row_index, cell.col_name)
+        values[#values + 1] = value or ""
+      end
+
+      vim.fn.setreg("+", table.concat(values, "\n"))
+      vim.schedule(function()
+        vim.notify(
+          ("Yanked %d cells from %s"):format(#values, cell.col_name),
+          vim.log.levels.INFO
+        )
+      end)
+      return "<Esc>"
+    end
+  end
+
+  -- 状态、筛选、提示、查询 SQL 等非数据区按普通文本复制。
+  return '"+y'
 end
 
 local function confirm_discard_result_changes(session, action)
@@ -976,6 +1054,18 @@ function M.setup()
           buffer = event.buf,
           silent = true,
           desc = "SQL：删除当前筛选条件或数据行",
+        })
+        vim.keymap.set("n", "y", M.result_yank_expr, {
+          buffer = event.buf,
+          silent = true,
+          expr = true,
+          desc = "SQL：表格内复制单元格，表格外使用原生复制",
+        })
+        vim.keymap.set("x", "y", M.result_visual_yank_expr, {
+          buffer = event.buf,
+          silent = true,
+          expr = true,
+          desc = "SQL：表格内复制选中单元格，表格外复制选中文本",
         })
         vim.keymap.set("n", "<leader>ss", function()
           M.sort_result_column("ASC")

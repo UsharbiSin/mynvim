@@ -100,13 +100,19 @@ browser.setup()
 assert(vim.deep_equal(browser._result_query_lines({
   query_sql = "SELECT id, name\nFROM people\nWHERE active = 1",
 }), {
-  " 查询 SQL：",
-  "SELECT id, name",
-  "FROM people",
-  "WHERE active = 1",
-}), "result grid footer must preserve the SQL text and line breaks")
+  " 查询 SQL：SELECT id, name FROM people WHERE active = 1",
+}), "result grid footer must collapse the SQL to one line")
 assert(vim.deep_equal(browser._result_query_lines({ query_sql = "   " }), {}),
   "blank SQL must not add an empty query footer")
+assert(browser._line_in_result_data({
+  _render = { data_start = 4, ordered = { 1, 2 } },
+}, 4), "the first rendered data row must be treated as table data")
+assert(browser._line_in_result_data({
+  _render = { data_start = 4, ordered = { 1, 2 } },
+}, 5), "the last rendered data row must be treated as table data")
+assert(not browser._line_in_result_data({
+  _render = { data_start = 4, ordered = { 1, 2 } },
+}, 6), "status and footer lines must be treated as ordinary text")
 vim.api.nvim_exec_autocmds("BufEnter", { buffer = bufnr })
 vim.wait(1000, function()
   return vim.fn.maparg("<leader>sx", "n", false, true).buffer == 1
@@ -126,6 +132,14 @@ assert(
 assert(
   vim.fn.maparg("d", "n", false, true).desc == "SQL：删除当前筛选条件或数据行",
   "result grid must make d context-sensitive for filters and rows"
+)
+assert(
+  vim.fn.maparg("y", "n", false, true).desc == "SQL：表格内复制单元格，表格外使用原生复制",
+  "normal y must fall back to native yank outside table data"
+)
+assert(
+  vim.fn.maparg("y", "x", false, true).desc == "SQL：表格内复制选中单元格，表格外复制选中文本",
+  "visual y must copy ordinary text outside table data"
 )
 vim.api.nvim_win_set_cursor(0, { 1, 0 })
 browser.reorder_result_column(-1)
