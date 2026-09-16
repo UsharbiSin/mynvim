@@ -3,6 +3,7 @@ local M = {}
 local metadata = require("config.sql-metadata")
 local namespace = vim.api.nvim_create_namespace("SqlCommentBrowser")
 local filter_join_namespace = vim.api.nvim_create_namespace("SqlFilterJoin")
+local result_query_namespace = vim.api.nvim_create_namespace("SqlResultQuery")
 local result_column_orders = {}
 local result_cleanup_registered = {}
 local result_filter_join_modes = {}
@@ -617,12 +618,41 @@ local function annotate_filter_joins(bufnr, view)
   end
 end
 
+local function result_query_lines(session)
+  local sql = session and session.query_sql
+  if not sql or vim.trim(sql) == "" then return {} end
+
+  local lines = { " 查询 SQL：" }
+  vim.list_extend(lines, vim.split(sql, "\n", { plain = true }))
+  return lines
+end
+
+M._result_query_lines = result_query_lines
+
+local function append_result_query(bufnr, view)
+  if not vim.api.nvim_buf_is_valid(bufnr) then return end
+
+  local lines = result_query_lines(view._sessions[bufnr])
+  if #lines == 0 then return end
+
+  local start_line = vim.api.nvim_buf_line_count(bufnr)
+  vim.api.nvim_set_option_value("modifiable", true, { buf = bufnr })
+  vim.api.nvim_buf_set_lines(bufnr, -1, -1, false, lines)
+  vim.api.nvim_set_option_value("modifiable", false, { buf = bufnr })
+  vim.api.nvim_buf_clear_namespace(bufnr, result_query_namespace, 0, -1)
+  vim.api.nvim_buf_set_extmark(bufnr, result_query_namespace, start_line, 0, {
+    end_col = #lines[1],
+    hl_group = "Comment",
+  })
+end
+
 local function install_filter_join_render()
   local view = require("dadbod-grip.view")
   if view._sql_browser_join_render then return end
   local original_render = view.render
   view.render = function(bufnr, render_state)
     local result = original_render(bufnr, render_state)
+    append_result_query(bufnr, view)
     annotate_filter_joins(bufnr, view)
     return result
   end

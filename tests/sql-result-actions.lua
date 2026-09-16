@@ -97,6 +97,16 @@ package.loaded["dadbod-grip.query"] = {
 
 local browser = require("config.sql-browser")
 browser.setup()
+assert(vim.deep_equal(browser._result_query_lines({
+  query_sql = "SELECT id, name\nFROM people\nWHERE active = 1",
+}), {
+  " 查询 SQL：",
+  "SELECT id, name",
+  "FROM people",
+  "WHERE active = 1",
+}), "result grid footer must preserve the SQL text and line breaks")
+assert(vim.deep_equal(browser._result_query_lines({ query_sql = "   " }), {}),
+  "blank SQL must not add an empty query footer")
 vim.api.nvim_exec_autocmds("BufEnter", { buffer = bufnr })
 vim.wait(1000, function()
   return vim.fn.maparg("<leader>sx", "n", false, true).buffer == 1
