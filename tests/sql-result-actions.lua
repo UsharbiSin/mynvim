@@ -100,7 +100,7 @@ browser.setup()
 assert(vim.deep_equal(browser._result_query_lines({
   query_sql = "SELECT id, name\nFROM people\nWHERE active = 1",
 }), {
-  " 查询 SQL：SELECT id, name FROM people WHERE active = 1",
+  " SELECT id, name FROM people WHERE active = 1",
 }), "result grid footer must collapse the SQL to one line")
 assert(vim.deep_equal(browser._result_query_lines({ query_sql = "   " }), {}),
   "blank SQL must not add an empty query footer")

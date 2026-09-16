@@ -623,7 +623,7 @@ local function result_query_lines(session)
   if not sql or vim.trim(sql) == "" then return {} end
 
   sql = vim.trim(sql:gsub("%s+", " "))
-  return { " 查询 SQL：" .. sql }
+  return { " " .. sql }
 end
 
 M._result_query_lines = result_query_lines
