@@ -38,6 +38,7 @@ require("dadbod-grip").setup({
   ai = false,
   completion = false,
   discovery = false,
+  limit = 1000,
   timeout = 300000,
 })
 

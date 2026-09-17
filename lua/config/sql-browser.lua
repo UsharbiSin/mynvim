@@ -85,6 +85,156 @@ local function restore_result_column_order(bufnr, view)
   view.render(bufnr, next_state)
 end
 
+local function install_local_sort_support()
+  local data = require("dadbod-grip.data")
+  if data._sql_browser_local_sort_support then return end
+
+  local original_get_ordered_rows = data.get_ordered_rows
+  data._sql_browser_original_get_ordered_rows = original_get_ordered_rows
+  data.get_ordered_rows = function(result_state)
+    local local_order = result_state and result_state._sql_browser_order
+    if not local_order then return original_get_ordered_rows(result_state) end
+
+    -- 本地排序只保存行索引，不改写 Dadbod Grip 的原始 rows。
+    -- 若排序后又插入了新行，把新行补到末尾，避免它从结果表消失。
+    local base_order = original_get_ordered_rows(result_state)
+    local available = {}
+    for _, row_index in ipairs(base_order) do available[row_index] = true end
+
+    local order = {}
+    for _, row_index in ipairs(local_order) do
+      if available[row_index] then
+        order[#order + 1] = row_index
+        available[row_index] = nil
+      end
+    end
+    for _, row_index in ipairs(base_order) do
+      if available[row_index] then order[#order + 1] = row_index end
+    end
+    return order
+  end
+  data._sql_browser_local_sort_support = true
+end
+
+local function compare_result_values(left, right)
+  if left == right then return 0 end
+  if left == nil then return -1 end
+  if right == nil then return 1 end
+
+  local left_number = tonumber(left)
+  local right_number = tonumber(right)
+  if left_number and right_number then
+    if left_number < right_number then return -1 end
+    if left_number > right_number then return 1 end
+    return 0
+  end
+
+  local left_text = tostring(left)
+  local right_text = tostring(right)
+  if left_text < right_text then return -1 end
+  if left_text > right_text then return 1 end
+  return 0
+end
+
+local function sorted_result_order(result_state, sorts)
+  if not sorts or #sorts == 0 then return nil end
+
+  local data = require("dadbod-grip.data")
+  local get_base_order = data._sql_browser_original_get_ordered_rows or data.get_ordered_rows
+  local order = get_base_order(result_state)
+  local original_position = {}
+  for index, row_index in ipairs(order) do original_position[row_index] = index end
+
+  table.sort(order, function(left_row, right_row)
+    for _, sort in ipairs(sorts) do
+      local comparison = compare_result_values(
+        data.effective_value(result_state, left_row, sort.column),
+        data.effective_value(result_state, right_row, sort.column)
+      )
+      if comparison ~= 0 then
+        if sort.dir == "DESC" then return comparison > 0 end
+        return comparison < 0
+      end
+    end
+    return original_position[left_row] < original_position[right_row]
+  end)
+  return order
+end
+
+local function apply_local_result_sort(bufnr, view, spec)
+  local session = view._sessions[bufnr]
+  if not session or not session.state or not spec then return false end
+
+  local next_state = {}
+  for key, value in pairs(session.state) do next_state[key] = value end
+  next_state._sql_browser_order = sorted_result_order(next_state, spec.sorts or {})
+
+  session.query_spec = vim.deepcopy(spec)
+  session._sql_browser_local_sort = #(spec.sorts or {}) > 0
+  view.render(bufnr, next_state)
+  return true
+end
+
+local function differs_only_by_sort(current_spec, next_spec)
+  if not current_spec or not next_spec then return false end
+  if vim.deep_equal(current_spec.sorts or {}, next_spec.sorts or {}) then return false end
+
+  local current = vim.deepcopy(current_spec)
+  local next_value = vim.deepcopy(next_spec)
+  current.sorts, next_value.sorts = nil, nil
+  -- Dadbod Grip 的排序操作会顺手回到第 1 页；本地排序不换页。
+  current.page, next_value.page = nil, nil
+  return vim.deep_equal(current, next_value)
+end
+
+local function wrap_result_requery(bufnr, view)
+  local session = view._sessions[bufnr]
+  if not session or not session.on_requery or session._sql_browser_requery_wrapped then return end
+
+  local original_on_requery = session.on_requery
+  session._sql_browser_requery_wrapped = true
+  session.on_requery = function(target_bufnr, next_spec)
+    local current = view._sessions[target_bufnr]
+    if not current then return end
+
+    if differs_only_by_sort(current.query_spec, next_spec) then
+      local local_spec = vim.deepcopy(next_spec)
+      local_spec.page = current.query_spec and current.query_spec.page or local_spec.page
+      apply_local_result_sort(target_bufnr, view, local_spec)
+      return
+    end
+
+    if not current._sql_browser_local_sort then
+      original_on_requery(target_bufnr, next_spec)
+      return
+    end
+
+    -- 筛选/翻页仍然需要访问数据库，但排序必须只在当前结果集本地执行。
+    -- 因此数据库查询去掉 ORDER BY，查询完成后再对新结果重排。
+    local previous_state = current.state
+    local previous_spec = vim.deepcopy(current.query_spec)
+    local previous_sql = current.query_sql
+    local previous_total_rows = current.total_rows
+
+    local database_spec = vim.deepcopy(next_spec)
+    database_spec.sorts = {}
+    original_on_requery(target_bufnr, database_spec)
+
+    local refreshed = view._sessions[target_bufnr]
+    if not refreshed then return end
+    if refreshed.state == previous_state then
+      refreshed.query_spec = previous_spec
+      refreshed.query_sql = previous_sql
+      refreshed.total_rows = previous_total_rows
+      return
+    end
+
+    local local_spec = vim.deepcopy(next_spec)
+    if refreshed.query_spec then local_spec.page = refreshed.query_spec.page end
+    apply_local_result_sort(target_bufnr, view, local_spec)
+  end
+end
+
 local function valid_win(winid)
   return winid and vim.api.nvim_win_is_valid(winid)
 end
@@ -650,6 +800,14 @@ local function install_filter_join_render()
   if view._sql_browser_join_render then return end
   local original_render = view.render
   view.render = function(bufnr, render_state)
+    local session = view._sessions[bufnr]
+    local sorts = session and session.query_spec and session.query_spec.sorts or {}
+    if render_state and #sorts > 0 and not render_state._sql_browser_order then
+      local next_state = {}
+      for key, value in pairs(render_state) do next_state[key] = value end
+      next_state._sql_browser_order = sorted_result_order(next_state, sorts)
+      render_state = next_state
+    end
     local result = original_render(bufnr, render_state)
     append_result_query(bufnr, view)
     annotate_filter_joins(bufnr, view)
@@ -925,42 +1083,11 @@ function M.sort_result_column(direction)
     return
   end
 
-  local data = require("dadbod-grip.data")
-  if data.has_changes(session.state) then
-    local staged = data.count_staged(session.state)
-    local choice = vim.fn.confirm(
-      ("排序会放弃 %d 项尚未提交的修改，是否继续？"):format(staged),
-      "&继续\n&取消",
-      2
-    )
-    if choice ~= 1 then return end
-  end
-
   local spec = vim.deepcopy(session.query_spec)
-  local sorts = spec.sorts or {}
-  local next_sorts = {}
-  local found = false
-  for _, sort in ipairs(sorts) do
-    if sort.column == column then
-      found = true
-      -- 同一列再次使用相同方向时取消该排序；相反方向则更新方向。
-      if sort.dir ~= direction then
-        next_sorts[#next_sorts + 1] = { column = column, dir = direction }
-      end
-    else
-      next_sorts[#next_sorts + 1] = vim.deepcopy(sort)
-    end
-  end
-  if not found then
-    -- 新列追加到 ORDER BY 末尾，保留之前列的优先级，实现联动排序。
-    next_sorts[#next_sorts + 1] = { column = column, dir = direction }
-  end
-  spec.sorts = next_sorts
-  spec.page = 1
-  if session.on_requery then
-    session.on_requery(bufnr, spec)
-    restore_result_column_order(bufnr, view)
-  end
+  spec.sorts = M._next_sorts(spec.sorts or {}, column, direction)
+  -- 本地排序只重排当前已经取得的结果，不重新访问数据库，也不切换分页。
+  spec.page = session.query_spec.page
+  apply_local_result_sort(bufnr, view, spec)
 end
 
 M._next_sorts = function(sorts, column, direction)
@@ -981,8 +1108,32 @@ M._next_sorts = function(sorts, column, direction)
 end
 
 M._merge_column_order = merge_column_order
+M._sorted_result_order = sorted_result_order
+
+function M.toggle_result_sort(stacked)
+  local bufnr = vim.api.nvim_get_current_buf()
+  local view = require("dadbod-grip.view")
+  local session = view._sessions[bufnr]
+  if not session or not session.query_spec or not session._render then return end
+
+  local cursor = vim.api.nvim_win_get_cursor(0)
+  local visible = session._render.visible_columns or session.state.columns
+  local column = view._resolve_col_at(session._render, visible, cursor[1], cursor[2])
+  if not column then
+    vim.notify("请先把光标移到需要排序的列", vim.log.levels.INFO)
+    return
+  end
+
+  local query = require("dadbod-grip.query")
+  local spec = stacked
+      and query.add_sort(session.query_spec, column)
+      or query.toggle_sort(session.query_spec, column)
+  spec.page = session.query_spec.page
+  apply_local_result_sort(bufnr, view, spec)
+end
 
 function M.setup()
+  install_local_sort_support()
   install_query_join_support()
   install_filter_join_render()
 
@@ -995,6 +1146,7 @@ function M.setup()
         if not vim.api.nvim_buf_is_valid(event.buf) then return end
         local ok, view = pcall(require, "dadbod-grip.view")
         if not ok or not view._sessions[event.buf] then return end
+        wrap_result_requery(event.buf, view)
         if not result_cleanup_registered[event.buf] then
           result_cleanup_registered[event.buf] = true
           vim.api.nvim_create_autocmd("BufWipeout", {
@@ -1039,6 +1191,20 @@ function M.setup()
           buffer = event.buf,
           silent = true,
           desc = "SQL：按当前列降序排列",
+        })
+        vim.keymap.set("n", "s", function()
+          M.toggle_result_sort(false)
+        end, {
+          buffer = event.buf,
+          silent = true,
+          desc = "SQL：本地切换当前列排序",
+        })
+        vim.keymap.set("n", "S", function()
+          M.toggle_result_sort(true)
+        end, {
+          buffer = event.buf,
+          silent = true,
+          desc = "SQL：本地叠加当前列排序",
         })
         vim.keymap.set("n", "/", M.filter_result_column, {
           buffer = event.buf,

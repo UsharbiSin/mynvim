@@ -111,6 +111,65 @@ function M.with_connection(callback)
   M.select_connection(callback)
 end
 
+local function open_exact_query(sql, url, opts)
+  local query = require("dadbod-grip.query")
+  local grip = require("dadbod-grip")
+  local view = require("dadbod-grip.view")
+  local cleaned_sql = sql and sql:gsub(";%s*$", "") or sql
+
+  local original_build_sql = query.build_sql
+  local original_page_info = query.page_info
+
+  -- Dadbod Grip 默认会把原始 SELECT 包成子查询后再追加分页 LIMIT。
+  -- <leader>sr 要严格执行用户写下的查询，因此首轮查询直接交给数据库。
+  query.build_sql = function(spec, build_opts)
+    if spec.is_raw
+        and spec.base_sql == cleaned_sql
+        and #(spec.filters or {}) == 0
+        and #(spec.sorts or {}) == 0
+        and (spec.page or 1) == 1 then
+      return spec.base_sql
+    end
+    return original_build_sql(spec, build_opts)
+  end
+
+  -- 首次渲染时就把原始查询视为一个完整结果集，避免显示成“第 1/N 页”。
+  query.page_info = function(spec, total_rows)
+    if spec.is_raw and spec.base_sql == cleaned_sql and total_rows ~= nil then
+      return ("Page 1/1 (%d rows)"):format(total_rows)
+    end
+    return original_page_info(spec, total_rows)
+  end
+
+  local ok, err = xpcall(function()
+    grip.open(sql, url, opts)
+  end, debug.traceback)
+
+  query.build_sql = original_build_sql
+  query.page_info = original_page_info
+
+  if not ok then return false, err end
+
+  -- open() 是同步的，返回后当前 buffer 已经是结果表。把分页大小同步成
+  -- 实际取得的行数，后续本地排序/重绘时仍保持“完整结果集”的语义。
+  local result_buf = vim.api.nvim_get_current_buf()
+  local session = view._sessions[result_buf]
+  if session
+      and session.state
+      and session.query_spec
+      and session.query_spec.is_raw
+      and session.query_spec.base_sql == cleaned_sql then
+    local row_count = #(session.state.rows or {})
+    session.query_spec.page = 1
+    session.query_spec.page_size = math.max(row_count, 1)
+    session.total_rows = row_count
+  end
+
+  return true
+end
+
+M._open_exact_query = open_exact_query
+
 function M.run(sql)
   local source_buf = vim.api.nvim_get_current_buf()
   local current = M.current_connection()
@@ -132,9 +191,12 @@ function M.run(sql)
     return
   end
 
-  require("dadbod-grip").open(sql, url, {
+  local ok, err = open_exact_query(sql, url, {
     source_path = vim.api.nvim_buf_get_name(source_buf),
   })
+  if not ok then
+    vim.notify("SQL 执行失败：" .. tostring(err), vim.log.levels.ERROR)
+  end
 end
 
 function M.run_buffer()

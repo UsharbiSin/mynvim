@@ -167,36 +167,38 @@ assert(vim.deep_equal(
   { "name", "id", "status" }
 ))
 
-local sorted
-session.on_requery = function(_, spec)
-  sorted = spec
-
-  session.state = {
-    columns = { "id", "name", "created_at" },
-    rows = {
-      { "1", "Alice", "2026-09-08" },
-    },
-  }
+session.state.rows = {
+  { "Bob", "2", "2026-09-10" },
+  { "Alice", "10", "2026-09-08" },
+  { "Alice", "3", "2026-09-09" },
+}
+session.query_spec = { sorts = {}, filters = {}, page = 3 }
+local requery_count = 0
+session.on_requery = function()
+  requery_count = requery_count + 1
 end
 browser.sort_result_column("ASC")
 
-assert(vim.deep_equal(
-  session.state.columns,
-  { "name", "id", "created_at" }
-))
+assert(requery_count == 0, "sorting the result grid must not requery the database")
+assert(session.query_spec.sorts[1].column == "name" and session.query_spec.sorts[1].dir == "ASC")
+assert(session.query_spec.page == 3, "local sorting must keep the current page")
+assert(vim.deep_equal(fake_data.get_ordered_rows(session.state), { 2, 3, 1 }),
+  "ascending sort must reorder only the rendered row indexes")
+assert(vim.deep_equal(session.state.rows, {
+  { "Bob", "2", "2026-09-10" },
+  { "Alice", "10", "2026-09-08" },
+  { "Alice", "3", "2026-09-09" },
+}), "local sorting must not rewrite the original result rows")
 
-assert(vim.deep_equal(
-  session.state.rows,
-  {
-    { "Alice", "1", "2026-09-08" },
-  }
-))
-assert(sorted.sorts[1].column == "name" and sorted.sorts[1].dir == "ASC")
-assert(sorted.page == 1)
-assert(vim.deep_equal(session.state.columns, { "name", "id", "created_at" }))
 browser.sort_result_column("DESC")
-assert(sorted.sorts[1].column == "name" and sorted.sorts[1].dir == "DESC")
-assert(vim.deep_equal(session.state.columns, { "name", "id", "created_at" }))
+assert(session.query_spec.sorts[1].column == "name" and session.query_spec.sorts[1].dir == "DESC")
+assert(vim.deep_equal(fake_data.get_ordered_rows(session.state), { 1, 2, 3 }),
+  "descending sort must be applied locally")
+browser.sort_result_column("DESC")
+assert(#session.query_spec.sorts == 0, "repeating the same direction must cancel the local sort")
+assert(vim.deep_equal(fake_data.get_ordered_rows(session.state), { 1, 2, 3 }),
+  "cancelling sort must restore the original result order")
+assert(requery_count == 0, "changing or cancelling local sort must never requery")
 
 assert(vim.deep_equal(browser._next_sorts({}, "name", "ASC"), {
   { column = "name", dir = "ASC" },
