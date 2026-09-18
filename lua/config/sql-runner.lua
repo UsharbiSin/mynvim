@@ -1,56 +1,7 @@
 local M = {}
 
-local connection_defs = {
-  { name = "tongyan",          suffix = "TY" },
-  { name = "tongyan_test",     suffix = "TYTEST" },
-  { name = "platform_st",      suffix = "ST" },
-  { name = "platform_st_test", suffix = "STTEST" },
-}
-
-local function get_connection(item)
-  local suffix = item.suffix
-
-  for _, field in ipairs({
-    "USER",
-    "PASSWORD",
-    "HOST",
-    "PORT",
-    "NAME",
-  }) do
-    local value = os.getenv("DB_" .. field .. "_" .. suffix)
-
-    if not value or value == "" then
-      return nil
-    end
-  end
-
-  return {
-    name = item.name,
-
-    -- 保留环境变量占位符，由 Dadbod Grip 在真正连接时展开。
-    url = string.format(
-      "mysql://${DB_USER_%s}:${DB_PASSWORD_%s}@${DB_HOST_%s}:${DB_PORT_%s}/${DB_NAME_%s}",
-      suffix,
-      suffix,
-      suffix,
-      suffix,
-      suffix
-    ),
-  }
-end
-
 function M.connections()
-  local result = {}
-
-  for _, item in ipairs(connection_defs) do
-    local conn = get_connection(item)
-
-    if conn then
-      table.insert(result, conn)
-    end
-  end
-
-  return result
+  return require("config.sql-credentials").connections()
 end
 
 function M.current_connection(bufnr)
@@ -70,7 +21,7 @@ function M.select_connection(on_select)
 
   if #items == 0 then
     vim.notify(
-      "没有找到完整的数据库环境变量",
+      "没有找到完整的数据库普通连接参数（USER/HOST/PORT/NAME）",
       vim.log.levels.ERROR
     )
     return

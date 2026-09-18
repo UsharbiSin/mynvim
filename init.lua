@@ -6,6 +6,9 @@ vim.g.loaded_ruby_provider = 0
 
 vim.g.is_win = vim.fn.has("win32")
 
+-- 插件启动前清理继承的 SQL 密码；密码只从系统凭据库按需获取。
+require("config.sql-credentials").setup()
+
 -- ==========================================
 -- 加载核心配置 (Core)
 -- ==========================================

@@ -10,54 +10,14 @@
 --- ```
 --- Sqls can be installed via `go install github.com/sqls-server/sqls@latest`. Instructions for compiling Sqls from the source can be found at [sqls-server/sqls](https://github.com/sqls-server/sqls).
 
-local function connection(alias, suffix)
-  local values = {}
-  for _, field in ipairs({ "USER", "PASSWORD", "HOST", "PORT", "NAME" }) do
-    local value = os.getenv("DB_" .. field .. "_" .. suffix)
-    if not value or value == "" then
-      return nil
-    end
-    values[field] = value
-  end
-
-  return {
-    alias = alias,
-    driver = "mysql",
-    dataSourceName = string.format(
-      "%s:%s@tcp(%s:%s)/%s",
-      values.USER,
-      values.PASSWORD,
-      values.HOST,
-      values.PORT,
-      values.NAME
-    ),
-  }
-end
-
-local connections = {}
-for _, item in ipairs({
-  { "tongyan", "TY" },
-  { "tongyan_test", "TYTEST" },
-  { "platform_st", "ST" },
-  { "platform_st_test", "STTEST" },
-}) do
-  local value = connection(item[1], item[2])
-  if value then
-    table.insert(connections, value)
-  end
-end
-
 ---@type vim.lsp.Config
 return {
-  cmd = { 'sqls' },
-  filetypes = { 'sql', 'mysql' },
-  -- 语法诊断和格式化交给 SQLFluff。
+  cmd = { "sqls" },
+  filetypes = { "sql", "mysql" },
+  -- 全局配置不包含密码，启动 SQLS 后再异步从系统凭据库读取。
+  on_init = require("config.sql-credentials.sqls").on_init,
   handlers = {
     ["textDocument/publishDiagnostics"] = function() end,
   },
-  settings = {
-    sqls = {
-      connections = connections,
-    },
-  },
+  settings = { sqls = { connections = {} } },
 }
