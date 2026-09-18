@@ -6,18 +6,25 @@
 
 ## 连接配置
 
-项目定义四个 MySQL 连接，每个从五个环境变量拼接 DSN：
+项目定义四个 MySQL 连接。普通参数来自四项环境变量，密码来自本机系统凭据库，SQLS
+初始化后异步接收配置。完整步骤见 [跨平台 SQL 配置](../../sql-database-config.md)。
 
-| 连接别名 | 五个环境变量的后缀 |
+| 连接别名 / 凭据名称 | 普通环境变量的后缀 |
 | --- | --- |
 | `tongyan` | `TY` |
 | `tongyan_test` | `TYTEST` |
 | `platform_st` | `ST` |
 | `platform_st_test` | `STTEST` |
 
-每组都有 `DB_USER_<后缀>`、`DB_PASSWORD_<后缀>`、`DB_HOST_<后缀>`、`DB_PORT_<后缀>`、`DB_NAME_<后缀>`。这些是作者环境约定，不是可直接使用的公共数据库；请将连接列表改成自己的连接，删除不需要的组。环境变量必须在启动 Neovim 前设置；任一项缺失时整组连接会被省略，SQLS 仍可启动。
+每组普通参数为 `DB_USER_<后缀>`、`DB_HOST_<后缀>`、`DB_PORT_<后缀>`、`DB_NAME_<后缀>`。
+这些是作者环境约定，不是公共数据库；需要修改时统一调整 `lua/config/sql-credentials.lua`
+中的定义和迁移助手。参数缺失时该组被省略，SQLS 仍可启动。密码缺失则报告错误，不回退到
+旧环境变量。Windows 使用凭据管理器，Arch 使用 Secret Service，两机密码分别保存。
 
-例如 Bash 使用 `export DB_HOST_TY='127.0.0.1'`，PowerShell 使用 `$env:DB_HOST_TY='127.0.0.1'`；其余四项同理，密码应在自己的本地环境管理，不写进仓库。Linux 已运行的 Neovim 和 Windows 已打开的终端不会自动继承后来修改的环境变量。
+例如 Bash 使用 `export DB_HOST_TY='127.0.0.1'`，PowerShell 使用 `$env:DB_HOST_TY='127.0.0.1'`；
+其余三项同理。普通参数变更后重启 Neovim；修改系统凭据后执行 `:SqlCredentialsReload`。
+`:SqlCredentialsCheck` 只检查取密状态，不显示密码。共享 LSP settings 不保存真实 DSN，
+敏感配置通知在日志保护下发送；SQLS 进程内仍会持有建立连接所需的密码。
 
 ## 命令注册与格式化职责
 
@@ -57,4 +64,4 @@ Windows 专项测试会确认 SQLS 无数据库连接时能附着、第二条命
 `空格 lf` 与 `空格 fm` 都使用 [Conform](conform.nvim.md) 的 SQLFluff 格式化。SQL 补全和
 表结构信息仍需要有效连接。
 
-Windows 11 已实测 SQLS 在没有数据库环境变量时仍能附着；真实数据库网络未测试。无候选时先区分 SQL 服务器进程未启动、环境变量缺失、连接网络不可达、账号权限不足与插件命令未注册；不要输出整个 DSN 排错，以免把密码写入日志。
+Windows 11 已验证无连接时附着、系统凭据运行时配置和实际数据库列表查询；Arch 钥匙环会话尚未实机验证。无候选时先区分 SQL 服务器进程未启动、环境变量缺失、连接网络不可达、账号权限不足与插件命令未注册；不要输出整个 DSN 排错，以免把密码写入日志。

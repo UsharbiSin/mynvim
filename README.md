@@ -85,7 +85,7 @@ ImageMagick 和 Nerd Font，并把命令加入 PATH。插件下载完成后执�
 │   ├── jsonls.lua
 │   ├── lua_ls.lua
 │   ├── pylsp.lua
-│   └── sqls.lua              # MySQL 连接来自环境变量
+│   └── sqls.lua              # MySQL 普通参数 + 系统凭据库按需取密
 ├── lua/
 │   ├── core/
 │   │   ├── options.lua       # 编辑器全局选项与 Python 缩进
@@ -257,27 +257,32 @@ Mason 安装成功不等于 LSP 已附着；插件安装成功也不等于外部
 
 ## SQL 数据库配置
 
-`lsp/sqls.lua` 定义了四个 MySQL 连接别名，不保存凭据，只读取环境变量。使用前在启动
-Neovim 的 shell 中设置相应值：
+Windows 和 Arch 共用 `lua/config/sql-credentials.lua` 定义的四个 MySQL 连接。
+普通参数从环境变量读取；密码分别来自 Windows 凭据管理器和 Arch Secret Service，
+不再读取 `DB_PASSWORD_*`。完整安装、迁移和安全边界见
+[跨平台 SQL 数据库配置](docs/sql-database-config.md)。
 
 | 别名 | 变量后缀 | 必需变量 |
 | --- | --- | --- |
-| `tongyan` | `TY` | `DB_USER_TY`、`DB_PASSWORD_TY`、`DB_HOST_TY`、`DB_PORT_TY`、`DB_NAME_TY` |
-| `tongyan_test` | `TYTEST` | 同样五项，以 `TYTEST` 结尾 |
-| `platform_st` | `ST` | 同样五项，以 `ST` 结尾 |
-| `platform_st_test` | `STTEST` | 同样五项，以 `STTEST` 结尾 |
+| `tongyan` | `TY` | `DB_USER_TY`、`DB_HOST_TY`、`DB_PORT_TY`、`DB_NAME_TY` |
+| `tongyan_test` | `TYTEST` | 同样四项，以 `TYTEST` 结尾 |
+| `platform_st` | `ST` | 同样四项，以 `ST` 结尾 |
+| `platform_st_test` | `STTEST` | 同样四项，以 `STTEST` 结尾 |
 
 例如在当前 Linux shell 临时设置：
 
 ```bash
 export DB_USER_TY='user'
-export DB_PASSWORD_TY='replace-me'
 export DB_HOST_TY='127.0.0.1'
 export DB_PORT_TY='3306'
 export DB_NAME_TY='database'
+secret-tool store --label='Neovim SQL / tongyan' application nvim-sql connection tongyan
 nvim query.sql
 ```
 
+`secret-tool` 在终端提示输入密码；Windows 在仓库根目录运行
+`python -I -S -B -X utf8 scripts/sql_credentials.py set tongyan`。进入 Neovim 后用
+`:SqlCredentialsCheck` 检查，修改凭据后用 `:SqlCredentialsReload` 更新 SQLS。
 不要把密码写进本仓库。SQL 缓冲区使用 `<Space>swc` / `<Space>swd` 切换连接和数据库，
 `<Space>ssc` / `<Space>ssd` / `<Space>sst` 查看连接、数据库和表，`<Space>se` 执行全部或可视
 选中的 SQL 行，`<Space>sv` 纵向显示结果。这些快捷键依赖 sqls.nvim 注册缓冲区命令；

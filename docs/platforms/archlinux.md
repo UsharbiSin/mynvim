@@ -88,7 +88,9 @@ Java 语言服务要求 Java 21 或更高版本，可安装 `jdk21-openjdk` 并�
    Mason 安装目录。
 3. `lua/core/keymaps.lua` 的 `<Space>pw` 指向个人密码文档。
 4. `lua/config/vimwiki.lua` 的 `~/vimwiki/`。
-5. `lsp/sqls.lua` 的数据库别名与环境变量。不要把密码直接写进 Lua。
+5. `lua/config/sql-credentials.lua` 的数据库别名与四项普通参数。密码使用 Secret Service，
+   不再放入环境变量。安装 `libsecret` 和兼容钥匙环并解锁后，按
+   [跨平台 SQL 配置](../sql-database-config.md)保存密码；Hyprland 的会话激活和自动解锁需单独配置。
 6. `<Space>g` 需要 PATH 中有 `gemini`；不用就删除该映射。
 
 ## 6. Codex

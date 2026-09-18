@@ -13,8 +13,11 @@
 ## 连接
 
 配置在 `lua/config/dadbod-grip.lua`，复用 SQLS 的 `TY`、`TYTEST`、`ST`、`STTEST` 四组
-`DB_*` 环境变量。只有五项变量完整的连接才会显示。连接 URL 保存的是 `${VAR}` 占位符，
-Grip 执行数据库命令时才展开，因此密码不会写进仓库。
+普通 `DB_*` 参数。只有 USER/HOST/PORT/NAME 四项完整的连接才会显示；密码由 Windows
+凭据管理器或 Arch Secret Service 提供。连接 URL 仍保存 `${VAR}` 占位符，展开后只含公开
+凭据标识，真正启动 MySQL 子进程前才读取密码。密码不放入 URL、命令行或全局环境。
+目标子进程仍使用临时 `MYSQL_PWD`，其风险没有完全消除。迁移与检查见
+[跨平台 SQL 配置](../../sql-database-config.md)。
 
 可用以下命令检查客户端与插件状态：
 

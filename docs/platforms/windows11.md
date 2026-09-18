@@ -196,19 +196,21 @@ Get-Command im-select.exe
 
 - Vimwiki 使用 Linux 分区中的 `E:/@home/usharbisin/vimwiki/`；可用 `:lua =vim.g.vimwiki_list[1].path` 查看实际配置。
 - `<Space>pw` 打开 `$USERPROFILE/Documents/pswd.md`。不用此个人映射就删除。
-- SQL 数据库信息读取 `DB_USER_*` 等环境变量；只有同一连接的五项变量完整时才把该连接传给
-  SQLS，未配置数据库不会阻止 SQLS 启动。可在启动 Neovim 前临时设置：
+- SQL 普通参数读取 `DB_USER_*`、`DB_HOST_*`、`DB_PORT_*`、`DB_NAME_*` 四项环境变量，
+  密码从 Windows 凭据管理器按需读取；未配置数据库不会阻止 SQLS 启动。可临时设置普通参数：
 
 ```powershell
 $env:DB_USER_TY = 'user'
-$env:DB_PASSWORD_TY = 'replace-me'
 $env:DB_HOST_TY = '127.0.0.1'
 $env:DB_PORT_TY = '3306'
 $env:DB_NAME_TY = 'database'
+python -I -S -B -X utf8 scripts/sql_credentials.py set tongyan
 nvim query.sql
 ```
 
-需要永久变量时可使用 Windows 用户环境变量界面。不要把密码提交到 Lua 或 PowerShell profile。
+上面的脚本在配置仓库根目录运行，按提示输入密码。普通参数需要永久保存时可使用 Windows
+用户环境变量界面。旧密码变量可通过 `scripts/sql_credentials.py migrate` 迁移，默认不删除
+系统旧变量；完整步骤与显式清理方式见 [跨平台 SQL 配置](../sql-database-config.md)。
 
 ## 6. 调试器逐项配置
 
