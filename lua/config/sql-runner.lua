@@ -70,6 +70,19 @@ local function open_exact_query(sql, url, opts)
 
   local original_build_sql = query.build_sql
   local original_page_info = query.page_info
+  local original_view_open = view.open
+
+  -- 自动 COUNT 已禁用；原 SQL 的完整结果已在内存中，首屏直接用返回行数，
+  -- 不等待额外渲染，也不把超过 1000 行的完整结果误显示为可继续分页。
+  view.open = function(result_state, connection, query_sql, view_opts)
+    local spec = view_opts and view_opts.query_spec
+    if spec and spec.is_raw and spec.base_sql == cleaned_sql then
+      local row_count = #(result_state.rows or {})
+      spec.page, spec.page_size = 1, math.max(row_count, 1)
+      view_opts = vim.tbl_extend("force", {}, view_opts, { total_rows = row_count })
+    end
+    return original_view_open(result_state, connection, query_sql, view_opts)
+  end
 
   -- Dadbod Grip 默认会把原始 SELECT 包成子查询后再追加分页 LIMIT。
   -- <leader>sr 要严格执行用户写下的查询，因此首轮查询直接交给数据库。
@@ -98,6 +111,7 @@ local function open_exact_query(sql, url, opts)
 
   query.build_sql = original_build_sql
   query.page_info = original_page_info
+  view.open = original_view_open
 
   if not ok then return false, err end
 

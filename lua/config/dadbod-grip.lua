@@ -13,3 +13,4 @@ require("dadbod-grip").setup({
 })
 
 require("config.sql-browser").setup()
+require("config.sql-no-count").install()
