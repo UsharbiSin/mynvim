@@ -174,7 +174,13 @@ return {
         if require('config.image-inline').enabled() then
           require('config.image-inline').setup()
         else
-          require('image').setup({})
+          -- Linux 的 Markdown 图片由 Snacks 负责行内渲染；image.nvim 仅保留给 diagram.nvim 使用。
+          -- 若保持 image.nvim 默认的 markdown integration，会与 Snacks 各渲染一次，导致重复图片。
+          require('image').setup({
+            integrations = {
+              markdown = { enabled = false },
+            },
+          })
         end
       end },
     },
