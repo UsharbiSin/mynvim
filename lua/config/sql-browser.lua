@@ -197,19 +197,22 @@ local function wrap_result_requery(bufnr, view)
     local current = view._sessions[target_bufnr]
     if not current then return end
 
-    if differs_only_by_sort(current.query_spec, next_spec) then
+    if current.query_spec
+        and current.query_spec.is_raw
+        and differs_only_by_sort(current.query_spec, next_spec) then
       local local_spec = vim.deepcopy(next_spec)
       local_spec.page = current.query_spec and current.query_spec.page or local_spec.page
       apply_local_result_sort(target_bufnr, view, local_spec)
       return
     end
 
-    if not current._sql_browser_local_sort then
+    if not current._sql_browser_local_sort or not (current.query_spec and current.query_spec.is_raw) then
       original_on_requery(target_bufnr, next_spec)
       return
     end
 
-    -- 筛选/翻页仍然需要访问数据库，但排序必须只在当前结果集本地执行。
+    -- <leader>sr 的原始 SQL 结果是完整结果集，因此筛选/翻页刷新后
+    -- 排序仍只在当前完整结果集本地执行。
     -- 因此数据库查询去掉 ORDER BY，查询完成后再对新结果重排。
     local previous_state = current.state
     local previous_spec = vim.deepcopy(current.query_spec)
@@ -1085,9 +1088,17 @@ function M.sort_result_column(direction)
 
   local spec = vim.deepcopy(session.query_spec)
   spec.sorts = M._next_sorts(spec.sorts or {}, column, direction)
-  -- 本地排序只重排当前已经取得的结果，不重新访问数据库，也不切换分页。
-  spec.page = session.query_spec.page
-  apply_local_result_sort(bufnr, view, spec)
+  if session.query_spec.is_raw then
+    -- <leader>sr 已经取得用户 SQL 的完整结果，本地排序即可。
+    spec.page = session.query_spec.page
+    apply_local_result_sort(bufnr, view, spec)
+    return
+  end
+
+  -- <leader>st 只加载当前分页（默认 LIMIT 1000）。排序必须重新访问数据库，
+  -- 让 ORDER BY 先作用于完整表，再由数据库返回排序后的当前页。
+  spec.page = 1
+  requery_result(bufnr, view, spec)
 end
 
 M._next_sorts = function(sorts, column, direction)
@@ -1128,8 +1139,13 @@ function M.toggle_result_sort(stacked)
   local spec = stacked
       and query.add_sort(session.query_spec, column)
       or query.toggle_sort(session.query_spec, column)
-  spec.page = session.query_spec.page
-  apply_local_result_sort(bufnr, view, spec)
+  if session.query_spec.is_raw then
+    spec.page = session.query_spec.page
+    apply_local_result_sort(bufnr, view, spec)
+  else
+    spec.page = 1
+    requery_result(bufnr, view, spec)
+  end
 end
 
 function M.setup()

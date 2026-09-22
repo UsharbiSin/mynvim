@@ -172,7 +172,7 @@ session.state.rows = {
   { "Alice", "10", "2026-09-08" },
   { "Alice", "3", "2026-09-09" },
 }
-session.query_spec = { sorts = {}, filters = {}, page = 3 }
+session.query_spec = { sorts = {}, filters = {}, page = 3, is_raw = true }
 local requery_count = 0
 session.on_requery = function()
   requery_count = requery_count + 1
@@ -199,6 +199,34 @@ assert(#session.query_spec.sorts == 0, "repeating the same direction must cancel
 assert(vim.deep_equal(fake_data.get_ordered_rows(session.state), { 1, 2, 3 }),
   "cancelling sort must restore the original result order")
 assert(requery_count == 0, "changing or cancelling local sort must never requery")
+
+session.state = {
+  columns = { "name", "id", "created_at" },
+  rows = {
+    { "Bob", "2", "2026-09-10" },
+    { "Alice", "10", "2026-09-08" },
+  },
+}
+session._render.visible_columns = { "name", "id", "created_at" }
+session.query_spec = { sorts = {}, filters = {}, page = 3, page_size = 1000 }
+local table_requery_spec
+session.on_requery = function(_, spec)
+  table_requery_spec = vim.deepcopy(spec)
+  session.query_spec = vim.deepcopy(spec)
+  session.state = {
+    columns = { "name", "id", "created_at" },
+    rows = {
+      { "Alice", "10", "2026-09-08" },
+      { "Bob", "2", "2026-09-10" },
+    },
+  }
+end
+browser.sort_result_column("ASC")
+assert(table_requery_spec ~= nil, "table-browser sorting must requery the database")
+assert(table_requery_spec.page == 1, "table-browser sorting must restart from the first page")
+assert(table_requery_spec.page_size == 1000, "table-browser sorting must preserve LIMIT 1000")
+assert(table_requery_spec.sorts[1].column == "name" and table_requery_spec.sorts[1].dir == "ASC",
+  "table-browser sorting must send ORDER BY state to the database")
 
 assert(vim.deep_equal(browser._next_sorts({}, "name", "ASC"), {
   { column = "name", dir = "ASC" },
