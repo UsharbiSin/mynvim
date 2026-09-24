@@ -8,8 +8,8 @@ map({ 'n', 'v' }, '<C-s>', ':w<CR>')
 map({ 'n', 'v' }, '<C-q>', ':q<CR>')
 
 -- 光标移动优化
-map({ 'n', 'v' }, 'j', 'jzz', { noremap = true })
-map({ 'n', 'v' }, 'k', 'kzz', { noremap = true })
+-- map({ 'n', 'v' }, 'j', 'jzz', { noremap = true })
+-- map({ 'n', 'v' }, 'k', 'kzz', { noremap = true })
 map({ 'n', 'v' }, '<C-j>', '5jzz', { noremap = true })
 map({ 'n', 'v' }, '<C-k>', '5kzz', { noremap = true })
 map({ 'n', 'v' }, 'G', 'Gzz', { noremap = true })
