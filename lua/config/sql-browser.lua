@@ -771,14 +771,79 @@ local function annotate_filter_joins(bufnr, view)
   end
 end
 
-local function result_query_lines(session)
+local function mysql_display_identifier_quotes(sql)
+  local output = {}
+  local index = 1
+
+  while index <= #sql do
+    local char = sql:sub(index, index)
+
+    if char == "'" then
+      local start = index
+      index = index + 1
+      while index <= #sql do
+        if sql:sub(index, index) == "'" then
+          if sql:sub(index + 1, index + 1) == "'" then
+            index = index + 2
+          else
+            index = index + 1
+            break
+          end
+        else
+          index = index + 1
+        end
+      end
+      output[#output + 1] = sql:sub(start, index - 1)
+    elseif char == '"' then
+      local identifier = {}
+      index = index + 1
+      while index <= #sql do
+        local current = sql:sub(index, index)
+        if current == '"' then
+          if sql:sub(index + 1, index + 1) == '"' then
+            identifier[#identifier + 1] = '"'
+            index = index + 2
+          else
+            index = index + 1
+            break
+          end
+        else
+          identifier[#identifier + 1] = current
+          index = index + 1
+        end
+      end
+      output[#output + 1] = "`" .. table.concat(identifier):gsub("`", "``") .. "`"
+    else
+      output[#output + 1] = char
+      index = index + 1
+    end
+  end
+
+  return table.concat(output)
+end
+
+local function result_display_sql(session)
   local sql = session and session.query_sql
+  if not sql then return sql end
+
+  local spec = session.query_spec
+  local url = tostring(session.url or ""):lower()
+  if spec and spec.is_raw == false and (url:match("^mysql:") or url:match("^mariadb:")) then
+    return mysql_display_identifier_quotes(sql)
+  end
+  return sql
+end
+
+local function result_query_lines(session)
+  local sql = result_display_sql(session)
   if not sql or vim.trim(sql) == "" then return {} end
 
   sql = vim.trim(sql:gsub("%s+", " "))
   return { " " .. sql }
 end
 
+M._mysql_display_identifier_quotes = mysql_display_identifier_quotes
+M._result_display_sql = result_display_sql
 M._result_query_lines = result_query_lines
 
 local function append_result_query(bufnr, view)

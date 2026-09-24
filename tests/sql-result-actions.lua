@@ -102,6 +102,34 @@ assert(vim.deep_equal(browser._result_query_lines({
 }), {
   " SELECT id, name FROM people WHERE active = 1",
 }), "result grid footer must collapse the SQL to one line")
+assert(vim.deep_equal(browser._result_query_lines({
+  url = "mysql://user@localhost/test",
+  query_spec = { is_raw = false },
+  query_sql = [[SELECT * FROM "people" WHERE ("name" = 'A"B') ORDER BY "created_at" DESC LIMIT 1000]],
+}), {
+  [[ SELECT * FROM `people` WHERE (`name` = 'A"B') ORDER BY `created_at` DESC LIMIT 1000]],
+}), "MySQL table-browser footer must use native backtick identifier quoting")
+assert(vim.deep_equal(browser._result_query_lines({
+  url = "mariadb://user@localhost/test",
+  query_spec = { is_raw = false },
+  query_sql = [[SELECT * FROM "app"."weird""table" ORDER BY "tick`name" ASC LIMIT 1000]],
+}), {
+  [[ SELECT * FROM `app`.`weird"table` ORDER BY `tick``name` ASC LIMIT 1000]],
+}), "MariaDB footer must convert qualified and escaped identifiers safely")
+assert(vim.deep_equal(browser._result_query_lines({
+  url = "mysql://user@localhost/test",
+  query_spec = { is_raw = true },
+  query_sql = [[SELECT "manual_identifier" FROM people]],
+}), {
+  [[ SELECT "manual_identifier" FROM people]],
+}), "raw query footer must preserve user-authored SQL")
+assert(vim.deep_equal(browser._result_query_lines({
+  url = "postgresql://user@localhost/test",
+  query_spec = { is_raw = false },
+  query_sql = [[SELECT * FROM "people" ORDER BY "id" ASC LIMIT 1000]],
+}), {
+  [[ SELECT * FROM "people" ORDER BY "id" ASC LIMIT 1000]],
+}), "non-MySQL table-browser footer must preserve its identifier quoting")
 assert(vim.deep_equal(browser._result_query_lines({ query_sql = "   " }), {}),
   "blank SQL must not add an empty query footer")
 assert(browser._line_in_result_data({
