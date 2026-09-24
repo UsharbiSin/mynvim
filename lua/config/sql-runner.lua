@@ -62,11 +62,274 @@ function M.with_connection(callback)
   M.select_connection(callback)
 end
 
+local function sql_tokens(sql)
+  local tokens = {}
+  local depth = 0
+  local i = 1
+  local length = #sql
+
+  local function add(kind, text, start_pos, end_pos)
+    if depth ~= 0 then return end
+    tokens[#tokens + 1] = {
+      kind = kind,
+      text = text,
+      upper = kind == "word" and text:upper() or nil,
+      start_pos = start_pos,
+      end_pos = end_pos,
+    }
+  end
+
+  while i <= length do
+    local char = sql:sub(i, i)
+    local next_char = sql:sub(i + 1, i + 1)
+
+    if char:match("%s") then
+      i = i + 1
+    elseif char == "-" and next_char == "-" then
+      local newline = sql:find("\n", i + 2, true)
+      i = newline and (newline + 1) or (length + 1)
+    elseif char == "#" then
+      local newline = sql:find("\n", i + 1, true)
+      i = newline and (newline + 1) or (length + 1)
+    elseif char == "/" and next_char == "*" then
+      local close = sql:find("*/", i + 2, true)
+      i = close and (close + 2) or (length + 1)
+    elseif char == "'" then
+      i = i + 1
+      while i <= length do
+        local current = sql:sub(i, i)
+        if current == "\\" then
+          i = i + 2
+        elseif current == "'" and sql:sub(i + 1, i + 1) == "'" then
+          i = i + 2
+        elseif current == "'" then
+          i = i + 1
+          break
+        else
+          i = i + 1
+        end
+      end
+    elseif char == "`" or char == '"' then
+      local quote = char
+      local start_pos = i
+      local value = {}
+      i = i + 1
+      while i <= length do
+        local current = sql:sub(i, i)
+        if current == quote and sql:sub(i + 1, i + 1) == quote then
+          value[#value + 1] = quote
+          i = i + 2
+        elseif current == quote then
+          i = i + 1
+          break
+        else
+          value[#value + 1] = current
+          i = i + 1
+        end
+      end
+      add("ident", table.concat(value), start_pos, i - 1)
+    elseif char == "[" then
+      local start_pos = i
+      local close = sql:find("]", i + 1, true)
+      if not close then break end
+      add("ident", sql:sub(i + 1, close - 1), start_pos, close)
+      i = close + 1
+    elseif char == "(" then
+      if depth == 0 then add("lparen", char, i, i) end
+      depth = depth + 1
+      i = i + 1
+    elseif char == ")" then
+      if depth > 0 then depth = depth - 1 end
+      if depth == 0 then add("rparen", char, i, i) end
+      i = i + 1
+    elseif char == "," then
+      add("comma", char, i, i)
+      i = i + 1
+    elseif char == "." then
+      add("dot", char, i, i)
+      i = i + 1
+    elseif char == ";" then
+      add("semicolon", char, i, i)
+      i = i + 1
+    elseif char:match("[%a_]") then
+      local start_pos = i
+      i = i + 1
+      while i <= length and sql:sub(i, i):match("[%w_$]") do
+        i = i + 1
+      end
+      add("word", sql:sub(start_pos, i - 1), start_pos, i - 1)
+    else
+      i = i + 1
+    end
+  end
+
+  return tokens
+end
+
+local function infer_editable_table(sql)
+  if not sql or sql:match("^%s*$") then return nil end
+
+  local tokens = sql_tokens(sql)
+  if #tokens == 0 or tokens[1].kind ~= "word" then return nil end
+
+  local cte_names = {}
+  local main_select
+
+  if tokens[1].upper == "WITH" then
+    local index = 2
+    if tokens[index] and tokens[index].upper == "RECURSIVE" then index = index + 1 end
+
+    while tokens[index] do
+      local name = tokens[index]
+      if name.kind ~= "word" and name.kind ~= "ident" then return nil end
+      cte_names[name.text:lower()] = true
+      index = index + 1
+
+      -- Optional CTE column list: cte_name(col1, col2) AS (...)
+      if tokens[index] and tokens[index].kind == "lparen" then
+        if not tokens[index + 1] or tokens[index + 1].kind ~= "rparen" then return nil end
+        index = index + 2
+      end
+
+      if not tokens[index] or tokens[index].upper ~= "AS" then return nil end
+      index = index + 1
+      if tokens[index] and tokens[index].upper == "NOT" and tokens[index + 1]
+          and tokens[index + 1].upper == "MATERIALIZED" then
+        index = index + 2
+      elseif tokens[index] and tokens[index].upper == "MATERIALIZED" then
+        index = index + 1
+      end
+
+      if not tokens[index] or tokens[index].kind ~= "lparen"
+          or not tokens[index + 1] or tokens[index + 1].kind ~= "rparen" then
+        return nil
+      end
+      index = index + 2
+
+      if tokens[index] and tokens[index].kind == "comma" then
+        index = index + 1
+      else
+        main_select = index
+        break
+      end
+    end
+  elseif tokens[1].upper == "SELECT" then
+    main_select = 1
+  else
+    return nil
+  end
+
+  if not main_select or not tokens[main_select] or tokens[main_select].upper ~= "SELECT" then
+    return nil
+  end
+
+  local from_index
+  local disallowed = {
+    UNION = true,
+    INTERSECT = true,
+    EXCEPT = true,
+    GROUP = true,
+    HAVING = true,
+    WINDOW = true,
+    QUALIFY = true,
+  }
+  for index = main_select + 1, #tokens do
+    local token = tokens[index]
+    if token.kind == "word" then
+      if disallowed[token.upper] then return nil end
+      if not from_index and token.upper == "FROM" then from_index = index end
+    end
+  end
+  if not from_index then return nil end
+
+  local clause_keywords = {
+    WHERE = true,
+    GROUP = true,
+    HAVING = true,
+    ORDER = true,
+    LIMIT = true,
+    OFFSET = true,
+    UNION = true,
+    INTERSECT = true,
+    EXCEPT = true,
+    FOR = true,
+    LOCK = true,
+    WINDOW = true,
+    QUALIFY = true,
+  }
+  local clause_end = #tokens + 1
+  for index = from_index + 1, #tokens do
+    local token = tokens[index]
+    if token.kind == "word" and clause_keywords[token.upper] then
+      clause_end = index
+      break
+    elseif token.kind == "semicolon" then
+      clause_end = index
+      break
+    end
+  end
+
+  local index = from_index + 1
+  local first = tokens[index]
+  if not first or (first.kind ~= "word" and first.kind ~= "ident") then return nil end
+
+  local parts = { first.text }
+  index = index + 1
+  while index < clause_end and tokens[index].kind == "dot" do
+    local part = tokens[index + 1]
+    if not part or (part.kind ~= "word" and part.kind ~= "ident") then return nil end
+    parts[#parts + 1] = part.text
+    index = index + 2
+  end
+
+  -- FROM 后只允许一个可选别名；JOIN、逗号多表、索引提示等都保持只读。
+  local remaining = clause_end - index
+  if remaining == 1 then
+    local alias = tokens[index]
+    if alias.kind ~= "word" and alias.kind ~= "ident" then return nil end
+  elseif remaining == 2 then
+    local as_token = tokens[index]
+    local alias = tokens[index + 1]
+    if as_token.upper ~= "AS" or (alias.kind ~= "word" and alias.kind ~= "ident") then
+      return nil
+    end
+  elseif remaining ~= 0 then
+    return nil
+  end
+
+  if #parts == 1 and cte_names[parts[1]:lower()] then return nil end
+  return table.concat(parts, ".")
+end
+
+local function has_primary_key_columns(state, primary_keys)
+  if not state or type(primary_keys) ~= "table" or #primary_keys == 0 then return false end
+  local columns = {}
+  for _, column in ipairs(state.columns or {}) do
+    columns[tostring(column):lower()] = true
+  end
+  for _, primary_key in ipairs(primary_keys) do
+    if not columns[tostring(primary_key):lower()] then return false end
+  end
+  return true
+end
+
+local function restore_editable_state(state, table_name, primary_keys)
+  if not state or state.table_name ~= nil then return false end
+  if not has_primary_key_columns(state, primary_keys) then return false end
+  state.table_name = table_name
+  state.pks = vim.deepcopy(primary_keys)
+  state.readonly = false
+  return true
+end
+
 local function open_exact_query(sql, url, opts)
   local query = require("dadbod-grip.query")
   local grip = require("dadbod-grip")
   local view = require("dadbod-grip.view")
+  local db = require("dadbod-grip.db")
   local cleaned_sql = sql and sql:gsub(";%s*$", "") or sql
+  local editable_table = infer_editable_table(cleaned_sql)
+  local editable_primary_keys
 
   local original_build_sql = query.build_sql
   local original_page_info = query.page_info
@@ -80,6 +343,15 @@ local function open_exact_query(sql, url, opts)
       local row_count = #(result_state.rows or {})
       spec.page, spec.page_size = 1, math.max(row_count, 1)
       view_opts = vim.tbl_extend("force", {}, view_opts, { total_rows = row_count })
+
+      -- dadbod-grip 会把 WITH 查询统一视为 table_name=nil。这里只在能从最外层
+      -- SELECT 安全确定唯一真实表、连接可写、且结果包含完整主键时恢复编辑能力。
+      if editable_table and result_state.table_name == nil and not db.is_readonly(connection) then
+        local primary_keys, pk_err = db.get_primary_keys(editable_table, connection)
+        if not pk_err and restore_editable_state(result_state, editable_table, primary_keys) then
+          editable_primary_keys = vim.deepcopy(primary_keys)
+        end
+      end
     end
     return original_view_open(result_state, connection, query_sql, view_opts)
   end
@@ -128,12 +400,27 @@ local function open_exact_query(sql, url, opts)
     session.query_spec.page = 1
     session.query_spec.page_size = math.max(row_count, 1)
     session.total_rows = row_count
+
+    -- raw query 新增筛选等操作后会重新查询；上游会再次丢掉 table_name。
+    -- 把已经验证过的底表/主键补回，避免编辑能力刷新一次就消失。
+    if editable_primary_keys and session.on_requery and not session._sql_runner_editable_requery then
+      local original_on_requery = session.on_requery
+      session._sql_runner_editable_requery = true
+      session.on_requery = function(target_bufnr, next_spec)
+        original_on_requery(target_bufnr, next_spec)
+        local current = view._sessions[target_bufnr]
+        if current and restore_editable_state(current.state, editable_table, editable_primary_keys) then
+          view.render(target_bufnr, current.state)
+        end
+      end
+    end
   end
 
   return true
 end
 
 M._open_exact_query = open_exact_query
+M._infer_editable_table = infer_editable_table
 
 function M.run(sql)
   local source_buf = vim.api.nvim_get_current_buf()
