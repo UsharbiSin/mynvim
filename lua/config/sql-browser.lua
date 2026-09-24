@@ -655,11 +655,13 @@ end
 M._export_rows = export_rows
 M._export_default_path = export_default_path
 
-local function has_joined_filters(spec)
-  for _, filter in ipairs((spec and spec.filters) or {}) do
-    if filter.join then return true end
+local function filter_atom(clause)
+  clause = tostring(clause or "")
+  local upper = clause:upper()
+  if upper:find("%f[%a]AND%f[^%a]") or upper:find("%f[%a]OR%f[^%a]") then
+    return "(" .. clause .. ")"
   end
-  return false
+  return clause
 end
 
 local function joined_where_clause(spec)
@@ -675,16 +677,29 @@ local function joined_where_clause(spec)
 
   local parts = {}
   for _, filter in ipairs(pinned) do
-    parts[#parts + 1] = "(" .. filter.clause .. ")"
+    parts[#parts + 1] = filter_atom(filter.clause)
   end
 
+  local user_expr
+  local user_precedence = 3
   if #user > 0 then
-    local expr = "(" .. user[1].clause .. ")"
+    user_expr = filter_atom(user[1].clause)
     for index = 2, #user do
       local join = user[index].join == "OR" and "OR" or "AND"
-      expr = "(" .. expr .. " " .. join .. " (" .. user[index].clause .. "))"
+      local precedence = join == "AND" and 2 or 1
+      if user_precedence < precedence then
+        user_expr = "(" .. user_expr .. ")"
+      end
+      user_expr = user_expr .. " " .. join .. " " .. filter_atom(user[index].clause)
+      user_precedence = precedence
     end
-    parts[#parts + 1] = expr
+  end
+
+  if user_expr then
+    if #parts > 0 and user_precedence < 2 then
+      user_expr = "(" .. user_expr .. ")"
+    end
+    parts[#parts + 1] = user_expr
   end
 
   if #parts == 0 then return nil end
@@ -693,6 +708,34 @@ end
 
 M._joined_where_clause = joined_where_clause
 
+local function last_plain_match(text, needle)
+  local found
+  local start = 1
+  while true do
+    local index = text:find(needle, start, true)
+    if not index then return found end
+    found = index
+    start = index + 1
+  end
+end
+
+local function inject_where(sql, spec, opts, where)
+  if not where then return sql end
+
+  local marker
+  if #(spec.sorts or {}) > 0 then
+    marker = " ORDER BY "
+  elseif not opts or opts.paginate ~= false then
+    marker = " LIMIT "
+  end
+
+  if not marker then return sql .. " " .. where end
+
+  local index = last_plain_match(sql, marker)
+  if not index then return sql .. " " .. where end
+  return sql:sub(1, index - 1) .. " " .. where .. sql:sub(index)
+end
+
 local function install_query_join_support()
   local query = require("dadbod-grip.query")
   if query._sql_browser_join_support then return end
@@ -700,20 +743,24 @@ local function install_query_join_support()
   local original_build_sql = query.build_sql
   local original_build_count_sql = query.build_count_sql
 
-  local function compatible_spec(spec)
-    if not has_joined_filters(spec) then return spec end
-    local where = joined_where_clause(spec)
-    local next_spec = vim.deepcopy(spec)
-    next_spec.filters = where and { { clause = where:gsub("^WHERE%s+", "") } } or {}
-    return next_spec
-  end
-
   query.build_sql = function(spec, opts)
-    return original_build_sql(compatible_spec(spec), opts)
+    if #((spec and spec.filters) or {}) == 0 then
+      return original_build_sql(spec, opts)
+    end
+
+    local base_spec = vim.deepcopy(spec)
+    base_spec.filters = {}
+    return inject_where(original_build_sql(base_spec, opts), spec, opts, joined_where_clause(spec))
   end
 
   query.build_count_sql = function(spec)
-    return original_build_count_sql(compatible_spec(spec))
+    if #((spec and spec.filters) or {}) == 0 then
+      return original_build_count_sql(spec)
+    end
+
+    local base_spec = vim.deepcopy(spec)
+    base_spec.filters = {}
+    return original_build_count_sql(base_spec) .. " " .. joined_where_clause(spec)
   end
 
   query._sql_browser_join_support = true
@@ -1039,9 +1086,14 @@ function M.filter_result_column()
 
     local spec = require("dadbod-grip.query").add_filter(current.query_spec, clause)
     local filters = spec.filters or {}
-    if #filters > 0 then
-      filters[#filters].join = join_mode
+    local previous_user_filter = false
+    for index = 1, #filters - 1 do
+      if not filters[index].pinned then
+        previous_user_filter = true
+        break
+      end
     end
+    filters[#filters].join = previous_user_filter and join_mode or nil
     requery_result(bufnr, view, spec)
   end)
 end

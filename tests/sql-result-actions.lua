@@ -308,7 +308,7 @@ vim.ui.input = original_input
 assert(filter_prompt == 'WHERE "name"  [AND] ', "filter prompt must identify the current column and join mode")
 assert(filtered.page == 1, "filtering must return to the first page")
 assert(filtered.filters[1].clause == '"name" LIKE \'%Ali%\'', "filter must target the current column")
-assert(filtered.filters[1].join == "AND", "new filters must record the active join mode")
+assert(filtered.filters[1].join == nil, "the first filter must not carry a join operator")
 assert(vim.deep_equal(
   session.state.columns,
   { "name", "id", "created_at" }
@@ -328,14 +328,14 @@ local joined_spec = {
 }
 assert(
   browser._joined_where_clause(joined_spec)
-    == 'WHERE ((("id" = 1) OR ("name" = \'Alice\')) AND ("active" = 1))',
-  "mixed AND/OR filters must be grouped in input order"
+    == 'WHERE ("id" = 1 OR "name" = \'Alice\') AND "active" = 1',
+  "mixed AND/OR filters must keep input-order semantics with minimal parentheses"
 )
 local joined_sql = package.loaded["dadbod-grip.query"].build_sql(joined_spec)
 assert(
   joined_sql
-    == 'SELECT * FROM (SELECT * FROM people) AS _grip WHERE (((("id" = 1) OR ("name" = \'Alice\')) AND ("active" = 1))) LIMIT 100',
-  "query builder must use the stored filter joins"
+    == 'SELECT * FROM (SELECT * FROM people) AS _grip WHERE ("id" = 1 OR "name" = \'Alice\') AND "active" = 1 LIMIT 100',
+  "query builder must inject the compact joined WHERE clause"
 )
 
 browser.toggle_filter_join_mode()
