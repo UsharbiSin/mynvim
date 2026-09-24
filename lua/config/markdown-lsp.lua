@@ -2,66 +2,6 @@ local M = {}
 
 local supported_filetypes = { markdown = true, vimwiki = true }
 local lsp_languages = { "python", "lua", "c", "cpp", "java", "javascript", "html", "json", "sql" }
-local publish_diagnostics = vim.lsp.protocol.Methods.textDocument_publishDiagnostics
-local pull_diagnostics = vim.lsp.protocol.Methods.textDocument_diagnostic
-
-local function is_e303(diagnostic)
-  return tostring(diagnostic.code or ""):upper() == "E303"
-      or (diagnostic.message or ""):match("^E303[%s:]") ~= nil
-end
-
-local function is_json_end_of_file_expected(diagnostic)
-  return (diagnostic.message or ""):lower() == "end of file expected."
-end
-
-local function filter_diagnostic_items(uri, diagnostics)
-  uri = (uri or ""):lower()
-  local is_python_raft = uri:match("%.otter%.py$") ~= nil
-  local is_json_raft = uri:match("%.otter%.json$") ~= nil
-  if not is_python_raft and not is_json_raft then return diagnostics end
-
-  return vim.tbl_filter(function(diagnostic)
-    if is_python_raft and is_e303(diagnostic) then return false end
-    if is_json_raft and is_json_end_of_file_expected(diagnostic) then return false end
-    return true
-  end, diagnostics or {})
-end
-
-local function filter_diagnostics(result)
-  if not result or not result.uri then return result end
-
-  result = vim.deepcopy(result)
-  result.diagnostics = filter_diagnostic_items(result.uri, result.diagnostics)
-  return result
-end
-
-local function filter_pull_diagnostics(result, context)
-  if not result or result.kind == "unchanged" then return result end
-
-  local params = context and context.params or nil
-  local text_document = params and params.textDocument or nil
-  local uri = text_document and text_document.uri or nil
-  if not uri then return result end
-
-  result = vim.deepcopy(result)
-  result.items = filter_diagnostic_items(uri, result.items)
-  return result
-end
-
-local function filter_markdown_raft_diagnostics(client)
-  if client._markdown_otter_diagnostic_filter then return end
-  client._markdown_otter_diagnostic_filter = true
-
-  local original = client.handlers[publish_diagnostics] or vim.lsp.handlers[publish_diagnostics]
-  client.handlers[publish_diagnostics] = function(error, result, context, config)
-    return original(error, filter_diagnostics(result), context, config)
-  end
-
-  local original_pull = client.handlers[pull_diagnostics] or vim.lsp.handlers[pull_diagnostics]
-  client.handlers[pull_diagnostics] = function(error, result, context, config)
-    return original_pull(error, filter_pull_diagnostics(result, context), context, config)
-  end
-end
 
 local function activate(buffer)
   if not vim.api.nvim_buf_is_valid(buffer) or not supported_filetypes[vim.bo[buffer].filetype] then
@@ -74,14 +14,13 @@ local function activate(buffer)
   if keeper_ok and keeper.rafts[buffer] then return end
 
   vim.api.nvim_buf_call(buffer, function()
-    require("otter").activate(lsp_languages, true, true)
+    require("otter").activate(lsp_languages, true, false)
   end)
 end
 
 function M.setup()
   require("otter").setup({
     lsp = {
-      diagnostic_update_events = { "BufWritePost", "InsertLeave", "TextChanged" },
       root_dir = function(_, buffer)
         return vim.fs.root(buffer or 0, { ".git", "pyproject.toml", "package.json" })
             or vim.fn.getcwd(0)
@@ -105,25 +44,10 @@ function M.setup()
       end)
     end,
   })
-  vim.api.nvim_create_autocmd("LspAttach", {
-    group = group,
-    callback = function(args)
-      local name = vim.api.nvim_buf_get_name(args.buf):lower()
-      if name:match("%.otter%.py$") or name:match("%.otter%.json$") then
-        local client = vim.lsp.get_client_by_id(args.data.client_id)
-        if client and (client.name == "pylsp" or client.name == "jsonls") then
-          filter_markdown_raft_diagnostics(client)
-        end
-      end
-    end,
-  })
 
   vim.schedule(function()
     activate(vim.api.nvim_get_current_buf())
   end)
 end
-
-M.filter_diagnostics = filter_diagnostics
-M.filter_pull_diagnostics = filter_pull_diagnostics
 
 return M
