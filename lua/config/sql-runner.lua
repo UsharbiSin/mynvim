@@ -62,274 +62,238 @@ function M.with_connection(callback)
   M.select_connection(callback)
 end
 
-local function sql_tokens(sql)
-  local tokens = {}
-  local depth = 0
-  local i = 1
-  local length = #sql
-
-  local function add(kind, text, start_pos, end_pos)
-    if depth ~= 0 then return end
-    tokens[#tokens + 1] = {
-      kind = kind,
-      text = text,
-      upper = kind == "word" and text:upper() or nil,
-      start_pos = start_pos,
-      end_pos = end_pos,
-    }
-  end
-
-  while i <= length do
-    local char = sql:sub(i, i)
-    local next_char = sql:sub(i + 1, i + 1)
-
-    if char:match("%s") then
-      i = i + 1
-    elseif char == "-" and next_char == "-" then
-      local newline = sql:find("\n", i + 2, true)
-      i = newline and (newline + 1) or (length + 1)
-    elseif char == "#" then
-      local newline = sql:find("\n", i + 1, true)
-      i = newline and (newline + 1) or (length + 1)
-    elseif char == "/" and next_char == "*" then
-      local close = sql:find("*/", i + 2, true)
-      i = close and (close + 2) or (length + 1)
-    elseif char == "'" then
-      i = i + 1
-      while i <= length do
-        local current = sql:sub(i, i)
-        if current == "\\" then
-          i = i + 2
-        elseif current == "'" and sql:sub(i + 1, i + 1) == "'" then
-          i = i + 2
-        elseif current == "'" then
-          i = i + 1
-          break
-        else
-          i = i + 1
-        end
-      end
-    elseif char == "`" or char == '"' then
-      local quote = char
-      local start_pos = i
-      local value = {}
-      i = i + 1
-      while i <= length do
-        local current = sql:sub(i, i)
-        if current == quote and sql:sub(i + 1, i + 1) == quote then
-          value[#value + 1] = quote
-          i = i + 2
-        elseif current == quote then
-          i = i + 1
-          break
-        else
-          value[#value + 1] = current
-          i = i + 1
-        end
-      end
-      add("ident", table.concat(value), start_pos, i - 1)
-    elseif char == "[" then
-      local start_pos = i
-      local close = sql:find("]", i + 1, true)
-      if not close then break end
-      add("ident", sql:sub(i + 1, close - 1), start_pos, close)
-      i = close + 1
-    elseif char == "(" then
-      if depth == 0 then add("lparen", char, i, i) end
-      depth = depth + 1
-      i = i + 1
-    elseif char == ")" then
-      if depth > 0 then depth = depth - 1 end
-      if depth == 0 then add("rparen", char, i, i) end
-      i = i + 1
-    elseif char == "," then
-      add("comma", char, i, i)
-      i = i + 1
-    elseif char == "." then
-      add("dot", char, i, i)
-      i = i + 1
-    elseif char == ";" then
-      add("semicolon", char, i, i)
-      i = i + 1
-    elseif char:match("[%a_]") then
-      local start_pos = i
-      i = i + 1
-      while i <= length and sql:sub(i, i):match("[%w_$]") do
-        i = i + 1
-      end
-      add("word", sql:sub(start_pos, i - 1), start_pos, i - 1)
-    else
-      i = i + 1
-    end
-  end
-
-  return tokens
-end
-
-local function infer_editable_table(sql)
-  if not sql or sql:match("^%s*$") then return nil end
-
-  local tokens = sql_tokens(sql)
-  if #tokens == 0 or tokens[1].kind ~= "word" then return nil end
-
-  local cte_names = {}
-  local main_select
-
-  if tokens[1].upper == "WITH" then
-    local index = 2
-    if tokens[index] and tokens[index].upper == "RECURSIVE" then index = index + 1 end
-
-    while tokens[index] do
-      local name = tokens[index]
-      if name.kind ~= "word" and name.kind ~= "ident" then return nil end
-      cte_names[name.text:lower()] = true
-      index = index + 1
-
-      -- Optional CTE column list: cte_name(col1, col2) AS (...)
-      if tokens[index] and tokens[index].kind == "lparen" then
-        if not tokens[index + 1] or tokens[index + 1].kind ~= "rparen" then return nil end
-        index = index + 2
-      end
-
-      if not tokens[index] or tokens[index].upper ~= "AS" then return nil end
-      index = index + 1
-      if tokens[index] and tokens[index].upper == "NOT" and tokens[index + 1]
-          and tokens[index + 1].upper == "MATERIALIZED" then
-        index = index + 2
-      elseif tokens[index] and tokens[index].upper == "MATERIALIZED" then
-        index = index + 1
-      end
-
-      if not tokens[index] or tokens[index].kind ~= "lparen"
-          or not tokens[index + 1] or tokens[index + 1].kind ~= "rparen" then
-        return nil
-      end
-      index = index + 2
-
-      if tokens[index] and tokens[index].kind == "comma" then
-        index = index + 1
+-- 这里只识别 CTE 头部和括号边界；外层 SELECT 的列来源由上游负责。
+-- 不支持的前缀词法保持只读，避免把字符串/注释中的 SELECT 误当成外层。
+local function cte_outer_select(sql, adapter_kind)
+  local pos, length = 1, #sql
+  local word_start, word_part = "[%a_\128-\255]", "[%w_$\128-\255]"
+  local function next_token()
+    while pos <= length do
+      local char, pair = sql:sub(pos, pos), sql:sub(pos, pos + 1)
+      if char:match("%s") then
+        pos = pos + 1
+      elseif pair == "--" or (char == "#" and adapter_kind == "mysql") then
+        local following = sql:sub(pos + 2, pos + 2)
+        if pair == "--" and adapter_kind == "mysql" and following ~= ""
+            and not following:match("[%s%c]") then return nil end
+        local newline = sql:find("[\r\n]", pos + 1)
+        if newline and sql:sub(newline, newline) == "\r"
+            and sql:sub(newline + 1, newline + 1) ~= "\n"
+            and adapter_kind ~= "postgresql" and adapter_kind ~= "duckdb" then return nil end
+        pos = newline and (newline + 1) or (length + 1)
+      elseif pair == "/*" then
+        if sql:sub(pos + 2, pos + 2) == "!"
+            or sql:sub(pos + 2, pos + 3):upper() == "M!" then return nil end
+        local close = sql:find("*/", pos + 2, true)
+        local nested = sql:find("/*", pos + 2, true)
+        if not close or (nested and nested < close) then return nil end
+        pos = close + 2
       else
-        main_select = index
         break
       end
     end
-  elseif tokens[1].upper == "SELECT" then
-    main_select = 1
-  else
-    return nil
-  end
-
-  if not main_select or not tokens[main_select] or tokens[main_select].upper ~= "SELECT" then
-    return nil
-  end
-
-  local from_index
-  local disallowed = {
-    UNION = true,
-    INTERSECT = true,
-    EXCEPT = true,
-    GROUP = true,
-    HAVING = true,
-    WINDOW = true,
-    QUALIFY = true,
-  }
-  for index = main_select + 1, #tokens do
-    local token = tokens[index]
-    if token.kind == "word" then
-      if disallowed[token.upper] then return nil end
-      if not from_index and token.upper == "FROM" then from_index = index end
-    end
-  end
-  if not from_index then return nil end
-
-  local clause_keywords = {
-    WHERE = true,
-    GROUP = true,
-    HAVING = true,
-    ORDER = true,
-    LIMIT = true,
-    OFFSET = true,
-    UNION = true,
-    INTERSECT = true,
-    EXCEPT = true,
-    FOR = true,
-    LOCK = true,
-    WINDOW = true,
-    QUALIFY = true,
-  }
-  local clause_end = #tokens + 1
-  for index = from_index + 1, #tokens do
-    local token = tokens[index]
-    if token.kind == "word" and clause_keywords[token.upper] then
-      clause_end = index
-      break
-    elseif token.kind == "semicolon" then
-      clause_end = index
-      break
-    end
-  end
-
-  local index = from_index + 1
-  local first = tokens[index]
-  if not first or (first.kind ~= "word" and first.kind ~= "ident") then return nil end
-
-  local parts = { first.text }
-  index = index + 1
-  while index < clause_end and tokens[index].kind == "dot" do
-    local part = tokens[index + 1]
-    if not part or (part.kind ~= "word" and part.kind ~= "ident") then return nil end
-    parts[#parts + 1] = part.text
-    index = index + 2
-  end
-
-  -- FROM 后只允许一个可选别名；JOIN、逗号多表、索引提示等都保持只读。
-  local remaining = clause_end - index
-  if remaining == 1 then
-    local alias = tokens[index]
-    if alias.kind ~= "word" and alias.kind ~= "ident" then return nil end
-  elseif remaining == 2 then
-    local as_token = tokens[index]
-    local alias = tokens[index + 1]
-    if as_token.upper ~= "AS" or (alias.kind ~= "word" and alias.kind ~= "ident") then
+    if pos > length then return nil end
+    local first = pos
+    local char = sql:sub(pos, pos)
+    if char == "'" or char == '"' or char == "`" or char == "[" then
+      if char == "`" and adapter_kind ~= "mysql" and adapter_kind ~= "sqlite" then return nil end
+      if char == "[" and adapter_kind ~= "sqlite" and adapter_kind ~= "sqlserver" then return nil end
+      local close = char == "[" and "]" or char
+      local value = {}
+      pos = pos + 1
+      while pos <= length do
+        local current = sql:sub(pos, pos)
+        -- MySQL/PG 会话的转义选项可能改变引号边界，不能据此授权编辑。
+        if current == "\\" then return nil end
+        if current == close then
+          if sql:sub(pos + 1, pos + 1) == close and (char ~= "[" or adapter_kind == "sqlserver") then
+            value[#value + 1] = close
+            pos = pos + 2
+          else
+            pos = pos + 1
+            return { kind = char == "'" and "literal" or "ident", text = table.concat(value), start = first }
+          end
+        else
+          value[#value + 1] = current
+          pos = pos + 1
+        end
+      end
       return nil
     end
-  elseif remaining ~= 0 then
-    return nil
+    -- dollar-string、未知转义和其它方言的 # 都不参与 CTE 编辑恢复。
+    if char == "$" or char == "\\" or char == "#" then return nil end
+    if char:match(word_start) then
+      pos = pos + 1
+      while pos <= length and sql:sub(pos, pos):match(word_part) do pos = pos + 1 end
+      local value = sql:sub(first, pos - 1)
+      return { kind = "word", text = value, upper = value:upper(), start = first }
+    end
+    pos = pos + 1
+    return { kind = char, text = char, start = first }
   end
 
-  if #parts == 1 and cte_names[parts[1]:lower()] then return nil end
-  return table.concat(parts, ".")
+  local token = next_token()
+  local function advance() token = next_token() end
+  local function identifier()
+    return token and (token.kind == "word" or token.kind == "ident")
+  end
+  if not token or token.upper ~= "WITH" then return nil end
+  advance()
+  if token and token.upper == "RECURSIVE" then advance() end
+
+  local names = {}
+  while identifier() do
+    -- MySQL 的名称折叠依赖服务端字符集；Lua 无法可靠比较非 ASCII 名称。
+    if adapter_kind == "mysql" and token.text:find("[\128-\255]") then return nil end
+    names[token.text:lower()] = true
+    advance()
+    if token and token.kind == "(" then
+      advance()
+      if not identifier() then return nil end
+      advance()
+      while token and token.kind == "," do
+        advance()
+        if not identifier() then return nil end
+        advance()
+      end
+      if not token or token.kind ~= ")" then return nil end
+      advance()
+    end
+    if not token or token.upper ~= "AS" then return nil end
+    advance()
+    if token and token.upper == "NOT" then
+      advance()
+      if not token or token.upper ~= "MATERIALIZED" then return nil end
+      advance()
+    elseif token and token.upper == "MATERIALIZED" then
+      advance()
+    end
+    if not token or token.kind ~= "(" then return nil end
+    local depth = 0
+    repeat
+      if not token or token.kind == ";" then return nil end
+      if token.kind == "(" then depth = depth + 1 end
+      if token.kind == ")" then depth = depth - 1 end
+      advance()
+    until depth == 0
+    if token and token.kind == "," then
+      advance()
+    else
+      if not token or token.upper ~= "SELECT" then return nil end
+      return sql:sub(token.start), names
+    end
+  end
+end
+
+local function infer_editable_table(sql, adapter_kind)
+  if type(sql) ~= "string" or not sql:match("^%s*[Ww][Ii][Tt][Hh]%f[^%w_$]") then return nil end
+  if not adapter_kind then return nil end
+  local outer, names = cte_outer_select(sql, adapter_kind)
+  if not outer then return nil end
+  local resolve = require("dadbod-grip")._resolve_query
+  if type(resolve) ~= "function" then return nil end
+
+  -- lazy-lock.json 不入库；旧插件尚无 #78 的检查时，不启用 CTE 编辑扩展。
+  local ok, probe, unsafe_table = pcall(resolve, "SELECT id + 1 AS id FROM _sql_runner_probe", 1, adapter_kind)
+  if not ok or not probe or not probe.is_raw or unsafe_table ~= nil then return nil end
+  local resolved, spec, table_name, file_path, mutation = pcall(resolve, outer, 1, adapter_kind)
+  if not resolved or not spec or not spec.is_raw or type(table_name) ~= "string"
+      or file_path or mutation then return nil end
+  if not table_name:find(".", 1, true) then
+    if adapter_kind == "mysql" and table_name:find("[\128-\255]") then return nil end
+    if names[table_name:lower()] then return nil end
+  end
+  return table_name
 end
 
 local function has_primary_key_columns(state, primary_keys)
   if not state or type(primary_keys) ~= "table" or #primary_keys == 0 then return false end
   local columns = {}
   for _, column in ipairs(state.columns or {}) do
-    columns[tostring(column):lower()] = true
+    columns[column] = (columns[column] or 0) + 1
   end
   for _, primary_key in ipairs(primary_keys) do
-    if not columns[tostring(primary_key):lower()] then return false end
+    -- 不能把 PostgreSQL 的非主键 "ID" 当成真正的主键 id，也拒绝重名结果列。
+    if columns[primary_key] ~= 1 then return false end
   end
   return true
 end
 
-local function restore_editable_state(state, table_name, primary_keys)
-  if not state or state.table_name ~= nil then return false end
-  if not has_primary_key_columns(state, primary_keys) then return false end
+local function restore_editable_state(state, spec, connection)
+  if not state or state.table_name ~= nil or not spec or not spec.is_raw then return false end
+  local db = require("dadbod-grip.db")
+  if state.url ~= connection or db.is_readonly(connection) then return false end
+  local kind = require("dadbod-grip.adapters").kind(db.resolved_url(connection))
+  local table_name = infer_editable_table(spec.base_sql, kind)
+  if not table_name then return false end
+
+  local query = require("dadbod-grip.query")
+  local plain = #(spec.filters or {}) == 0 and #(spec.sorts or {}) == 0 and (spec.page or 1) == 1
+  if not (plain and state.sql == spec.base_sql) then
+    local ok, expected = pcall(query.build_sql, spec)
+    if not ok or state.sql ~= expected then return false end
+  end
+  -- 筛选/排序片段也可能追加 UNION 等结构；使用相同构造器验证外层修饰。
+  -- 此 SQL 仅交给解析器，不会执行，也不会改变用户原查询。
+  local modifiers = vim.deepcopy(spec)
+  modifiers.is_raw, modifiers.base_sql, modifiers.table_name = false, nil, table_name
+  local built, modifier_sql = pcall(query.build_sql, modifiers)
+  if not built then return false end
+  local checked, _, source = pcall(require("dadbod-grip")._resolve_query, modifier_sql, 1, kind)
+  if not checked or source ~= table_name then return false end
+
+  local primary_keys, pk_err = db.get_primary_keys(table_name, connection)
+  if pk_err or not has_primary_key_columns(state, primary_keys) then return false end
   state.table_name = table_name
   state.pks = vim.deepcopy(primary_keys)
   state.readonly = false
   return true
 end
 
+local function install_editable_refresh(session)
+  if session._sql_runner_editable_refresh then return end
+  local view = require("dadbod-grip.view")
+  local db = require("dadbod-grip.db")
+  local function wrap(callback)
+    return function(bufnr, next_spec)
+      local current = view._sessions[bufnr]
+      if not current or not current.state then return callback(bufnr, next_spec) end
+      local previous_state, previous_spec = current.state, current.query_spec
+      local previous_sql, previous_total = current.query_sql, current.total_rows
+      local previous_table = previous_state.table_name
+      -- 上游 on_refresh 会沿用 state.table_name；先撤下本地补充的表名，
+      -- 让新结果从只读状态重新核验，旧结果本身保留以便查询失败时恢复。
+      previous_state.table_name = nil
+      local ok, err = pcall(callback, bufnr, next_spec)
+      previous_state.table_name = previous_table
+      current = view._sessions[bufnr]
+      if current and current.state == previous_state then
+        current.query_spec, current.query_sql = previous_spec, previous_sql
+        current.total_rows = previous_total
+        if db.is_readonly(current.url) then
+          previous_state.table_name, previous_state.pks, previous_state.readonly = nil, {}, true
+          view.render(bufnr, previous_state)
+        end
+      elseif ok and current and current.state then
+        local sql_changed = current.query_sql ~= current.state.sql
+        current.query_sql = current.state.sql
+        local restored = restore_editable_state(current.state, current.query_spec, current.url)
+        if restored or sql_changed then view.render(bufnr, current.state) end
+      end
+      if not ok then error(err, 0) end
+    end
+  end
+  for _, name in ipairs({ "on_requery", "on_refresh" }) do
+    if type(session[name]) == "function" then session[name] = wrap(session[name]) end
+  end
+  session._sql_runner_editable_refresh = true
+end
+
 local function open_exact_query(sql, url, opts)
   local query = require("dadbod-grip.query")
   local grip = require("dadbod-grip")
   local view = require("dadbod-grip.view")
-  local db = require("dadbod-grip.db")
   local cleaned_sql = sql and sql:gsub(";%s*$", "") or sql
-  local editable_table = infer_editable_table(cleaned_sql)
-  local editable_primary_keys
 
   local original_build_sql = query.build_sql
   local original_page_info = query.page_info
@@ -344,14 +308,8 @@ local function open_exact_query(sql, url, opts)
       spec.page, spec.page_size = 1, math.max(row_count, 1)
       view_opts = vim.tbl_extend("force", {}, view_opts, { total_rows = row_count })
 
-      -- dadbod-grip 会把 WITH 查询统一视为 table_name=nil。这里只在能从最外层
-      -- SELECT 安全确定唯一真实表、连接可写、且结果包含完整主键时恢复编辑能力。
-      if editable_table and result_state.table_name == nil and not db.is_readonly(connection) then
-        local primary_keys, pk_err = db.get_primary_keys(editable_table, connection)
-        if not pk_err and restore_editable_state(result_state, editable_table, primary_keys) then
-          editable_primary_keys = vim.deepcopy(primary_keys)
-        end
-      end
+      -- 普通 SELECT 保留上游的只读判断，仅为通过验证的 CTE 补充编辑元数据。
+      restore_editable_state(result_state, spec, connection)
     end
     return original_view_open(result_state, connection, query_sql, view_opts)
   end
@@ -401,18 +359,8 @@ local function open_exact_query(sql, url, opts)
     session.query_spec.page_size = math.max(row_count, 1)
     session.total_rows = row_count
 
-    -- raw query 新增筛选等操作后会重新查询；上游会再次丢掉 table_name。
-    -- 把已经验证过的底表/主键补回，避免编辑能力刷新一次就消失。
-    if editable_primary_keys and session.on_requery and not session._sql_runner_editable_requery then
-      local original_on_requery = session.on_requery
-      session._sql_runner_editable_requery = true
-      session.on_requery = function(target_bufnr, next_spec)
-        original_on_requery(target_bufnr, next_spec)
-        local current = view._sessions[target_bufnr]
-        if current and restore_editable_state(current.state, editable_table, editable_primary_keys) then
-          view.render(target_bufnr, current.state)
-        end
-      end
+    if cleaned_sql:match("^%s*[Ww][Ii][Tt][Hh]%f[^%w_$]") then
+      install_editable_refresh(session)
     end
   end
 

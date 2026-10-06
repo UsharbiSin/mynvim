@@ -131,6 +131,33 @@ mysql.exe --help | findstr /C:"Default options" /C:"my.ini" /C:"my.cnf"
 需要修改数据时应从结构树打开原始表。
 
 
+### 查询结果的编辑资格
+
+普通 SELECT 的编辑资格由上游 Dadbod Grip 判断。结果列使用别名（包括 `id AS id`）、
+计算表达式或无法确认真实列来源时，保持只读；本地配置不会重新放开这类查询。
+
+`<Space>sr` 为简单 CTE 保留额外的编辑支持：最外层 SELECT 必须直接读取唯一真实表，
+输出列通过上游的来源检查，并且结果包含该表完整、未改名且不重复的主键列。例如：
+
+```sql
+WITH role_id AS (
+    SELECT id FROM base_sms_person WHERE phone = '示例号码'
+)
+SELECT * FROM base_sms_person_module
+WHERE record_id IN (SELECT id FROM role_id);
+```
+
+直接读取 CTE 结果、CTE 名称遮蔽真实表、列别名、计算主键等情况保持只读。
+筛选、重新查询和刷新都会根据新结果重新验证表名、主键及连接的只读模式；
+查询失败时保留原结果和原查询信息，不沿用新 SQL 给旧结果授权。
+
+该扩展要求上游包含 [#78](https://github.com/joryeugene/dadbod-grip.nvim/pull/78)
+的投影检查。旧插件缺少检查时，CTE 自动保留只读。CTE 头部或定义中包含无法可靠识别的
+转义、dollar-string、嵌套或可执行注释时也保留只读。MySQL 的非 ASCII CTE 名称及未限定
+schema 的非 ASCII 底表名，也因无法确定服务端的名称折叠规则而保持只读；中文列名不受此限制。
+这些限制只影响编辑资格，原 SQL 的执行方式保持不变。
+
+
 ## 使用方式
 
 当前配置把数据库操作分成两类：
