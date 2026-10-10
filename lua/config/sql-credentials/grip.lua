@@ -40,32 +40,63 @@ local function client_args(args)
 end
 
 local function run_secure(args, timeout_ms, callback, opts, name)
+  local guard = opts and opts._sql_result_guard
   local active, process = true, nil
   local function finish(result)
     if not active then return end
     active = false
     callback(result.stdout or "", result.stderr or "", result.code or 1)
   end
+  local function cancel(reason)
+    if not active then return end
+    if guard then
+      if process then
+        process.cancel(reason)
+      else
+        -- 取密仍在等待时也必须结束查询；迟到的凭据不能再启动客户端。
+        finish({ code = reason == "timeout" and 124 or 130,
+          stderr = reason == "timeout" and "[SQL_RESULT_GUARD] SQL 凭据读取或查询超时"
+            or "[SQL_RESULT_GUARD] SQL 查询已取消" })
+      end
+    else
+      active = false
+      if process then pcall(process.kill, process, 15) end
+    end
+  end
+  if guard then guard.cancel = cancel end
   local profile, err = validate_target(args, name)
   if not profile then
     finish({ code = 1, stderr = err })
-    return function() end
+    return cancel
   end
   credentials.fetch(name, function(secret, failure)
     if not active then return end
     if not secret then finish({ code = 1, stderr = failure }); return end
     local env = credentials.environment(opts and opts.env)
     env.MYSQL_PWD = secret
-    local ok, value = pcall(vim.system, client_args(args), {
+    local sys_opts = {
       stdin = opts and opts.stdin, text = true, timeout = timeout_ms or 30000,
       env = env, clear_env = true,
-    }, function(result)
-      -- 错误里不能带上密码；SQL 查询结果本身不进行改写。
-      if result.stderr and secret ~= "" then
+    }
+    local function completed(result, report)
+      -- 截断可能只留下密码前缀，无法再用完整密码匹配；不展示这种原始错误。
+      if report and report.stderr_truncated and report.kind == "exit" then
+        result.stderr = "MySQL 客户端错误输出过长（已隐藏截断内容）"
+      elseif result.stderr and secret and secret ~= "" then
+        -- SQL 查询结果本身不进行改写。
         result.stderr = result.stderr:gsub(vim.pesc(secret), function() return "***" end)
       end
       secret = nil
       vim.schedule(function() finish(result) end)
+    end
+    local ok, value = pcall(function()
+      if guard then
+        return require("config.sql-result-stream").start(client_args(args), timeout_ms, sys_opts, guard,
+          function(stdout, stderr, code, report)
+            completed({ stdout = stdout, stderr = stderr, code = code }, report)
+          end)
+      end
+      return vim.system(client_args(args), sys_opts, completed)
     end)
     env.MYSQL_PWD = nil
     if ok then
@@ -75,10 +106,7 @@ local function run_secure(args, timeout_ms, callback, opts, name)
       finish({ code = 1, stderr = "MySQL 子进程启动失败（已隐藏底层参数）" })
     end
   end)
-  return function()
-    active = false
-    if process then pcall(process.kill, process, 15) end
-  end
+  return cancel
 end
 
 function M.install()
@@ -107,18 +135,44 @@ function M.install()
 
   adapters.run_cmd_async = function(args, timeout_ms, callback, opts)
     local name = marker_name(opts)
-    if not name then return original_async(args, timeout_ms, callback, opts) end
+    if not name then
+      if opts and opts._sql_result_guard then
+        local sys_opts = { stdin = opts.stdin, env = opts.env }
+        return require("config.sql-result-stream").start(args, timeout_ms, sys_opts,
+          opts._sql_result_guard, callback).cancel
+      end
+      return original_async(args, timeout_ms, callback, opts)
+    end
     return run_secure(args, timeout_ms, callback, opts, name)
   end
 
   adapters.run_cmd = function(args, timeout_ms, opts)
     local name = marker_name(opts)
-    if not name then return original_run(args, timeout_ms, opts) end
+    if not name then
+      if opts and opts._sql_result_guard then
+        local sys_opts = { stdin = opts.stdin, env = opts.env }
+        return require("config.sql-result-stream").run(args, timeout_ms, sys_opts, opts._sql_result_guard)
+      end
+      return original_run(args, timeout_ms, opts)
+    end
     local done, out, err, code = false, "", "", 1
     local cancel = run_secure(args, timeout_ms, function(stdout, stderr, status)
       out, err, code, done = stdout, stderr, status, true
     end, opts, name)
-    if not done and not vim.wait(62000 + (timeout_ms or 30000), function() return done end, 20) then
+    if opts and opts._sql_result_guard then
+      if not done then
+        local ok, completed, reason = pcall(vim.wait, 62000 + (timeout_ms or 30000), function() return done end, 20)
+        if not done then
+          local cancellation = ok and not completed and reason ~= -2 and "timeout" or nil
+          cancel(cancellation)
+          -- 允许有界接收器回收本次客户端；Ctrl-C 不应被报告成超时。
+          pcall(vim.wait, 2250, function() return done end, 10)
+          if not done then
+            return "", "[SQL_RESULT_GUARD] 已停止结果读取，客户端退出尚未确认", cancellation == "timeout" and 124 or 130
+          end
+        end
+      end
+    elseif not done and not vim.wait(62000 + (timeout_ms or 30000), function() return done end, 20) then
       cancel()
       return "", "SQL 凭据读取或查询被取消/超时", 124
     end
