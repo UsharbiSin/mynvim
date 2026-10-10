@@ -36,6 +36,7 @@ local python = vim.fn.exepath("python3")
 assert(python ~= "", "python3 required for the synthetic client")
 local original_system = vim.system
 local original_wait = vim.wait
+local synthetic_children = {}
 
 local function gone(pid)
   if not pid then return true end
@@ -223,6 +224,39 @@ local ok, err = xpcall(function()
   equal(report.kind, "spawn")
   check(not stderr:find("fixture%-token") and not stderr:find("secret"), "spawn error leaked argv/env")
 
+  -- A shell import can leave a producer holding stdout after the shell exits.
+  -- Only this synthetic child's unique fixture argv may be cleaned up on failure.
+  if vim.fn.has("win32") == 0 then
+    local pidfile = tmp .. "/producer.json"
+    local function quote(value) return "'" .. value:gsub("'", "'\\''") .. "'" end
+    local shell_input = "trap 'wait; exit 0' TERM\n"
+      .. quote(python) .. " " .. quote(fixture) .. " producer " .. quote(pidfile)
+      .. " &\nfixture_producer=$!\nwait \"$fixture_producer\"\n"
+    local shell_results = {}
+    local shell = stream.start({ "sh", "-s" }, 2000, { stdin = shell_input }, {
+      format = "bytes", kill_grace_ms = 40, exit_grace_ms = 150,
+    }, function(out, _, result_code, meta)
+      shell_results[#shell_results + 1] = { out = out, code = result_code, report = meta }
+    end)
+    check(vim.wait(1000, function() return vim.fn.filereadable(pidfile) == 1 end, 5),
+      "synthetic producer did not start")
+    local child = vim.json.decode(table.concat(vim.fn.readfile(pidfile), "\n"))
+    synthetic_children[#synthetic_children + 1] = child.pid
+    equal(child.ppid, shell.pid, "shell unexpectedly replaced itself with the producer")
+    check(shell.cancel(), "shell cancellation failed")
+    check(vim.wait(1000, function() return #shell_results == 1 end, 5), "shell cancellation did not finish")
+    equal(shell_results[1].code, 130)
+    equal(shell_results[1].out, "")
+    check(gone(shell.pid), "synthetic shell remains alive")
+    check(vim.wait(500, function() return gone(child.pid) end, 5),
+      "cancel left synthetic producer alive after shell exit; exit_unconfirmed="
+        .. tostring(shell_results[1].report.exit_unconfirmed))
+    equal(child.pgid, shell.pid, "pipe command did not get its own process group")
+    check(not shell_results[1].report.exit_unconfirmed, "producer kept the output pipe open")
+    vim.wait(75, function() return false end, 5)
+    equal(#shell_results, 1, "producer exit delivered completion twice")
+  end
+
   -- Missing/late exit callbacks cannot keep waiting or deliver a second completion.
   local captured, exit_callback, calls, kills
   calls, kills = 0, {}
@@ -287,6 +321,20 @@ end, debug.traceback)
 
 vim.system = original_system
 vim.wait = original_wait
+for _, pid in ipairs(synthetic_children) do
+  if not gone(pid) then
+    local file = io.open("/proc/" .. pid .. "/cmdline", "rb")
+    local cmdline = file and file:read(4096) or ""
+    if file then file:close() end
+    if cmdline:find(fixture, 1, true) and cmdline:find("producer", 1, true) then
+      pcall(vim.uv.kill, pid, "sigkill")
+    end
+  end
+end
+vim.wait(250, function()
+  for _, pid in ipairs(synthetic_children) do if not gone(pid) then return false end end
+  return true
+end, 5)
 vim.fn.delete(tmp, "rf")
 if not ok then error(err) end
 print(("sql-result-stream: %d checks passed (synthetic clients only)"):format(checks))

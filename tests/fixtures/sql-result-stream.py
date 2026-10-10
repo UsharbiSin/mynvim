@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Tiny synthetic client for stream lifecycle tests; never connects to a database."""
 import os
+import json
 import signal
 import sys
 import time
@@ -47,6 +48,12 @@ elif mode == "hang":
     os.write(1, b"ready\n")
     while True:
         time.sleep(0.05)
+elif mode == "producer":
+    with open(args[1], "w", encoding="utf-8") as output:
+        json.dump({"pid": os.getpid(), "ppid": os.getppid(), "pgid": os.getpgrp()}, output)
+    while True:
+        os.write(1, b"child-output\n")
+        time.sleep(0.01)
 elif mode == "marker":
     with open(args[1], "w", encoding="utf-8") as output:
         output.write("spawned")

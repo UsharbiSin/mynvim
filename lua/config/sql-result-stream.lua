@@ -229,6 +229,7 @@ function M.start(args, timeout_ms, sys_opts, context, callback)
   local kill_grace = delay_ms(context.kill_grace_ms, 250)
   local exit_grace = delay_ms(context.exit_grace_ms, 1000)
   local limits = collector and collector.limits
+  local own_group = context.format == "bytes" and vim.fn.has("win32") == 0
   local on_finish, on_start = context.on_finish, context.on_start
   local state = {
     done = false, stopping = false, spawning = false, process = nil,
@@ -257,7 +258,12 @@ function M.start(args, timeout_ms, sys_opts, context, callback)
   end
 
   local function signal(name)
-    if state.process then pcall(state.process.kill, state.process, name) end
+    if state.group_pid then
+      -- 只向本次 detach=true 新建的进程组发信号；绝不使用调用方所在组。
+      pcall(vim.uv.kill, -state.group_pid, name)
+    elseif state.process then
+      pcall(state.process.kill, state.process, name)
+    end
   end
 
   local function terminate()
@@ -360,6 +366,9 @@ function M.start(args, timeout_ms, sys_opts, context, callback)
   options._sql_result_guard = nil
   -- 用原始字节计数；UTF-8 和 CRLF 均不能在分块时被重写。
   options.text, options.timeout = false, nil
+  -- Unix pipe 命令的 shell 与 producer 必须一起停止，否则继承的 stdout 不会 EOF。
+  -- vim.system 的 detach 会新建进程组；不调用 unref，仍等待并清理本次进程。
+  if own_group then options.detach = true end
   options.stdout = function(err, chunk)
     if state.done or state.stopping then return end
     if err then
@@ -402,6 +411,10 @@ function M.start(args, timeout_ms, sys_opts, context, callback)
   end
   if state.done then return handle end
   state.process, handle.pid = process, process.pid
+  if own_group and type(process.pid) == "number" and process.pid > 1
+      and process.pid ~= vim.uv.os_getpid() then
+    state.group_pid = process.pid
+  end
   if state.stopping then
     terminate()
   else
