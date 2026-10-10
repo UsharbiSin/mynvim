@@ -14,3 +14,10 @@ require("dadbod-grip").setup({
 
 require("config.sql-browser").setup()
 require("config.sql-no-count").install()
+require("config.sql-result-guard").install({
+  max_rows = 10000,
+  max_cells = 200000,
+  max_columns = 256,
+  max_bytes = 16 * 1024 * 1024,
+  max_stderr_bytes = 64 * 1024,
+})

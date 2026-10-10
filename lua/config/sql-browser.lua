@@ -193,7 +193,7 @@ local function wrap_result_requery(bufnr, view)
 
   local original_on_requery = session.on_requery
   session._sql_browser_requery_wrapped = true
-  session.on_requery = function(target_bufnr, next_spec)
+  session.on_requery = require("config.sql-result-guard").wrap_refresh(bufnr, "on_requery", function(target_bufnr, next_spec)
     local current = view._sessions[target_bufnr]
     if not current then return end
 
@@ -235,7 +235,7 @@ local function wrap_result_requery(bufnr, view)
     local local_spec = vim.deepcopy(next_spec)
     if refreshed.query_spec then local_spec.page = refreshed.query_spec.page end
     apply_local_result_sort(target_bufnr, view, local_spec)
-  end
+  end)
 end
 
 local function valid_win(winid)

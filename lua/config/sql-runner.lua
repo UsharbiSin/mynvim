@@ -289,7 +289,7 @@ local function install_editable_refresh(session)
   session._sql_runner_editable_refresh = true
 end
 
-local function open_exact_query(sql, url, opts)
+local function open_exact_query_impl(sql, url, opts)
   local query = require("dadbod-grip.query")
   local grip = require("dadbod-grip")
   local view = require("dadbod-grip.view")
@@ -365,6 +365,10 @@ local function open_exact_query(sql, url, opts)
   end
 
   return true
+end
+
+local function open_exact_query(sql, url, opts)
+  return require("config.sql-result-guard").exact_query(open_exact_query_impl, sql, url, opts)
 end
 
 M._open_exact_query = open_exact_query
