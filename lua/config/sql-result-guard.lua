@@ -3,6 +3,7 @@ local M = {}
 local budget = require("config.sql-result-budget")
 local PREFIX = "[SQL_RESULT_GUARD] "
 local installed, limits = false, nil
+local metadata_limits, metadata_depth = nil, 0
 local current, foreground, pending_mysql
 local serial = 0
 local active = {}
@@ -152,6 +153,21 @@ function M.cancel()
   return cancelled
 end
 
+-- 表结构侧栏使用独立预算，不能受结果网格的 10000 行上限阻断。
+-- 范围仅限 sql-metadata.lua 的一次同步 db.query；退出时恢复作用域。
+function M.metadata_query(sql, url)
+  local db = require("dadbod-grip.db")
+  metadata_depth = metadata_depth + 1
+  local ok, value, err = pcall(db.query, sql, url)
+  metadata_depth = metadata_depth - 1
+  if not ok then error(value, 0) end
+  return value, err
+end
+
+local function query_limits()
+  return metadata_depth > 0 and metadata_limits or limits
+end
+
 function M.get_limits()
   return vim.deepcopy(limits or budget.DEFAULTS)
 end
@@ -180,6 +196,10 @@ function M.install(opts)
   local normalized, err = budget.normalize_budget(opts)
   assert(normalized, err)
   limits = normalized
+  metadata_limits = assert(budget.normalize_budget({
+    max_rows = 200000, max_cells = 1400000, max_columns = 256,
+    max_bytes = 128 * 1024 * 1024, max_stderr_bytes = 64 * 1024,
+  }))
   local grip = require("dadbod-grip")
   local adapters = require("dadbod-grip.adapters")
   local mysql = require("dadbod-grip.adapters.mysql")
@@ -228,7 +248,7 @@ function M.install(opts)
   end
 
   mysql.query = function(...)
-    local context = { budget = limits, owner = current }
+    local context = { budget = query_limits(), owner = current }
     local previous = pending_mysql
     pending_mysql = context
     local result = pack(pcall(original_mysql, ...))
@@ -247,7 +267,7 @@ function M.install(opts)
       if owner then owner.failure = query_err or "查询失败" end
       return nil, query_err
     end
-    local ok, failure = budget.check_result(result, limits)
+    local ok, failure = budget.check_result(result, query_limits())
     if not ok then
       if owner then abort(failure) end
       return nil, failure

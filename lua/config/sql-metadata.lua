@@ -83,7 +83,7 @@ function M.fetch(url, force)
 
   local result, err
   require("dadbod-grip.ui").blocking("  正在读取数据库注释...", function()
-    result, err = require("dadbod-grip.db").query(metadata_sql, url)
+    result, err = require("config.sql-result-guard").metadata_query(metadata_sql, url)
   end)
   if not result then
     return nil, err or "读取数据库注释失败"
