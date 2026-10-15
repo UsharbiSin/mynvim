@@ -39,17 +39,39 @@ local function environment_python(prefix)
   return vim.fs.joinpath(prefix, is_win and "python.exe" or "bin/python")
 end
 
-local mason_path = vim.fn.stdpath("data")
-  .. "/mason/packages/debugpy/venv/"
-  .. (is_win and "Scripts/python.exe" or "bin/python")
-dap.adapters.python = {
-  type = "executable",
-  command = mason_path,
-  args = { "-m", "debugpy.adapter" },
-  options = {
-    detached = false,
+-- 调试器使用独立环境；被调试程序仍使用下方配置选择的项目 Python。
+-- 在启动时查找，兼容 Windows 的 Mason 与 Arch 已有的 debugpy 虚拟环境。
+dap.adapters.python = function(callback)
+  local python_suffix = is_win and "Scripts/python.exe" or "bin/python"
+  local candidates = {
+    vim.fs.joinpath(vim.fn.stdpath("data"), "mason/packages/debugpy/venv", python_suffix),
+    vim.fs.joinpath(vim.fn.expand("~"), ".virtualenvs/debugpy", python_suffix),
   }
-}
+  for _, python in ipairs(candidates) do
+    if vim.fn.executable(python) == 1 then
+      callback({
+        type = "executable",
+        command = python,
+        args = { "-m", "debugpy.adapter" },
+        options = { detached = false },
+      })
+      return
+    end
+  end
+
+  local command = vim.fn.exepath("debugpy-adapter")
+  if command ~= "" then
+    callback({
+      type = "executable",
+      command = command,
+      options = { detached = false },
+    })
+    return
+  end
+
+  vim.notify("找不到 Python 调试器 debugpy，请执行 :MasonInstall debugpy 后重试 F2",
+    vim.log.levels.ERROR)
+end
 
 -- ==========================================
 -- 针对不同文件类型的调试配置 (Configurations)

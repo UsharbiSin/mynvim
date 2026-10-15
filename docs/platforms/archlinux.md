@@ -83,9 +83,9 @@ Java 语言服务要求 Java 21 或更高版本，可安装 `jdk21-openjdk` 并�
 首次使用前检查：
 
 1. `lua/config/markdown.lua` 的 Firefox、CSS 和 Vimwiki 图片绝对路径。
-2. `lua/config/debugging.lua` 的 debugpy 适配器固定为
-   `/home/usharbisin/.virtualenvs/debugpy/bin/python`。改为自己的 debugpy Python，或使用
-   Mason 安装目录。
+2. `lua/config/debugging.lua` 在启动调试时依次查找 Mason 的 debugpy 虚拟环境、
+   `~/.virtualenvs/debugpy/bin/python` 和 PATH 中的 `debugpy-adapter`，无需修改用户名。
+   均未安装时，按提示执行 `:MasonInstall debugpy` 后重试 F2。
 3. `lua/core/keymaps.lua` 的 `<Space>pw` 指向个人密码文档。
 4. `lua/config/vimwiki.lua` 的 `~/vimwiki/`。
 5. `lua/config/sql-credentials.lua` 的数据库别名与四项普通参数。密码使用 Secret Service，
