@@ -26,6 +26,15 @@ sqlfluff.parser = function(output, bufnr)
   local diagnostics = sqlfluff_parser(output, bufnr)
   if not bufnr or not vim.api.nvim_buf_is_valid(bufnr) then return diagnostics end
 
+  -- SQLFluff 4.3.0 lacks MySQL SHOW PROCESSLIST. Only hide its PRS for a
+  -- complete, single command: a PRS can otherwise span later invalid SQL too.
+  local sql = table.concat(vim.api.nvim_buf_get_lines(bufnr, 0, -1, false), "\n")
+  if require("config.sql-statements").is_processlist(sql) then
+    diagnostics = vim.tbl_filter(function(diagnostic)
+      return diagnostic.code ~= "PRS"
+    end, diagnostics)
+  end
+
   for _, diagnostic in ipairs(diagnostics) do
     if diagnostic.code == "AM04"
         and diagnostic.end_lnum

@@ -289,7 +289,77 @@ local function install_editable_refresh(session)
   session._sql_runner_editable_refresh = true
 end
 
+-- PROCESSLIST 是返回结果集的命令，不能作为表名或 SELECT 子查询包装。
+local function open_processlist(sql, url, opts)
+  local db = require("dadbod-grip.db")
+  local data = require("dadbod-grip.data")
+  local query = require("dadbod-grip.query")
+  local view = require("dadbod-grip.view")
+  local browser = require("config.sql-browser")
+
+  local function fetch()
+    local started = vim.uv.hrtime()
+    local result, err
+    require("dadbod-grip.ui").blocking("  querying processlist...", function()
+      result, err = db.query(sql, url)
+    end)
+    if not result then return nil, err or "query failed" end
+    result.url, result.sql = url, sql
+    result.table_name, result.primary_keys, result.readonly = nil, {}, true
+    return data.new(result), math.floor((vim.uv.hrtime() - started) / 1e6)
+  end
+
+  local state, elapsed = fetch()
+  if not state then return false, elapsed end
+  local spec = query.new_raw(sql, math.max(#state.rows, 1))
+  local view_opts = vim.tbl_extend("force", {}, opts or {}, {
+    query_spec = spec, total_rows = #state.rows, elapsed_ms = elapsed, write = false,
+  })
+  local bufnr = view.open(state, url, sql, view_opts)
+  require("dadbod-grip.history").record({
+    sql = sql, url = url, type = "query", elapsed_ms = elapsed,
+  })
+
+  view.set_callbacks(bufnr, {
+    on_refresh = function(bid)
+      local session = view._sessions[bid]
+      if not session then return end
+      local next_state, next_elapsed = fetch()
+      if not next_state then
+        vim.notify("SQL 执行失败：" .. tostring(next_elapsed), vim.log.levels.ERROR)
+        return
+      end
+      session.query_spec.page = 1
+      session.query_spec.page_size = math.max(#next_state.rows, 1)
+      session.total_rows, session.elapsed_ms = #next_state.rows, next_elapsed
+      next_state._sql_browser_order = browser._sorted_result_order(next_state, session.query_spec.sorts)
+      view.render(bid, next_state)
+    end,
+    on_requery = function(bid, next_spec)
+      local session = view._sessions[bid]
+      if not session then return end
+      -- SHOW 不接受 WHERE/LIMIT；排序直接作用于已取得的完整结果。
+      if #(next_spec.filters or {}) > 0 or next_spec.page ~= 1
+          or next_spec.base_sql ~= spec.base_sql then
+        vim.notify("进程列表支持本地排序和 r 刷新，不支持 SQL 筛选或分页", vim.log.levels.INFO)
+        return
+      end
+      session.query_spec.sorts = vim.deepcopy(next_spec.sorts or {})
+      session.state._sql_browser_order = browser._sorted_result_order(session.state, session.query_spec.sorts)
+      view.render(bid, session.state)
+    end,
+  })
+  return true
+end
+
 local function open_exact_query_impl(sql, url, opts)
+  if require("config.sql-statements").is_processlist(sql) then
+    local ok, success, err = xpcall(function()
+      return open_processlist(sql, url, opts)
+    end, debug.traceback)
+    if not ok then return false, success end
+    return success, err
+  end
   local query = require("dadbod-grip.query")
   local grip = require("dadbod-grip")
   local view = require("dadbod-grip.view")

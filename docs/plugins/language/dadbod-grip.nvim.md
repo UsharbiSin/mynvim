@@ -118,6 +118,13 @@ mysql.exe --print-defaults
 mysql.exe --help | findstr /C:"Default options" /C:"my.ini" /C:"my.cnf"
 ```
 
+## 执行进程列表
+
+SQL 文件先用 `<Space>sc` 选择连接，再用 `<Space>sr` 执行单条
+`SHOW PROCESSLIST;` 或 `SHOW FULL PROCESSLIST;`，也可按行选中后执行。
+结果作为只读表格显示，按 `r` 重新查询，列排序在本地完成；不支持追加 WHERE 筛选或分页。
+这两条命令直接交给数据库，不会被当成表名，也不会追加子查询、LIMIT 或 COUNT。
+
 ## 编辑并保存
 
 1. 按 `<Space>sg`，选择连接。
