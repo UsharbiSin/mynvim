@@ -37,12 +37,42 @@ local function terminal(command, cwd)
 
   vim.opt.splitbelow = true
   vim.cmd("botright 15new")
+  local bufnr = vim.api.nvim_get_current_buf()
+  local finished = false
+
+  local function leave_terminal_input()
+    if vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_get_current_buf() == bufnr then
+      vim.cmd("stopinsert")
+    end
+  end
+
+  vim.api.nvim_create_autocmd("TermClose", {
+    buffer = bufnr,
+    once = true,
+    callback = function()
+      finished = true
+      -- 已结束的终端在输入模式下会被下一次按键关闭；保留普通模式供查看、复制。
+      vim.keymap.set("n", "q", function()
+        vim.api.nvim_buf_delete(bufnr, { force = true })
+      end, { buffer = bufnr, silent = true, desc = "关闭运行结果" })
+      vim.schedule(leave_terminal_input)
+    end,
+  })
+  vim.api.nvim_create_autocmd("TermEnter", {
+    buffer = bufnr,
+    callback = function()
+      -- 结果页误按 i/a 时也不进入已经结束的终端。
+      if finished then leave_terminal_input() end
+    end,
+  })
+
   local job = vim.fn.jobstart(command, { cwd = cwd, term = true })
   if job <= 0 then
+    vim.api.nvim_buf_delete(bufnr, { force = true })
     notify("无法启动终端命令：" .. vim.inspect(command), vim.log.levels.ERROR)
     return false
   end
-  vim.cmd("startinsert")
+  if not finished then vim.cmd("startinsert") end
   return true
 end
 
