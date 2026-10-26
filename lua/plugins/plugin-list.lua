@@ -400,12 +400,11 @@ return {
       },
       {
         "<leader>sr",
-        function()
-          require("config.sql-runner").run_visual()
-        end,
+        -- 先退出可视模式并更新 '< / '>；Lua 回调会读到上一次选区。
+        ":<C-U>lua require('config.sql-runner').run_visual()<CR>",
         mode = "v",
         ft = { "sql", "mysql" },
-        desc = "SQL：执行选中内容",
+        desc = "SQL：执行选中行",
       },
     },
     config = function()
