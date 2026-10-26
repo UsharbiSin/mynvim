@@ -65,6 +65,9 @@ package.loaded["dadbod-grip.sql"] = {
   quote_ident = function(name)
     return '"' .. tostring(name):gsub('"', '""') .. '"'
   end,
+  quote_value = function(value)
+    return "'" .. tostring(value):gsub("'", "''") .. "'"
+  end,
 }
 package.loaded["dadbod-grip.query"] = {
   add_filter = function(spec, clause)
@@ -279,13 +282,59 @@ assert(
   "column WHERE builder must prefix the current quoted column and trim the condition"
 )
 assert(browser._build_column_where_clause("name", "   ") == nil, "blank filters must be ignored")
+assert(browser._build_column_where_clause("name", nil) == nil, "cancelled filters must be ignored")
+
+local column_filter_cases = {
+  { "xxx", "LIKE '%xxx%'" },
+  { "  工程  ", "LIKE '%工程%'" },
+  { "100", "LIKE '%100%'" },
+  { "O'Reilly", "LIKE '%O''Reilly%'" },
+  { "50%_done", "LIKE '%50%_done%'" },
+  { [[C:\work]], [[LIKE '%C:\work%']] },
+  { "inside", "LIKE '%inside%'" },
+  { "island", "LIKE '%island%'" },
+  { "likeable", "LIKE '%likeable%'" },
+  { "notebook", "LIKE '%notebook%'" },
+  { "LIKE_name", "LIKE '%LIKE_name%'" },
+  { "LIKE工程", "LIKE '%LIKE工程%'" },
+  { "not ready", "LIKE '%not ready%'" },
+  { " = 'xxx' ", "= 'xxx'" },
+  { "!='xxx'", "!='xxx'" },
+  { "<> 'xxx'", "<> 'xxx'" },
+  { "> 100", "> 100" },
+  { ">=100", ">=100" },
+  { "< 100", "< 100" },
+  { "<=100", "<=100" },
+  { "<=> NULL", "<=> NULL" },
+  { "LIKE '%xxx%'", "LIKE '%xxx%'" },
+  { "like'xxx%'", "like'xxx%'" },
+  { "not like '%xxx%'", "not like '%xxx%'" },
+  { "ILIKE '%xxx%'", "ILIKE '%xxx%'" },
+  { "IS NULL", "IS NULL" },
+  { "is not null", "is not null" },
+  { "IN('a', 'b')", "IN('a', 'b')" },
+  { "NOT IN ('a', 'b')", "NOT IN ('a', 'b')" },
+  { "BETWEEN 1 AND 10", "BETWEEN 1 AND 10" },
+  { "NOT BETWEEN 1 AND 10", "NOT BETWEEN 1 AND 10" },
+  { "REGEXP '^xxx'", "REGEXP '^xxx'" },
+  { "RLIKE '^xxx'", "RLIKE '^xxx'" },
+  { "GLOB '*xxx*'", "GLOB '*xxx*'" },
+  { "~* 'xxx'", "~* 'xxx'" },
+  { "!~ 'xxx'", "!~ 'xxx'" },
+}
+for _, case in ipairs(column_filter_cases) do
+  assert(
+    browser._build_column_where_clause("name", case[1]) == '"name" ' .. case[2],
+    "column filter must handle input: " .. case[1]
+  )
+end
 
 local filter_prompt
 local filtered
 local original_input = vim.ui.input
 vim.ui.input = function(opts, callback)
   filter_prompt = opts.prompt
-  callback("LIKE '%Ali%'")
+  callback("Ali")
 end
 session.query_spec = {
   sorts = {},

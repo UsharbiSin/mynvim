@@ -1044,12 +1044,30 @@ local function requery_result(bufnr, view, spec)
   return true
 end
 
+local column_condition_operators = {
+  LIKE = true, ILIKE = true, IN = true, BETWEEN = true, IS = true,
+  REGEXP = true, RLIKE = true, GLOB = true, MATCH = true, SIMILAR = true,
+}
+
+local function has_column_condition_operator(condition)
+  if condition:match("^[<>=~]") or condition:match("^![=<>~]") then return true end
+
+  local expression = condition:upper():gsub("^NOT%s+", "", 1)
+  local operator, suffix = expression:match("^([A-Z]+)(.*)$")
+  -- 关键词后必须是 SQL 分隔符，避免把 inside、LIKE_name、LIKE工程等搜索词当成条件。
+  return column_condition_operators[operator] == true
+    and (suffix == "" or suffix:match([=[^[%s('"]]=]) ~= nil)
+end
+
 local function build_column_where_clause(column, condition)
   condition = vim.trim(tostring(condition or ""))
   if condition == "" then return nil end
 
-  local quoted = require("dadbod-grip.sql").quote_ident(column)
-  return quoted .. " " .. condition
+  local sql = require("dadbod-grip.sql")
+  if not has_column_condition_operator(condition) then
+    condition = "LIKE " .. sql.quote_value("%" .. condition .. "%")
+  end
+  return sql.quote_ident(column) .. " " .. condition
 end
 
 M._build_column_where_clause = build_column_where_clause
