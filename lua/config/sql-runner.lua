@@ -362,6 +362,7 @@ local function open_exact_query_impl(sql, url, opts)
   end
   local query = require("dadbod-grip.query")
   local grip = require("dadbod-grip")
+  require("config.sql-mutation-preview").install()
   local view = require("dadbod-grip.view")
   local cleaned_sql = sql and sql:gsub(";%s*$", "") or sql
 

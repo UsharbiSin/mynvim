@@ -14,6 +14,7 @@ require("dadbod-grip").setup({
 
 require("config.sql-browser").setup()
 require("config.sql-no-count").install()
+require("config.sql-mutation-preview").install()
 require("config.sql-result-guard").install({
   max_rows = 10000,
   max_cells = 200000,
