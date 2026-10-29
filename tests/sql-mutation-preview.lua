@@ -148,7 +148,8 @@ INSERT INTO people VALUES
     return parsed
   end
 
-  local function selected(sql)
+  local function selected(sql, statement)
+    statement = statement or "UPDATE"
     feed("<Esc>")
     vim.cmd.only({ bang = true, mods = { silent = true } })
     vim.cmd.enew({ bang = true })
@@ -173,8 +174,8 @@ INSERT INTO people VALUES
     local session = assert(view._sessions[bufnr],
       "preview grid missing: " .. vim.inspect(notifications))
     assert(session.pending_mutation and session.pending_mutation.sql == sql,
-      "preview did not retain the exact selected UPDATE")
-    assert(session.pending_mutation.type == "UPDATE")
+      "preview did not retain the exact selected mutation")
+    assert(session.pending_mutation.type == statement)
     assert(#executions == 0 and #confirmations == 0, "opening a preview must not execute a mutation")
     return session, bufnr
   end
@@ -395,14 +396,229 @@ WHERE id = 1;]])
     end
   end)
 
+  local delete = [[DELETE stsd
+FROM people AS stsd
+WHERE
+    -- Keep this condition on the next line; LIMIT 999 stays a comment
+    stsd.phone IN ('target')
+    AND stsd.id = 1;]]
+
+  test("visual DELETE preview preserves AS alias, line comments and exact affected rows", function()
+    local session = selected(delete, "DELETE")
+    assert(#queries == 1 and queries[1]:find("people AS stsd", 1, true),
+      "DELETE preview lost the source alias")
+    assert(queries[1]:find("-- Keep this condition on the next line; LIMIT 999 stays a comment\n",
+      1, true), "DELETE preview flattened a line comment")
+    assert(#session.state.rows == 1 and session.state.rows[1][1] == "1")
+    assert(session.pending_mutation.row_count == 1 and session.state.deleted[1],
+      "DELETE preview did not mark exactly the affected row")
+    assert(next(session.state.changes) == nil and session.state.table_name == "people")
+  end)
+
+  test("DELETE supports a single target with implicit, quoted, wildcard and USING aliases", function()
+    for _, sql in ipairs({
+      "DELETE p FROM people p WHERE p.id = 1;",
+      "DELETE p.* FROM people AS p WHERE p.id = 1;",
+      "DELETE FROM people WHERE id = 1;",
+      "DELETE FROM people AS p WHERE p.id = 1;",
+      "DELETE FROM p USING people AS p WHERE p.id = 1;",
+      "DELETE FROM p.* USING people p WHERE p.id = 1;",
+      "DELETE `p` FROM `main`.`people` AS `p` WHERE `p`.`id` = 1;",
+      'DELETE "p" FROM "main"."people" AS "p" WHERE "p"."id" = 1;',
+    }) do
+      local session = selected(sql, "DELETE")
+      assert(#session.state.rows == 1 and session.state.rows[1][1] == "1", sql)
+      assert(session.state.deleted[1] and #executions == 0, sql)
+      if sql:find("main", 1, true) then
+        assert(session.state.table_name == "main.people", "DELETE metadata lost the base schema")
+      end
+    end
+  end)
+
+  test("DELETE preserves ORDER BY LIMIT, with and without a WHERE", function()
+    for _, sql in ipairs({
+      "DELETE FROM people WHERE id >= 1 ORDER BY id DESC LIMIT 1;",
+      "DELETE FROM people ORDER BY id DESC LIMIT 1;",
+    }) do
+      local session = selected(sql, "DELETE")
+      assert(#session.state.rows == 1 and session.state.rows[1][1] == "3")
+      assert(session.pending_mutation.row_count == 1 and session.state.deleted[1])
+      assert(queries[1]:find("ORDER BY id DESC LIMIT 1", 1, true), "DELETE preview widened the range")
+    end
+    local all = selected("DELETE FROM people;", "DELETE")
+    assert(#all.state.rows == 3 and all.pending_mutation.row_count == 3)
+    for row = 1, 3 do assert(all.state.deleted[row]) end
+  end)
+
+  test("DELETE WHERE subquery and strings retain their meaning", function()
+    local session = selected([[DELETE p FROM people p
+WHERE p.id IN (SELECT id FROM people WHERE counter >= 7 ORDER BY id LIMIT 2)
+  AND p.role <> 'WHERE ORDER BY LIMIT; -- not a comment';]], "DELETE")
+    assert(#session.state.rows == 2 and session.state.deleted[1] and session.state.deleted[2])
+    assert(session.pending_mutation.row_count == 2 and #executions == 0)
+  end)
+
+  test("DELETE comments, modifiers and final comment remain intact in the SELECT", function()
+    local sql = [[DELETE LOW_PRIORITY QUICK IGNORE p
+FROM people -- alias belongs to the next line
+p /* WHERE fake */
+WHERE # LIMIT 999 stays a comment
+p.id = 1; -- final comment]]
+    local parsed, err = preview.parse_delete(sql)
+    assert(parsed, err)
+    assert(parsed.table_name == "people")
+    assert(parsed.sql:find("people -- alias belongs to the next line\np", 1, true))
+    assert(parsed.sql:find("WHERE # LIMIT 999 stays a comment\np.id = 1", 1, true))
+    assert(parsed.sql:find("-- final comment", 1, true))
+    assert(not parsed.sql:find("LOW_PRIORITY", 1, true))
+  end)
+
+  test("DELETE cancelled confirmation retains pending rows without execution", function()
+    local session = selected(delete, "DELETE")
+    confirm(2, function() feed("a") end)
+    assert(#confirmations == 1 and confirmations[1].default == 2)
+    assert(#executions == 0 and session.pending_mutation.sql == delete and session.state.deleted[1])
+  end)
+
+  test("DELETE confirmation applies the exact original selected statement only once", function()
+    selected(delete, "DELETE")
+    confirm(1, function() feed("a") end)
+    assert(#confirmations == 1 and #executions == 1 and executions[1] == delete,
+      "DELETE apply must confirm and execute the original SQL exactly once")
+  end)
+
+  test("DELETE U cancels pending SQL without executing", function()
+    local _, bufnr = selected(delete, "DELETE")
+    feed("U")
+    local session = view._sessions[bufnr]
+    assert(not session or not session.pending_mutation)
+    assert(#executions == 0 and #confirmations == 0)
+  end)
+
+  test("DELETE refresh retains the query range and red row markers", function()
+    local sql = "DELETE FROM people WHERE id >= 1 ORDER BY id DESC LIMIT 1;"
+    local session, bufnr = selected(sql, "DELETE")
+    local first_query = queries[1]
+    confirm(1, function() feed("r") end)
+    session = assert(view._sessions[bufnr])
+    assert(#queries == 2 and queries[2] == first_query)
+    assert(session.pending_mutation.sql == sql and session.pending_mutation.row_count == 1)
+    assert(#session.state.rows == 1 and session.state.rows[1][1] == "3" and session.state.deleted[1])
+    assert(#executions == 0)
+  end)
+
+  test("DELETE failed refresh retains the previous preview and pending SQL", function()
+    local session, bufnr = selected(delete, "DELETE")
+    local old_state = session.state
+    fail_next_query = true
+    session.on_refresh(bufnr)
+    assert(view._sessions[bufnr].state == old_state and old_state.deleted[1])
+    assert(session.pending_mutation.sql == delete and #executions == 0)
+    assert(notifications[#notifications].message:find("synthetic preview failure", 1, true))
+  end)
+
+  test("empty DELETE preview keeps schema and records zero affected rows", function()
+    local session = selected("DELETE p FROM people p WHERE p.id = 999;", "DELETE")
+    assert(#session.state.rows == 0 and session.pending_mutation.row_count == 0)
+    assert(vim.deep_equal(session.state.columns, { "id", "dept", "role", "phone", "counter" }))
+    assert(next(session.state.deleted) == nil and #executions == 0)
+  end)
+
+  test("failed initial DELETE preview never executes or opens a pending grid", function()
+    local prior_buf = vim.api.nvim_get_current_buf()
+    local before_queries, before_executions = #queries, #executions
+    fail_next_query = true
+    grip._mutation_preview(delete, url, "DELETE", {})
+    assert(#queries == before_queries + 1 and #executions == before_executions)
+    assert(vim.api.nvim_get_current_buf() == prior_buf)
+    assert(notifications[#notifications].message:find("synthetic preview failure", 1, true))
+  end)
+
+  test("unsupported DELETE forms and multiple statements fail before querying", function()
+    for _, sql in ipairs({
+      "DELETE FROM people; DELETE FROM people;",
+      "DELETE FROM people; SELECT 1;",
+      "DELETE FROM people;;",
+      "DELETE p FROM people p JOIN people q ON p.id = q.id WHERE p.id = 1",
+      "DELETE p, q FROM people p, people q WHERE p.id = q.id",
+      "DELETE FROM p USING people p JOIN people q ON p.id = q.id",
+      "DELETE p FROM people p WHERE p.id > 0 ORDER BY p.id LIMIT 1",
+      "DELETE FROM p USING people p WHERE p.id > 0 LIMIT 1",
+      "DELETE FROM people PARTITION (p0) WHERE id = 1",
+      "DELETE q FROM people p WHERE p.id = 1",
+      "DELETE FROM people AS WHERE id = 1",
+      "DELETE FROM `schema.table` WHERE id = 1",
+      "DELETE FROM people WHERE phone = 'unterminated",
+      "DELETE FROM people WHERE id IN (SELECT id FROM people",
+      "DELETE FROM people /*! WHERE id = 1 */",
+      "DELETE /*+ hint */ FROM people WHERE id = 1",
+      "DELETE FROM people /* incomplete",
+      "DELETE FROM people WHERE id = 1 INTO OUTFILE '/tmp/should-not-exist'",
+      "DELETE FROM people WHERE id = 1 UNION SELECT * FROM people",
+      "DELETE FROM people WHERE id = 1 FOR UPDATE",
+      "DELETE FROM people WHERE id = 1 LOCK IN SHARE MODE",
+      "DELETE FROM people WHERE id = 1 PROCEDURE ANALYSE()",
+    }) do
+      local parsed, err = preview.parse_delete(sql)
+      assert(not parsed and type(err) == "string", "unsafe DELETE accepted: " .. sql)
+      local before_queries, before_executions = #queries, #executions
+      grip._mutation_preview(sql, url, "DELETE", {})
+      assert(#queries == before_queries and #executions == before_executions,
+        "unsupported DELETE reached a database boundary: " .. sql)
+    end
+  end)
+
   test("installation is idempotent and preserves other adapters and mutation types", function()
     local installed = grip._mutation_preview
     preview.install()
     assert(grip._mutation_preview == installed, "install wrapped the hook twice")
     assert(grip._mutation_preview("delegation sentinel", "postgresql://fixture/db", "UPDATE") == "upstream")
-    assert(grip._mutation_preview("delegation sentinel", url, "DELETE") == "upstream")
+    assert(grip._mutation_preview("delegation sentinel", "postgresql://fixture/db", "DELETE") == "upstream")
     assert(grip._mutation_preview("delegation sentinel", url, "INSERT") == "upstream")
     assert(#delegated == 3)
+  end)
+
+  test("hot reload upgrades the legacy boolean guard and keeps fallback delegation", function()
+    local original_hook, original_guard = grip._mutation_preview, grip._nvim_sql_mutation_preview
+    local legacy_calls = 0
+    local legacy_hook = function(sql)
+      legacy_calls = legacy_calls + 1
+      assert(sql == "legacy delegation sentinel", "DELETE reached the old alias-dropping preview")
+      return "legacy fallback"
+    end
+    local ok, err = xpcall(function()
+      grip._mutation_preview, grip._nvim_sql_mutation_preview = legacy_hook, true
+      preview.install()
+      local wrapper = grip._mutation_preview
+      assert(wrapper ~= legacy_hook and type(grip._nvim_sql_mutation_preview) == "table")
+      assert(grip._nvim_sql_mutation_preview.original == legacy_hook)
+      local session = selected(delete, "DELETE")
+      assert(session.state.deleted[1] and legacy_calls == 0)
+      assert(wrapper("legacy delegation sentinel", url, "INSERT") == "legacy fallback")
+      assert(legacy_calls == 1)
+      preview.install()
+      assert(grip._mutation_preview == wrapper, "hot reload stacked another wrapper")
+    end, debug.traceback)
+    grip._mutation_preview, grip._nvim_sql_mutation_preview = original_hook, original_guard
+    assert(ok, err)
+  end)
+
+  test("upgrading a versioned hook unwraps its previous wrapper", function()
+    local original_hook, original_guard = grip._mutation_preview, grip._nvim_sql_mutation_preview
+    local old_wrapper = function() error("obsolete wrapper must not be called", 0) end
+    local ok, err = xpcall(function()
+      grip._mutation_preview = old_wrapper
+      grip._nvim_sql_mutation_preview = { version = 1, original = original_hook, wrapper = old_wrapper }
+      preview.install()
+      assert(grip._nvim_sql_mutation_preview.original == original_hook,
+        "upgrade retained the obsolete wrapper as its fallback")
+      assert(grip._mutation_preview ~= old_wrapper)
+      local session = selected(delete, "DELETE")
+      assert(session.state.deleted[1])
+      assert(grip._mutation_preview("delegation sentinel", url, "INSERT") == "upstream")
+    end, debug.traceback)
+    grip._mutation_preview, grip._nvim_sql_mutation_preview = original_hook, original_guard
+    assert(ok, err)
   end)
 
   assert(sqlite(".dump") == original_dump, "a test unexpectedly mutated the SQLite fixture")
