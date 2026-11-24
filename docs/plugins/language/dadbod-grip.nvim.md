@@ -120,7 +120,7 @@ mysql.exe --help | findstr /C:"Default options" /C:"my.ini" /C:"my.cnf"
 
 ## 执行进程列表
 
-SQL 文件先用 `<Space>sc` 选择连接，再用 `<Space>sr` 执行单条
+在 SQL 文件中用 `<Space>sr` 执行单条
 `SHOW PROCESSLIST;` 或 `SHOW FULL PROCESSLIST;`，也可按行选中后执行。
 结果作为只读表格显示，按 `r` 重新查询，列排序在本地完成；不支持追加 WHERE 筛选或分页。
 这两条命令直接交给数据库，不会被当成表名，也不会追加子查询、LIMIT 或 COUNT。
@@ -193,6 +193,9 @@ schema 的非 ASCII 底表名，也因无法确定服务端的名称折叠规则
 | `<Space>sc` | 为当前 `.sql` 缓冲区选择数据库连接，不离开当前文件 |
 | `<Space>sr` | 普通模式执行整个 `.sql` 缓冲区 |
 | `<Space>sr` | 可视模式执行当前选区覆盖的完整 SQL 行 |
+
+当前文件尚未选库时，`<Space>sr` 会打开和 `<Space>sc` 相同的连接列表。
+选定后立即执行刚才的 SQL，取消则结束本次操作。后续执行沿用所选连接。
 
 ### Dadbod Grip 工作区
 

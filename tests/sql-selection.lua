@@ -8,8 +8,27 @@ vim.g.mapleader = " "
 local runner = require("config.sql-runner")
 local executions, failures = {}, {}
 local passed = 0
-runner.run = function(sql)
-  executions[#executions + 1] = { sql = sql, mode = vim.fn.mode() }
+local connection = { name = "test", url = "sqlite:test" }
+local pending_choice
+runner.connections = function() return { connection } end
+vim.ui.select = function(items, _, on_choice)
+  assert(items[1] == connection and not pending_choice, "unexpected database picker")
+  pending_choice = on_choice
+end
+package.loaded["config.sql-result-guard"] = {
+  exact_query = function(_, sql, url, opts)
+    executions[#executions + 1] = {
+      sql = sql, mode = vim.fn.mode(), url = url, path = opts.source_path,
+      buf = vim.api.nvim_get_current_buf(), win = vim.api.nvim_get_current_win(),
+    }
+    return true
+  end,
+}
+
+local function choose(item)
+  local callback = assert(pending_choice, "database picker did not open")
+  pending_choice = nil
+  callback(item)
 end
 
 local mappings = {}
@@ -43,10 +62,12 @@ local function feed(keys)
   vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(keys, true, false, true), "xt", false)
 end
 
-local function new_buffer()
+local function new_buffer(needs_connection)
   feed("<Esc>")
   vim.cmd.enew({ bang = true })
   vim.bo.bufhidden = "wipe"
+  pending_choice = nil
+  if not needs_connection then vim.b.sql_connection_url = connection.url end
   vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
   for _, key in ipairs(mappings) do
     vim.keymap.set(key.mode or "n", key[1], key[2], { buffer = true, silent = true })
@@ -111,6 +132,56 @@ test("normal mode still executes the whole buffer", function()
   new_buffer()
   feed("ggVj<Esc><Space>sr")
   expect_execution(table.concat(lines, "\n"))
+end)
+
+test("choosing a database resumes the original selection in its source window", function()
+  new_buffer(true)
+  local source, win = vim.api.nvim_get_current_buf(), vim.api.nvim_get_current_win()
+  local path = vim.fn.tempname() .. ".sql"
+  vim.api.nvim_buf_set_name(source, path)
+  feed("4GV5j<Space>sr")
+  assert(#executions == 0)
+  vim.api.nvim_buf_set_lines(source, 3, 4, false, { "-- edited after opening picker" })
+  vim.cmd.new()
+  local other = vim.api.nvim_get_current_buf()
+  choose(connection)
+  assert(#executions == 1)
+  local result = executions[1]
+  assert(result.sql == selected_sql and result.url == connection.url)
+  assert(result.buf == source and result.win == win and result.path == path)
+  assert(runner.current_connection(source).name == connection.name)
+  assert(not runner.current_connection(other))
+
+  vim.api.nvim_set_current_win(win)
+  feed("11GV<Space>sr")
+  assert(#executions == 2 and executions[2].sql == lines[11] and not pending_choice)
+end)
+
+test("cancelling leaves the buffer disconnected and allows a fresh run", function()
+  new_buffer(true)
+  feed("<Space>sr")
+  choose(nil)
+  assert(not runner.current_connection() and #executions == 0)
+  feed("<Space>sr")
+  choose(connection)
+  expect_execution(table.concat(lines, "\n"))
+end)
+
+test("closing the source window while choosing abandons the query", function()
+  new_buffer(true)
+  feed("<Space>sr")
+  local win = vim.api.nvim_get_current_win()
+  vim.cmd.new()
+  vim.api.nvim_win_close(win, true)
+  choose(connection)
+  assert(#executions == 0 and not runner.current_connection())
+end)
+
+test("empty SQL skips the database picker", function()
+  new_buffer(true)
+  vim.api.nvim_buf_set_lines(0, 0, -1, false, { "  " })
+  feed("<Space>sr")
+  assert(#executions == 0 and not pending_choice)
 end)
 
 if #failures > 0 then

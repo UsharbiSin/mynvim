@@ -34,14 +34,12 @@ function M.select_connection(on_select)
       return item.name
     end,
   }, function(choice)
-    if not choice then
+    if not choice or not vim.api.nvim_buf_is_valid(source_buf) then
       return
     end
 
-    if vim.api.nvim_buf_is_valid(source_buf) then
-      vim.b[source_buf].sql_connection_name = choice.name
-      vim.b[source_buf].sql_connection_url = choice.url
-    end
+    vim.b[source_buf].sql_connection_name = choice.name
+    vim.b[source_buf].sql_connection_url = choice.url
 
     vim.notify(
       "当前 SQL 连接：" .. choice.name,
@@ -446,18 +444,6 @@ M._open_exact_query = open_exact_query
 M._infer_editable_table = infer_editable_table
 
 function M.run(sql)
-  local source_buf = vim.api.nvim_get_current_buf()
-  local current = M.current_connection()
-  local url = current and current.url
-
-  if not url then
-    vim.notify(
-      "当前 SQL 文件还没有选择数据库，请先按 <leader>sc",
-      vim.log.levels.WARN
-    )
-    return
-  end
-
   if not sql or sql:match("^%s*$") then
     vim.notify(
       "没有可执行的 SQL",
@@ -466,12 +452,21 @@ function M.run(sql)
     return
   end
 
-  local ok, err = open_exact_query(sql, url, {
-    source_path = vim.api.nvim_buf_get_name(source_buf),
-  })
-  if not ok then
-    vim.notify("SQL 执行失败：" .. tostring(err), vim.log.levels.ERROR)
-  end
+  local source_win = vim.api.nvim_get_current_win()
+  local source_buf = vim.api.nvim_win_get_buf(source_win)
+  M.with_connection(function(connection)
+    -- 选库可能异步返回，结果窗口和查询取消逻辑都依赖发起查询的窗口。
+    if not vim.api.nvim_win_is_valid(source_win) or vim.api.nvim_win_get_buf(source_win) ~= source_buf then
+      return
+    end
+    vim.api.nvim_set_current_win(source_win)
+    local ok, err = open_exact_query(sql, connection.url, {
+      source_path = vim.api.nvim_buf_get_name(source_buf),
+    })
+    if not ok then
+      vim.notify("SQL 执行失败：" .. tostring(err), vim.log.levels.ERROR)
+    end
+  end)
 end
 
 function M.run_buffer()
